@@ -1,18 +1,12 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import LoginForm from "../components/auth/LoginForm";
-import RegisterForm from "../components/auth/RegisterForm";
-import logo from "../assets/imgs/logo.webp";
+import LoginForm from "../../components/auth/LoginForm";
+import RegisterForm from "../../components/auth/RegisterForm";
+import logo from "../../assets/imgs/logo.webp";
 
 
 
-/**
- * Página de autenticación.
- *
- * Contiene solo la lógica de layout y la animación del círculo.
- * Los formularios de login y registro viven en sus propios componentes.
- */
 const Auth = () => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -48,12 +42,17 @@ const Auth = () => {
                 className={`bg-brand-200 absolute top-[calc(50vh-50vw)] w-[100vw] h-[100vw] rounded-full z-10 overflow-hidden flex items-center justify-center transition-all duration-[650ms] ease-[cubic-bezier(0.77,0,0.18,1)] ${isLogin ? "-left-[50vw]" : "left-[50vw]"
                     }`}
             >
-                <img
-                    src={logo}
-                    alt="Mundo Maquillaje"
-                    className={`w-[420px] object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition-transform duration-[650ms] ease-[cubic-bezier(0.77,0,0.18,1)] ${isLogin ? "translate-x-[25vw]" : "-translate-x-[25vw]"
+                <Link
+                    to="/"
+                    className={`flex items-center justify-center transition-transform duration-[650ms] ease-[cubic-bezier(0.77,0,0.18,1)] ${isLogin ? "translate-x-[25vw]" : "-translate-x-[25vw]"
                         }`}
-                />
+                >
+                    <img
+                        src={logo}
+                        alt="Mundo Maquillaje"
+                        className="w-[420px] object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+                    />
+                </Link>
             </div>
 
             {/* ── Panel de formularios ──────────────────────────────────────── */}

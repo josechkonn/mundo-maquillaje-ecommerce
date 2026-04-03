@@ -3,12 +3,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
-import { supabase, translateAuthError } from "../lib/supabase";
-import { forgotPasswordSchema, type ForgotPasswordData } from "../schemas/auth.schema";
-import FormField from "../components/ui/FormField";
-import SubmitButton from "../components/ui/SubmitButton";
-import logo from "../assets/imgs/logo.webp";
-import SimpleHeader from "../components/layout/SimpleHeader";
+import { supabase, translateAuthError } from "../../lib/supabase";
+import { forgotPasswordSchema, type ForgotPasswordData } from "../../schemas/auth.schema";
+import FormField from "../../components/ui/FormField";
+import SubmitButton from "../../components/ui/SubmitButton";
+import SimpleHeader from "../../components/layout/SimpleHeader";
 
 const ForgotPassword = () => {
     const [isSent, setIsSent] = useState(false);

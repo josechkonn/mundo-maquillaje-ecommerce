@@ -8,7 +8,7 @@ import AuthMiddleware from "./routes/middleware/AuthMiddleware";
 import RoleMiddleware from "./routes/middleware/RoleMiddleware";
 import AuthRoutes from "./routes/AuthRoutes";
 import CustomerRoutes from "./routes/CustomerRoutes";
-import UpdatePassword from "./pages/UpdatePassword";
+import UpdatePassword from "./pages/auth/UpdatePassword";
 
 function App() {
   const initializeAuthListener = useAuthStore((state) => state.initializeAuthListener);

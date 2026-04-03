@@ -14,21 +14,23 @@ export type FormFieldProps = {
     registration: object;
     /** Clase de fondo opcional para el input. Por defecto bg-white. */
     bgClass?: string;
+    /** Clase de redondeado opcional. Por defecto rounded-xl. */
+    roundedClass?: string;
+    /** Clase de borde opcional. Por defecto border-brand-300 o border-red-400. */
+    borderClass?: string;
+    /** Cualquier otra prop nativa del input (readOnly, disabled, etc.) */
+    [key: string]: any;
 };
 
-/**
- * Campo de formulario reutilizable con:
- * - Label
- * - Input estilizado con paleta brand
- * - Botón opcional para mostrar/ocultar contraseña
- * - Mensaje de error
- */
 const FormField = ({
     id, label, type = "text", placeholder,
     error, onToggleVisibility, visible, registration,
     bgClass = "bg-white",
+    roundedClass = "rounded-xl",
+    borderClass = "",
+    ...rest
 }: FormFieldProps) => (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5 w-full">
         <label htmlFor={id} className="text-sm font-semibold text-text-base">
             {label}
         </label>
@@ -38,12 +40,14 @@ const FormField = ({
                 id={id}
                 type={type}
                 placeholder={placeholder}
-                className={`w-full px-4 py-3 rounded-xl border text-sm ${bgClass} text-text-base
-                    placeholder-brand-300 outline-none transition-all duration-200
+                className={`w-full px-4 py-2.5 ${roundedClass} border text-sm text-text-base
+                    placeholder-neutral-400 outline-none transition-all duration-200
                     focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500
-                    ${error ? "border-red-400" : "border-brand-300"}
-                    ${onToggleVisibility ? "pr-12" : ""}`}
+                    ${error ? "border-red-400" : (borderClass || "border-brand-300")}
+                    ${onToggleVisibility ? "pr-12" : ""}
+                    ${rest.readOnly ? "bg-neutral-50 cursor-default" : bgClass}`}
                 {...registration}
+                {...rest}
             />
 
             {onToggleVisibility && (
