@@ -1,0 +1,59 @@
+/* Importa la fuente desde Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+
+/* Directivas de Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Reset base ─── */
+@layer base {
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+    /* Aplica tipografía Poppins por defecto y texto base responsive */
+    @apply font-sans font-normal text-text-base text-p-s md:text-p-b;
+  }
+
+  /* 
+   * Tipografías Responsive Globales de Figma:
+   * (En móvil usan la versión -s, y en sm/md/desktop saltan a -b)
+   */
+  h1 {
+    @apply text-h1-s md:text-h1-b font-bold tracking-tight;
+  }
+
+  h2 {
+    @apply text-h2-s md:text-h2-b font-bold tracking-tight;
+  }
+
+  h3 {
+    @apply text-h3-s md:text-h3-b font-bold tracking-tight;
+  }
+
+  h4 {
+    @apply text-h4-s md:text-h4-b font-bold;
+  }
+
+  h5 {
+    @apply text-h5-s md:text-h5-b font-bold;
+  }
+
+  p {
+    @apply text-p-s md:text-p-b;
+  }
+}
