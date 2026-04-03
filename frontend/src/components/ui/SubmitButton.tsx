@@ -31,8 +31,8 @@ const SubmitButton = ({
             id={id}
             type="submit"
             disabled={isSubmitting}
-            className={`w-full py-3.5 bg-gradient-to-r from-brand-400 to-brand-500 text-white font-bold
-                rounded-xl shadow-brand hover:shadow-brand-lg hover:-translate-y-0.5
+            className={`w-full py-3.5 bg-gradient-to-r bg-brand-400 text-white font-bold
+                rounded-xl shadow-brand hover:shadow-brand-lg hover:translate-y-0.5
                 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed 
                 disabled:translate-y-0 flex items-center justify-center gap-2 ${className}`}
         >

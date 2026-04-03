@@ -17,8 +17,8 @@ export default {
           50: "#FCE8ED",
           100: "#F6B6C6",
           200: "#F193AA",
-          300: "#EC6FA0",   // rosa claro (fondos, bordes)
-          400: "#E74B86",   // rosa medio (gradientes)
+          300: "#EB6283",   // rosa claro (fondos, bordes)
+          400: "#E7446B",   // rosa medio (gradientes)
           500: "#E11546",   // rosa base (botones, CTA)
           600: "#CD1340",   // rosa oscuro (hover)
           700: "#A00F32",   // rosa profundo (active)

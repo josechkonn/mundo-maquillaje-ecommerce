@@ -3,11 +3,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, Link } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
-import { supabase, translateAuthError } from "../lib/supabase";
-import { updatePasswordSchema, type UpdatePasswordData } from "../schemas/auth.schema";
-import FormField from "../components/ui/FormField";
-import SimpleHeader from "../components/layout/SimpleHeader";
-import SubmitButton from "../components/ui/SubmitButton";
+import { supabase, translateAuthError } from "../../lib/supabase";
+import { updatePasswordSchema, type UpdatePasswordData } from "../../schemas/auth.schema";
+import FormField from "../../components/ui/FormField";
+import SimpleHeader from "../../components/layout/SimpleHeader";
+import SubmitButton from "../../components/ui/SubmitButton";
 
 const UpdatePassword = () => {
     const navigate = useNavigate();

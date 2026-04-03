@@ -1,16 +1,21 @@
 import { Route } from "react-router-dom";
-import Logout from "../pages/Logout";
+import AccountLayout from "../layouts/AccountLayout";
+import ProfilePage from "../pages/account/ProfilePage";
+import AddressesPage from "../pages/account/AddressesPage";
 
 const CustomerRoutes = (
     <>
-        <Route path="cuenta" element={<div>Mi Perfil</div>} />
-        <Route path="direcciones" element={<div>Mis Direcciones</div>} />
-        <Route path="favoritos" element={<div>Mis Favoritos</div>} />
+        {/* Rutas del Centro de Usuarios - Con Layout y Sidebar */}
+        <Route path="cuenta" element={<AccountLayout />}>
+            <Route index element={<ProfilePage />} />
+            <Route path="direcciones" element={<AddressesPage />} />
+            <Route path="favoritos" element={<div>Mis Favoritos</div>} />
+            <Route path="pedidos" element={<div>Mis Pedidos</div>} />
+        </Route>
+
+        {/* Flujo de compra y otras rutas protegidas fuera del layout de cuenta */}
         <Route path="carrito" element={<div>Mi Carrito</div>} />
         <Route path="finalizar-compra" element={<div>Proceso de Pago</div>} />
-        <Route path="pedidos" element={<div>Mis Pedidos</div>} />
-
-        <Route path="logout" element={<Logout />} />
     </>
 );
 
