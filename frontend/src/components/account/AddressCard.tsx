@@ -19,7 +19,7 @@ interface AddressCardProps {
 
 const AddressCard = ({ address, onEdit, onDelete }: AddressCardProps) => {
   return (
-    <div className="bg-neutral-300 border-l-4 border-brand-400 rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-neutral-300 border-l-4 border-brand-400 rounded-xl p-6 flex flex-col md:flex-row md:items-end justify-between gap-4 shadow-sm hover:shadow-md transition-shadow">
       <div className="space-y-1">
         <h3 className="text-xl font-bold text-neutral-900">{address.name}</h3>
         <div className="text-neutral-700 text-sm space-y-0.5">
