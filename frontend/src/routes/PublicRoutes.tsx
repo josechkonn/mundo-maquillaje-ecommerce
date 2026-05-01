@@ -2,6 +2,8 @@ import { Route } from "react-router-dom";
 import StoreLayout from "../layouts/StoreLayout";
 import HomePage from "../pages/HomePage";
 import ProductDetailsPage from "../pages/ProductDetailsPage";
+import CategoryPage from "../pages/CategoryPage";
+import ProductsPage from "../pages/ProductsPage";
 
 const PublicRoutes = (
   <Route element={<StoreLayout />}>
@@ -10,9 +12,9 @@ const PublicRoutes = (
     <Route path="tienda" element={<div>Catálogo de Productos</div>} />
     <Route path="nosotros" element={<div>Sobre Nosotros</div>} />
     <Route path="categorias" element={<div>Lista General de Categorias</div>} />
-    <Route path="productos" element={<div>Lista General de Productos</div>} />
+    <Route path="productos" element={<ProductsPage />} />
     <Route path="producto/:slug" element={<ProductDetailsPage />} />
-    <Route path="productos/categoria/:categoria" element={<div>Productos por Categoría</div>} />
+    <Route path="*" element={<CategoryPage />} />
   </Route>
 );
 

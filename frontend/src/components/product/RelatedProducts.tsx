@@ -17,13 +17,15 @@ const RelatedProducts = ({ categoryId, currentProductId }: RelatedProductsProps)
     const fetchRelated = async () => {
       try {
         const response = await productService.getAllProducts(0, 8);
+        const allProducts = Array.isArray(response) ? response : response.content;
+
         // Filtrar el producto actual y (idealmente) por categoria si el API lo soportara
-        const filtered = response.content
+        const filtered = allProducts
           .filter(p => p.category?.id === categoryId && p.id !== currentProductId);
 
         // Si no hay suficientes de la misma categoría, simplemente mostramos otros productos
         if (filtered.length < 5) {
-          const others = response.content
+          const others = allProducts
             .filter(p => p.id !== currentProductId && p.category?.id !== categoryId)
             .slice(0, 10);
           setProducts([...filtered, ...others]);
@@ -42,11 +44,11 @@ const RelatedProducts = ({ categoryId, currentProductId }: RelatedProductsProps)
   if (loading) {
     return (
       <section className="py-4 md:py-16 border-t border-gray-100 mt-10 md:mt-20">
-        <div className="max-w-[1400px] mx-auto overflow-hidden">
+        <div className="max-w-[95%] mx-auto relative px-4 overflow-hidden">
           <div className="flex justify-center mb-8 md:mb-12">
             <Skeleton height={32} width={250} borderRadius={8} />
           </div>
-          <div className="flex gap-4 overflow-hidden px-4 justify-center md:justify-start">
+          <div className="flex gap-4 overflow-hidden justify-center md:justify-start">
             {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="min-w-[160px] w-[160px] md:min-w-[280px] md:w-[280px] h-[400px]">
                 <Skeleton height={400} borderRadius={24} />
@@ -61,9 +63,9 @@ const RelatedProducts = ({ categoryId, currentProductId }: RelatedProductsProps)
   if (products.length === 0) return null;
 
   return (
-    <section className="py-4 md:py-16 border-t border-gray-100 mt-10 md:mt-20">
-      <div className="max-w-[1400px] mx-auto">
-        <h3 className="text-h3-s md:text-h3-b font-bold mb-8 md:mb-12 text-center text-neutral-900">
+    <section className="pt-4 md:pt-8 border-t border-gray-100 ">
+      <div className="max-w-[95%] mx-auto relative px-4">
+        <h3 className="text-h3-s md:text-h3-b font-bold mb-8 md:mb-12 text-center text-neutral-800">
           También te puede interesar
         </h3>
 

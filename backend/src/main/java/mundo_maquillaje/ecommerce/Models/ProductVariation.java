@@ -55,5 +55,6 @@ public class ProductVariation {
     @OneToMany(mappedBy = "variation", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("variation-images")
     @Builder.Default
+    @org.hibernate.annotations.BatchSize(size = 20)
     private List<ProductImage> images = new ArrayList<>();
 }

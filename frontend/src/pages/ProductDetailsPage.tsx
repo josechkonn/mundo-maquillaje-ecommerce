@@ -91,7 +91,7 @@ const ProductDetailsPage = () => {
   if (!product) return null;
 
   const breadcrumbItems = [
-    { label: product.category?.name || "Categoría", path: `/productos/categoria/${product.category?.id}` },
+    { label: product.category?.name || "Categoría", path: `/productos?category=${product.category?.id}` },
     { label: product.name }
   ];
 
@@ -110,27 +110,27 @@ const ProductDetailsPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
           {/* Columna Izquierda: Galería */}
-          <ProductGallery 
+          <ProductGallery
             key={selectedVariation?.id ?? "no-variation"}
             images={displayImages}
             previewImageUrl={previewImageUrl}
           />
 
           {/* Columna Derecha: Información y Compra */}
-          <ProductInfo 
-            product={product} 
+          <ProductInfo
+            product={product}
             onVariationChange={handleVariationChange}
             onHoverVariation={setHoveredVariation}
           />
         </div>
+      </div>
 
-        {/* Sección de Productos Relacionados */}
-        <div className="mt-20">
-          <RelatedProducts 
-            categoryId={product.category?.id} 
-            currentProductId={product.id} 
-          />
-        </div>
+      {/* Sección de Productos Relacionados (Fuera del contenedor restrictivo) */}
+      <div>
+        <RelatedProducts
+          categoryId={product.category?.id}
+          currentProductId={product.id}
+        />
       </div>
     </div>
   );

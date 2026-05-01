@@ -36,6 +36,12 @@ public class Category {
     @Column(name = "logo_url")
     private String logoUrl;
 
+    @Column(name = "banner_url")
+    private String bannerUrl;
+
+    @Column(name = "sub_banner_url")
+    private String subBannerUrl;
+
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;

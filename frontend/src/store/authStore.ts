@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { useFavoritesStore } from "./favoritesStore";
 
 interface AuthState {
   user: User | null;
@@ -23,6 +24,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   signOut: async () => {
     await supabase.auth.signOut();
     set({ user: null, session: null });
+    useFavoritesStore.getState().clearFavorites();
   },
 
   initializeAuthListener: () => {
@@ -40,20 +42,25 @@ export const useAuthStore = create<AuthState>((set) => ({
     };
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      set({ session, user: session?.user ?? null, isLoading: false });
+      const user = session?.user ?? null;
+      set({ session, user, isLoading: false });
       if (session) {
         syncTokensWithBackend(session.access_token, session.refresh_token);
+        useFavoritesStore.getState().syncFavorites();
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, freshSession) => {
-        set({ session: freshSession, user: freshSession?.user ?? null });
+        const user = freshSession?.user ?? null;
+        set({ session: freshSession, user });
 
         if (freshSession) {
           syncTokensWithBackend(freshSession.access_token, freshSession.refresh_token);
+          useFavoritesStore.getState().syncFavorites();
         } else {
           syncTokensWithBackend(null, null);
+          useFavoritesStore.getState().clearFavorites();
         }
       }
     );

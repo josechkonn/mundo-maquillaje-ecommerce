@@ -22,9 +22,42 @@ public class CategoryService {
         return categoryRepository.findAll();
     }
 
+    public List<Category> getCategoriesByParent(UUID parentId, Boolean isActive) {
+        if (isActive != null) {
+            return categoryRepository.findByParentIdAndIsActive(parentId, isActive);
+        }
+        return categoryRepository.findByParentId(parentId);
+    }
+
+    public List<Category> getMainCategories(Boolean isActive) {
+        // Obtenemos todas las categorías filtradas por isActive y luego filtramos manualmente las que no tienen padre
+        // para asegurar una precisión del 100% independientemente de cómo se comporte la consulta JPA con nulos
+        List<Category> all;
+        if (isActive != null) {
+            all = categoryRepository.findByIsActive(isActive);
+        } else {
+            all = categoryRepository.findAll();
+        }
+        
+        return all.stream()
+                .filter(c -> c.getParent() == null)
+                .toList();
+    }
+
+    public List<Category> getActiveCategories() {
+        return categoryRepository.findByIsActive(true);
+    }
+
     public Category getCategoryById(UUID id) {
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
+    }
+
+    public Category getCategoryBySlug(String slug) {
+        if (slug == null) throw new RuntimeException("Slug cannot be null");
+        String normalizedSlug = slug.toLowerCase(Locale.ENGLISH);
+        return categoryRepository.findBySlug(normalizedSlug)
+                .orElseThrow(() -> new RuntimeException("Category not found: " + slug));
     }
 
     @Transactional

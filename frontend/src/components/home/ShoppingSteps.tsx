@@ -41,7 +41,7 @@ const ShoppingSteps = () => {
 
       <div className="max-w-7xl mx-auto relative z-10 text-center">
         {/* Título */}
-        <h2 className="text-h2-s md:text-h2-b font-bold text-[#1A1A1A] mb-10 md:mb-24 tracking-tight leading-tight">
+        <h2 className="text-h2-s md:text-h2-b font-bold text-[#222222] mb-10 md:mb-24 tracking-tight leading-tight">
           Hacer tus compras nunca fue <br className="md:hidden" />
           tan facil
         </h2>
@@ -59,7 +59,7 @@ const ShoppingSteps = () => {
                     className="w-full h-full object-contain drop-shadow-md"
                   />
                 </div>
-                <p className="text-[11px] md:text-xl font-medium md:font-medium text-[#1A1A1A] md:text-[#4A4A4A] leading-tight md:leading-relaxed px-1">
+                <p className="text-[11px] md:text-xl font-medium md:font-medium text-[#222222] md:text-[#4A4A4A] leading-tight md:leading-relaxed px-1">
                   {step.text}
                 </p>
               </div>

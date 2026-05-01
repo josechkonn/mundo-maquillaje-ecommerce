@@ -35,14 +35,14 @@ export default {
           600: "#8B7177",
           700: "#6A575B",
           800: "#222222",
-          900: "#000000",
+          900: "#222222",
         },
         surface: {
           DEFAULT: "#FEF0F3",  // fondo páginas auth
           card: "#ffffff",  // fondo tarjetas
         },
         text: {
-          base: "#1a1a2e",  // títulos
+          base: "#222222",  // títulos
           muted: "#6A575B",  // subtítulos / placeholders
           link: "#ec4899",  // links
         },

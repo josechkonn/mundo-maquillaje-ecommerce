@@ -98,7 +98,7 @@ const AddressesPage = () => {
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-h4-b font-extrabold text-neutral-900 tracking-tight">
+        <h1 className="text-h4-b font-extrabold text-neutral-800 tracking-tight">
           Direcciones
         </h1>
       </div>

@@ -38,13 +38,13 @@ const AddressForm = ({ initialData, onSubmit, onCancel }: AddressFormProps) => {
       <button
         onClick={onCancel}
         type="button"
-        className="flex items-center gap-1.5 text-neutral-600 hover:text-black transition-all mb-6 group font-medium"
+        className="flex items-center gap-1.5 text-neutral-600 hover:text-neutral-800 transition-all mb-6 group font-medium"
       >
         <ArrowLongLeftIcon className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
         <span>Volver a mis direcciones</span>
       </button>
 
-      <h2 className="text-2xl font-bold mb-6 text-neutral-900">
+      <h2 className="text-2xl font-bold mb-6 text-neutral-800">
         {initialData ? "Editar Dirección" : "Nueva Dirección"}
       </h2>
 

@@ -23,7 +23,7 @@ const VariationSelector = ({ variations, selectedVariation, onSelect, onHoverVar
       {Object.entries(groups).map(([groupName, groupVariations]) => (
         <div key={groupName}>
           {/* Label dinámico según attributeName */}
-          <h4 className="text-[14px] text-neutral-900 mb-3 font-bold tracking-tight">
+          <h4 className="text-[14px] text-neutral-800 mb-3 font-bold tracking-tight">
             {groupName}
             {/* Muestra el valor seleccionado de ese grupo */}
             {(() => {
@@ -56,7 +56,7 @@ const VariationSelector = ({ variations, selectedVariation, onSelect, onHoverVar
                       `}
                     >
                       <div
-                        className="w-full h-full rounded-full border border-black/10 shadow-inner"
+                        className="w-full h-full rounded-full border border-neutral-800/10 shadow-inner"
                         style={{ backgroundColor: v.hexColor }}
                       />
                       {v.stock <= 0 && <div className="absolute w-[120%] h-[1.5px] bg-red-400/70 rotate-45" />}

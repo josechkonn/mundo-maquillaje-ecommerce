@@ -1,4 +1,4 @@
-import { useEffect, ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
@@ -39,7 +39,7 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity animate-fade-in" 
+        className="absolute inset-0 bg-neutral-800/40 backdrop-blur-sm transition-opacity animate-fade-in" 
         onClick={onClose}
       />
       
