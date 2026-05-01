@@ -25,8 +25,8 @@
 
   body {
     -webkit-font-smoothing: antialiased;
-    /* Aplica tipografía Poppins por defecto y texto base responsive */
-    @apply font-sans font-normal text-text-base text-p-s md:text-p-b;
+    /* Aplica tipografía Poppins por defecto, texto base y fondo neutral-100 */
+    @apply font-sans font-normal text-text-base text-p-s md:text-p-b bg-neutral-100;
   }
 
   /* 
@@ -55,5 +55,62 @@
 
   p {
     @apply text-p-s md:text-p-b;
+  }
+}
+
+/* ─── Swiper Custom Pagination (Dot with Ring) ─── */
+.swiper-pagination {
+  position: static !important;
+  display: flex !important;
+  flex-wrap: wrap !important; /* Permite que los puntos bajen de fila si son muchos */
+  justify-content: center !important;
+  align-items: center !important;
+  margin-top: 1.5rem !important;
+  overflow: visible !important;
+  max-width: 90% !important; /* Margen de seguridad lateral */
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.swiper-pagination-bullet {
+  display: inline-block !important;
+  width: 11px !important;
+  height: 11px !important;
+  aspect-ratio: 1 / 1 !important;
+  background: #CBD5E1 !important;
+  opacity: 1 !important;
+  margin: 0 10px !important;
+  transition: all 0.3s ease !important;
+  position: relative;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.swiper-pagination-bullet-active {
+  width: 11px !important;
+  background: #E7446B !important;
+}
+
+/* El anillo alrededor del punto activo - Mejorado para evitar recortes */
+.swiper-pagination-bullet-active::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Centrado absoluto infalible */
+  width: 21px !important;
+  height: 21px !important;
+  border: 2.5px solid #E7446B;
+  border-radius: 50% !important;
+  opacity: 1;
+  box-sizing: border-box;
+}
+
+/* Ocultar flechas en móvil si no se usa display: none en el componente */
+@media (max-width: 1024px) {
+  .swiper-button-next,
+  .swiper-button-prev {
+    display: none !important;
   }
 }
