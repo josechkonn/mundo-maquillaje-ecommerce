@@ -25,12 +25,18 @@ const LoginForm = ({ onSwitchToRegister, visible }: LoginFormProps) => {
     const onSubmit = async (data: LoginData) => {
         const id = toast.loading("Iniciando sesión...");
         try {
-            const { error } = await supabase.auth.signInWithPassword({
+            const { data: authData, error } = await supabase.auth.signInWithPassword({
                 email: data.email,
                 password: data.password,
             });
 
             if (error) throw error;
+
+            if (authData.session) {
+                console.log("Access Token de Supabase:", authData.session.access_token);
+                // También el ID del usuario por si lo necesitas
+                console.log("User ID:", authData.session.user.id);
+            }
 
             toast.success("¡Bienvenida de vuelta! 💄", { id });
             // TODO: Redirigir al dashboard u otra página después del login

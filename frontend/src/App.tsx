@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuthStore } from "./store/authStore";
+import { useCurrencyStore } from "./store/currencyStore";
 import PublicMiddleware from "./routes/middleware/PublicMiddleware";
 import PublicRoutes from "./routes/PublicRoutes";
 import AdminRoutes from "./routes/AdminRoutes";
@@ -9,19 +10,23 @@ import RoleMiddleware from "./routes/middleware/RoleMiddleware";
 import AuthRoutes from "./routes/AuthRoutes";
 import CustomerRoutes from "./routes/CustomerRoutes";
 import UpdatePassword from "./pages/auth/UpdatePassword";
+import ScrollToTop from "./components/layout/ScrollToTop";
 
 function App() {
   const initializeAuthListener = useAuthStore((state) => state.initializeAuthListener);
+  const fetchCurrencies = useCurrencyStore((state) => state.fetchCurrencies);
 
   useEffect(() => {
     const unsubscribe = initializeAuthListener();
+    fetchCurrencies();
     return () => {
       unsubscribe();
     };
-  }, [initializeAuthListener]);
+  }, [initializeAuthListener, fetchCurrencies]);
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         {/* 1. ADMIN  */}
         <Route path="/admin/*" element={<RoleMiddleware />}>

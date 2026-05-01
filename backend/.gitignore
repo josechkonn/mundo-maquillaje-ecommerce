@@ -3,6 +3,9 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+/collections/
+.env.local
+workspace.yml
 
 ### STS ###
 .apt_generated

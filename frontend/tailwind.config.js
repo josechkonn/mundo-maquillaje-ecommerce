@@ -66,6 +66,8 @@ export default {
         "h4-b": ["28px", "1.28"],
         "h5-s": ["16px", "1.28"],
         "h5-b": ["20px", "1.28"],
+        "p-xs": ["12px", "normal"],
+        "p-sm": ["14px", "normal"],
         "p-s": ["14px", "normal"],
         "p-b": ["16px", "1.5"], // 150% line height
       },
