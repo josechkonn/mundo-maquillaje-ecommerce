@@ -1,11 +1,14 @@
 import { Link } from "react-router-dom";
 import { HeartIcon as HeartOutline } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
+import { CheckIcon } from "@heroicons/react/24/solid";
+import { useState } from "react";
 import { type Product } from "../../services/productService";
 import { convertAndFormatPrice } from "../../lib/formatters";
 import { useCurrencyStore } from "../../store/currencyStore";
 import { useFavoritesStore } from "../../store/favoritesStore";
 import { useAuthStore } from "../../store/authStore";
+import { useCartStore } from "../../store/cartStore";
 import Button from "./Button";
 
 interface ProductCardProps {
@@ -16,6 +19,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const { selectedCurrency, currencies } = useCurrencyStore();
   const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
   const user = useAuthStore(state => state.user);
+  const { addItem } = useCartStore();
+  const [addedToCart, setAddedToCart] = useState(false);
   
   const favorited = isFavorite(product.id);
 
@@ -29,8 +34,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
     }
   };
 
+  // Usar el precio mínimo de TODAS las variaciones (coincide con el sort del backend)
+  const minVariationPrice = product.variations?.length
+    ? Math.min(...product.variations.map(v => v.price))
+    : 0;
+
   const formattedPrice = convertAndFormatPrice(
-    product.variations?.[0]?.price || 0,
+    minVariationPrice,
     product.currency,
     selectedCurrency,
     currencies
@@ -76,8 +86,46 @@ const ProductCard = ({ product }: ProductCardProps) => {
         </p>
 
         {/* Botón de Acción Reutilizable */}
-        <Button className="mt-auto !text-p-xs font-medium">
-          Añadir a carrito
+        <Button
+          className={`mt-auto !text-p-xs font-medium transition-all duration-300 ${
+            addedToCart ? "!bg-green-500 !hover:bg-green-600" : ""
+          }`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const firstVariation = product.variations?.[0];
+            if (!firstVariation) return;
+
+            const mainImg = firstVariation.images?.find(img => img.isMain)?.urlImage
+              || firstVariation.images?.[0]?.urlImage
+              || "/placeholder-product.png";
+
+            addItem({
+              variationId: firstVariation.id,
+              productId: product.id,
+              productName: product.name,
+              productSlug: product.slug,
+              variationName: firstVariation.attributeValue || firstVariation.name,
+              price: firstVariation.price,
+              quantity: 1,
+              maxStock: firstVariation.stock,
+              imageUrl: mainImg,
+              hexColor: firstVariation.hexColor,
+              currencyId: product.currency.id,
+              currencyCode: product.currency.code,
+              currencySymbol: product.currency.symbol,
+              currencyDecimalPlaces: product.currency.decimalPlaces,
+              currencySymbolPosition: product.currency.symbolPosition,
+              currencyExchangeRate: product.currency.exchangeRate,
+            }, !!user);
+
+            setAddedToCart(true);
+            setTimeout(() => setAddedToCart(false), 1500);
+          }}
+        >
+          {addedToCart ? (
+            <><CheckIcon className="w-4 h-4" /> Añadido</>
+          ) : "Añadir a carrito"}
         </Button>
       </div>
     </div>

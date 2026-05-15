@@ -1,119 +1,161 @@
-import { useForm } from "react-hook-form";
-import FormField from "../ui/FormField";
-import SubmitButton from "../ui/SubmitButton";
-import { ArrowLongLeftIcon } from "@heroicons/react/24/outline";
+import React, { useState, useEffect } from "react";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
 
 interface Address {
   id?: string;
   name: string;
+  fullname: string;
   phone: string;
   direction: string;
+  state: string;
+  city: string;
   municipality: string;
   parish: string;
-  city: string;
-  state: string;
 }
 
 interface AddressFormProps {
-  initialData?: Address;
-  onSubmit: (data: Address) => Promise<void>;
+  initialData?: Address | null;
+  onSubmit: (data: Address) => void;
   onCancel: () => void;
+  isLoading?: boolean;
+  hideHeader?: boolean;
 }
 
-const AddressForm = ({ initialData, onSubmit, onCancel }: AddressFormProps) => {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<Address>({
-    defaultValues: initialData || {
-      name: "",
-      phone: "",
-      direction: "",
-      municipality: "",
-      parish: "",
-      city: "",
-      state: "",
-    }
+const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = false }: AddressFormProps) => {
+  const [formData, setFormData] = useState<Address>({
+    name: "",
+    fullname: "",
+    phone: "",
+    direction: "",
+    state: "",
+    city: "",
+    municipality: "",
+    parish: "",
   });
 
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
   return (
-    <div className="animate-fade-in">
-      <button
-        onClick={onCancel}
-        type="button"
-        className="flex items-center gap-1.5 text-neutral-600 hover:text-neutral-800 transition-all mb-6 group font-medium"
-      >
-        <ArrowLongLeftIcon className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
-        <span>Volver a mis direcciones</span>
-      </button>
-
-      <h2 className="text-2xl font-bold mb-6 text-neutral-800">
-        {initialData ? "Editar Dirección" : "Nueva Dirección"}
-      </h2>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-4xl">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            id="name"
-            label="Nombre de la ubicación (Ej: Casa, Oficina)"
-            placeholder="Casa"
-            registration={register("name", { required: "El nombre es obligatorio" })}
-            error={errors.name?.message}
-          />
-          <FormField
-            id="phone"
-            label="Teléfono de contacto"
-            placeholder="+58 412-0000000"
-            registration={register("phone", { required: "El teléfono es obligatorio" })}
-            error={errors.phone?.message}
-          />
+    <div className="w-full">
+      {/* Header Estilo Imagen */}
+      {!hideHeader && (
+        <div className="mb-8">
+          <button
+            onClick={onCancel}
+            type="button"
+            className="flex items-center gap-2 text-text-muted hover:text-text-base transition-colors mb-4 group"
+          >
+            <svg className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span className="text-p-s font-medium">Volver</span>
+          </button>
+          <h2 className="text-h4-s md:text-h4-b font-bold text-text-base mb-6">
+            Editar o agregar dirección
+          </h2>
+          <div className="border-t border-neutral-800 w-full mb-10"></div>
         </div>
+      )}
 
-        <FormField
-          id="direction"
-          label="Dirección detallada"
-          placeholder="Calle, número de casa, punto de referencia"
-          registration={register("direction", { required: "La dirección es obligatoria" })}
-          error={errors.direction?.message}
-        />
+      <form onSubmit={handleSubmit} className="space-y-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+          {/* Fila 1: Datos Personales */}
+          <Input
+            label="Nombre del receptor:"
+            name="fullname"
+            value={formData.fullname}
+            onChange={handleChange}
+            placeholder="Emi"
+            required
+          />
+          <Input
+            label="Numero de telefono:"
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            placeholder="0412-1578413"
+            required
+          />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            id="state"
-            label="Estado"
+          {/* Fila 2: Ubicación Principal */}
+          <Input
+            label="Estado:"
+            name="state"
+            value={formData.state}
+            onChange={handleChange}
             placeholder="Táchira"
-            registration={register("state", { required: "El estado es obligatorio" })}
-            error={errors.state?.message}
+            required
           />
-          <FormField
-            id="city"
-            label="Ciudad"
-            placeholder="San Cristóbal"
-            registration={register("city", { required: "La ciudad es obligatoria" })}
-            error={errors.city?.message}
+          <Input
+            label="Ciudad:"
+            name="city"
+            value={formData.city}
+            onChange={handleChange}
+            placeholder="San Juan de Colón"
+            required
           />
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            id="municipality"
-            label="Municipio"
-            placeholder="San Cristóbal"
-            registration={register("municipality", { required: "El municipio es obligatorio" })}
-            error={errors.municipality?.message}
+          {/* Fila 3: Ubicación Secundaria */}
+          <Input
+            label="Municipio:"
+            name="municipality"
+            value={formData.municipality}
+            onChange={handleChange}
+            placeholder="Ayacucho"
+            required
           />
-          <FormField
-            id="parish"
-            label="Parroquia"
-            placeholder="La Concordia"
-            registration={register("parish", { required: "La parroquia es obligatoria" })}
-            error={errors.parish?.message}
+          <Input
+            label="Parroquia:"
+            name="parish"
+            value={formData.parish}
+            onChange={handleChange}
+            placeholder="San Juan de Colón"
+            required
+          />
+
+          {/* Fila 4: Detalles */}
+          <Input
+            label="Dirección:"
+            name="direction"
+            value={formData.direction}
+            onChange={handleChange}
+            placeholder="Prolongación calle 9"
+            required
+          />
+          <Input
+            label="Nombre de dirección:"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Casa"
+            required
           />
         </div>
 
         <div className="flex pt-4">
-          <SubmitButton
-            label={initialData ? "Actualizar Dirección" : "Guardar Dirección"}
-            isSubmitting={isSubmitting}
-            className="w-full md:w-fit px-12 h-12 rounded-2xl bg-brand-400 hover:bg-brand-500 transition-all font-bold text-white shadow-brand"
-          />
+          <Button
+            type="submit"
+            isLoading={isLoading}
+            className="!px-16 !py-4 !rounded-2xl !bg-brand-400 !w-auto shadow-lg shadow-brand-100 font-bold"
+          >
+            {initialData ? "Guardar Cambios" : "Agregar Dirección"}
+          </Button>
         </div>
       </form>
     </div>

@@ -27,21 +27,19 @@ public interface ProductRepository extends JpaRepository<Product, UUID>,
 
        Optional<Product> findBySlug(String slug);
 
-       Optional<Product> findBySku(String sku);
-
        @EntityGraph(attributePaths = { "category", "brand", "currency", "variations" })
-       @org.springframework.data.jpa.repository.Query("SELECT p FROM Product p WHERE " +
+       @org.springframework.data.jpa.repository.Query("SELECT DISTINCT p FROM Product p JOIN p.variations v WHERE " +
                      "LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-                     "LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-                     "LOWER(p.sku) LIKE LOWER(CONCAT('%', :query, '%'))")
+                     "LOWER(v.description) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                     "LOWER(v.sku) LIKE LOWER(CONCAT('%', :query, '%'))")
        Page<Product> searchProducts(@org.springframework.data.repository.query.Param("query") String query,
                      Pageable pageable);
 
        @EntityGraph(attributePaths = { "category", "brand", "currency", "variations" })
-       @org.springframework.data.jpa.repository.Query("SELECT p FROM Product p WHERE " +
+       @org.springframework.data.jpa.repository.Query("SELECT DISTINCT p FROM Product p JOIN p.variations v WHERE " +
                      "(LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-                     "LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-                     "LOWER(p.sku) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
+                     "LOWER(v.description) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                     "LOWER(v.sku) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
                      "(:lastId IS NULL OR p.id > :lastId) " +
                      "ORDER BY p.id ASC")
        List<Product> findNextProducts(@org.springframework.data.repository.query.Param("query") String query,

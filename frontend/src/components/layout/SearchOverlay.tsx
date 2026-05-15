@@ -161,7 +161,9 @@ const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose }) => {
                     {results.map(prod => {
                       const mainImage = prod.variations?.[0]?.images?.find(img => img.isMain)?.urlImage 
                         || prod.variations?.[0]?.images?.[0]?.urlImage;
-                      const price = prod.variations?.[0]?.price || 0;
+                      const price = prod.variations?.length
+                        ? Math.min(...prod.variations.map(v => v.price))
+                        : 0;
 
                       return (
                         <button

@@ -35,16 +35,6 @@ public class Product {
     @Column(name = "slug", nullable = false, unique = true, length = 150)
     private String slug;
 
-    @Column(name = "sku", length = 100)
-    private String sku;
-
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
-
-    @Column(name = "alert_quantity")
-    @Builder.Default
-    private Integer alertQuantity = 5;
-
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;

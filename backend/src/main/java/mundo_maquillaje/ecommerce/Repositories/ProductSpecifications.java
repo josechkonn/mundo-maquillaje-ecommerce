@@ -10,9 +10,9 @@ import java.util.UUID;
 
 public class ProductSpecifications {
 
-    // Filtrado simple: minPrice y maxPrice llegan en targetCurrencyCode.
-    // Asumimos que todos los productos base están en COP, así que convertimos los
-    // límites a COP.
+    private static final UUID USD_ID = UUID.fromString("d496cda6-bcaf-49c8-ab46-021db20b8164");
+    private static final UUID VES_ID = UUID.fromString("23792dea-1aa4-4bc1-ad9d-a9848cafbc6f");
+
     public static Specification<Product> filterBy(
             String search,
             UUID categoryId,
@@ -21,18 +21,30 @@ public class ProductSpecifications {
             Double maxPrice,
             Double rateVES,
             Double rateCOP,
-            String targetCurrencyCode) {
+            String targetCurrencyCode,
+            String sortBy) {
 
         return (Root<Product> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // 1. Búsqueda por texto
+            Double rVES = rateVES != null ? rateVES : 1.0;
+            Double rCOP = rateCOP != null ? rateCOP : 1.0;
+
+            // 1. Búsqueda por texto (name en product, description/sku en variations)
             if (search != null && !search.trim().isEmpty()) {
                 String searchLower = "%" + search.toLowerCase() + "%";
-                predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("name")), searchLower),
-                        cb.like(cb.lower(root.get("description")), searchLower),
-                        cb.like(cb.lower(root.get("sku")), searchLower)));
+                Predicate namePred = cb.like(cb.lower(root.get("name")), searchLower);
+
+                Subquery<UUID> searchSub = query.subquery(UUID.class);
+                Root<ProductVariation> searchRoot = searchSub.from(ProductVariation.class);
+                searchSub.select(searchRoot.get("id")).where(
+                    cb.equal(searchRoot.get("product").get("id"), root.get("id")),
+                    cb.or(
+                        cb.like(cb.lower(searchRoot.get("description")), searchLower),
+                        cb.like(cb.lower(searchRoot.get("sku")), searchLower)
+                    )
+                );
+                predicates.add(cb.or(namePred, cb.exists(searchSub)));
             }
 
             // 2. Filtrado por Categoría
@@ -45,17 +57,14 @@ public class ProductSpecifications {
                 predicates.add(cb.equal(root.get("brand").get("id"), brandId));
             }
 
-            // 4. Filtrado por Rango de Precios (Lógica con Subquery para evitar duplicados en la paginación)
+            // 4. Filtrado por Rango de Precios
             if (minPrice != null || maxPrice != null) {
                 Subquery<UUID> subquery = query.subquery(UUID.class);
                 Root<ProductVariation> subRoot = subquery.from(ProductVariation.class);
                 Join<ProductVariation, Product> subProduct = subRoot.join("product");
 
-                Double rVES = rateVES != null ? rateVES : 1.0;
-                Double rCOP = rateCOP != null ? rateCOP : 1.0;
                 String target = targetCurrencyCode != null ? targetCurrencyCode.toUpperCase() : "USD";
 
-                // Convertir límites de targetCurrency a COP
                 Double minCOP = minPrice;
                 Double maxCOP = maxPrice;
 
@@ -65,21 +74,12 @@ public class ProductSpecifications {
                 } else if ("VES".equals(target)) {
                     minCOP = minPrice != null ? minPrice * rCOP : null;
                     maxCOP = maxPrice != null ? maxPrice * rCOP : null;
-                } // Si es COP, se queda igual
+                }
 
                 List<Predicate> subPredicates = new ArrayList<>();
                 subPredicates.add(cb.equal(subProduct.get("id"), root.get("id")));
 
-                // Normalizar el precio del producto a COP dinámicamente según su moneda base (por ID)
-                UUID usdId = UUID.fromString("d496cda6-bcaf-49c8-ab46-021db20b8164");
-                UUID vesId = UUID.fromString("23792dea-1aa4-4bc1-ad9d-a9848cafbc6f");
-
-                Expression<Double> priceInCOP = cb.selectCase()
-                    .when(cb.equal(subProduct.get("currency").get("id"), usdId), 
-                          cb.prod(subRoot.get("price"), rVES * rCOP))
-                    .when(cb.equal(subProduct.get("currency").get("id"), vesId), 
-                          cb.prod(subRoot.get("price"), rCOP))
-                    .otherwise(subRoot.get("price")).as(Double.class);
+                Expression<Double> priceInCOP = buildNormalizedPriceExpression(cb, subRoot, subProduct, rVES, rCOP);
 
                 if (minCOP != null) {
                     subPredicates.add(cb.greaterThanOrEqualTo(priceInCOP, minCOP));
@@ -95,7 +95,48 @@ public class ProductSpecifications {
             // Solo productos activos
             predicates.add(cb.isTrue(root.get("isActive")));
 
+            // 5. Ordenamiento por precio (subquery explícito, no depende de @Formula)
+            // Solo aplicar ORDER BY en la query principal, no en la count query
+            if (sortBy != null && (sortBy.equals("price_asc") || sortBy.equals("price_desc"))) {
+                if (query.getResultType() != Long.class && query.getResultType() != long.class) {
+                    Subquery<Double> priceSub = query.subquery(Double.class);
+                    Root<ProductVariation> vr = priceSub.from(ProductVariation.class);
+                    Join<ProductVariation, Product> pj = vr.join("product");
+
+                    Expression<Double> normalizedPrice = buildNormalizedPriceExpression(cb, vr, pj, rVES, rCOP);
+
+                    priceSub.select(cb.min(normalizedPrice))
+                            .where(cb.equal(vr.get("product").get("id"), root.get("id")));
+
+                    if ("price_asc".equals(sortBy)) {
+                        query.orderBy(cb.asc(priceSub));
+                    } else {
+                        query.orderBy(cb.desc(priceSub));
+                    }
+                }
+            }
+
             return cb.and(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    /**
+     * Construye la expresión de precio normalizado a COP, reutilizable
+     * para filtrado y ordenamiento.
+     */
+    private static Expression<Double> buildNormalizedPriceExpression(
+            CriteriaBuilder cb,
+            Root<ProductVariation> variationRoot,
+            Join<ProductVariation, Product> productJoin,
+            Double rateVES,
+            Double rateCOP) {
+
+        return cb.selectCase()
+                .when(cb.equal(productJoin.get("currency").get("id"), USD_ID),
+                      cb.prod(variationRoot.get("price"), rateVES * rateCOP))
+                .when(cb.equal(productJoin.get("currency").get("id"), VES_ID),
+                      cb.prod(variationRoot.get("price"), rateCOP))
+                .otherwise(variationRoot.get("price"))
+                .as(Double.class);
     }
 }

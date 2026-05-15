@@ -27,6 +27,9 @@ public class Address {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
+    @Column(name = "fullname", nullable = true, length = 200)
+    private String fullname;
+
     @Column(name = "phone", nullable = false, length = 20)
     private String phone;
 

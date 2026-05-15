@@ -4,6 +4,7 @@ import HomePage from "../pages/HomePage";
 import ProductDetailsPage from "../pages/ProductDetailsPage";
 import CategoryPage from "../pages/CategoryPage";
 import ProductsPage from "../pages/ProductsPage";
+import CartPage from "../pages/CartPage";
 
 const PublicRoutes = (
   <Route element={<StoreLayout />}>
@@ -14,8 +15,10 @@ const PublicRoutes = (
     <Route path="categorias" element={<div>Lista General de Categorias</div>} />
     <Route path="productos" element={<ProductsPage />} />
     <Route path="producto/:slug" element={<ProductDetailsPage />} />
+    <Route path="carrito" element={<CartPage />} />
     <Route path="*" element={<CategoryPage />} />
   </Route>
 );
 
 export default PublicRoutes;
+

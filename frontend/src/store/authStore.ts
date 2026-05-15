@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { useFavoritesStore } from "./favoritesStore";
+import { useCartStore } from "./cartStore";
 
 interface AuthState {
   user: User | null;
@@ -25,6 +26,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     await supabase.auth.signOut();
     set({ user: null, session: null });
     useFavoritesStore.getState().clearFavorites();
+    // No borramos el carrito al cerrar sesión para que los productos 
+    // se mantengan localmente como invitado.
   },
 
   initializeAuthListener: () => {
@@ -47,6 +50,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (session) {
         syncTokensWithBackend(session.access_token, session.refresh_token);
         useFavoritesStore.getState().syncFavorites();
+        useCartStore.getState().syncCart();
       }
     });
 
@@ -58,9 +62,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         if (freshSession) {
           syncTokensWithBackend(freshSession.access_token, freshSession.refresh_token);
           useFavoritesStore.getState().syncFavorites();
+          useCartStore.getState().syncCart();
         } else {
           syncTokensWithBackend(null, null);
           useFavoritesStore.getState().clearFavorites();
+          // No limpiamos el carrito aquí automáticamente para no borrar el de los invitados al recargar
         }
       }
     );

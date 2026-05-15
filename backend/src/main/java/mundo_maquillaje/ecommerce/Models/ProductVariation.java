@@ -47,6 +47,17 @@ public class ProductVariation {
     @Column(name = "hex_color", length = 20)
     private String hexColor; // e.g., "#FF0000"
 
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "alert_quantity")
+    @Builder.Default
+    private Integer alertQuantity = 5;
+
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean isActive = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_product", nullable = false)
     @JsonBackReference("product-variations")

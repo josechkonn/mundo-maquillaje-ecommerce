@@ -110,7 +110,7 @@ export default {
       boxShadow: {
         brand: "0 4px 14px rgba(236,72,153,0.35)",
         "brand-lg": "0 6px 20px rgba(236,72,153,0.45)",
-        "card-custom": "4px 4px 14px 0px rgba(93, 93, 93, 0.25)",
+        "card-custom": "0px 4px 4px 0px rgba(0, 0, 0, 0.25)",
       },
     },
   },

@@ -14,6 +14,8 @@ import SearchOverlay from "./SearchOverlay";
 import logo from "../../assets/imgs/logo.webp";
 import { useAuthStore } from "../../store/authStore";
 import { useCurrencyStore } from "../../store/currencyStore";
+import { useCartStore } from "../../store/cartStore";
+import CartDrawer from "../cart/CartDrawer";
 import { categoryService, type Category } from "../../services/categoryService";
 import { collectionService, type ProductCollection } from "../../services/collectionService";
 
@@ -39,6 +41,8 @@ const getFlagCode = (currencyCode: string): string => {
 const Header = () => {
   const user = useAuthStore((state) => state.user);
   const { currencies, selectedCurrency, setSelectedCurrency } = useCurrencyStore();
+  const { getItemCount, setIsDrawerOpen } = useCartStore();
+  const cartItemCount = getItemCount();
 
   const [dropOpen, setDropOpen] = useState(false);
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
@@ -216,15 +220,16 @@ const Header = () => {
               <UserIcon className="w-5 h-5" />
             </Link>
 
-            <Link
-              to="/carrito"
-              className="relative w-10 h-10 flex items-center justify-center rounded-lg border border-neutral-800 bg-transparent text-neutral-800 hover:border-brand-500"
+            <button
+              onClick={() => setIsDrawerOpen(true)}
+              className="relative w-10 h-10 flex items-center justify-center rounded-lg border border-neutral-800 bg-transparent text-neutral-800 hover:border-brand-500 group"
+              title="Ver carrito"
             >
-              <ShoppingCartIcon className="w-5 h-5" />
+              <ShoppingCartIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
               <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-500 text-white text-[9px] lg:text-[10px] font-bold flex items-center justify-center">
-                0
+                {cartItemCount}
               </span>
-            </Link>
+            </button>
 
           </div>
         </div>
@@ -305,7 +310,7 @@ const Header = () => {
                       <div className="flex items-center gap-4 mb-8">
                         <h3 className="text-xl font-bold text-neutral-800">{activeMainCat.name}</h3>
                         <Link
-                          to={`/productos?category=${activeMainCat.id}`}
+                          to={`/${activeMainCat.slug}`}
                           onClick={() => setMegaMenuOpen(false)}
                           className="text-xs text-brand-400 hover:underline font-medium"
                         >
@@ -525,6 +530,8 @@ const Header = () => {
         </div>
       </div>
       <SearchOverlay isOpen={isSearchOverlayOpen} onClose={() => setIsSearchOverlayOpen(false)} />
+      {/* Lateral del Carrito */}
+      <CartDrawer />
     </header>
   );
 };

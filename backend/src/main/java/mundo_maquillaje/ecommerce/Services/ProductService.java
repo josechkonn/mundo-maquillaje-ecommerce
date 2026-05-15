@@ -59,13 +59,13 @@ public class ProductService {
             int page,
             int size) {
 
+        // Solo usar Sort de Spring Data para nombre; el precio se ordena dentro de la Specification
         org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.unsorted();
         if (sortBy != null) {
             switch (sortBy) {
                 case "name_asc" -> sort = org.springframework.data.domain.Sort.by("name").ascending();
                 case "name_desc" -> sort = org.springframework.data.domain.Sort.by("name").descending();
-                case "price_asc" -> sort = org.springframework.data.domain.Sort.by("minPrice").ascending();
-                case "price_desc" -> sort = org.springframework.data.domain.Sort.by("minPrice").descending();
+                // price_asc / price_desc se manejan dentro de ProductSpecifications
             }
         }
 
@@ -75,7 +75,7 @@ public class ProductService {
 
         Pageable pageable = PageRequest.of(page, size, sort);
         return productRepository.findAll(ProductSpecifications.filterBy(search, categoryId, brandId, minPrice, maxPrice,
-                rateVES, rateCOP, targetCurrencyCode), pageable);
+                rateVES, rateCOP, targetCurrencyCode, sortBy), pageable);
     }
 
     public Product getProductById(UUID id) {
@@ -99,7 +99,6 @@ public class ProductService {
         if (product.getVariations() == null || product.getVariations().isEmpty()) {
             ProductVariation defaultVariation = ProductVariation.builder()
                     .name("Estándar")
-                    .sku(product.getSku())
                     .price(0.0)
                     .stock(0)
                     .product(product)
@@ -123,8 +122,6 @@ public class ProductService {
         Product product = getProductById(id);
 
         product.setName(details.getName());
-        product.setDescription(details.getDescription());
-        product.setAlertQuantity(details.getAlertQuantity());
         product.setIsActive(details.getIsActive());
         product.setCategory(details.getCategory());
         product.setBrand(details.getBrand());

@@ -3,6 +3,8 @@ import AccountLayout from "../layouts/AccountLayout";
 import ProfilePage from "../pages/account/ProfilePage";
 import AddressesPage from "../pages/account/AddressesPage";
 import FavoritesPage from "../pages/account/FavoritesPage";
+import CheckoutPage from "../pages/CheckoutPage";
+import StoreLayout from "../layouts/StoreLayout";
 
 const CustomerRoutes = (
     <>
@@ -14,10 +16,12 @@ const CustomerRoutes = (
             <Route path="pedidos" element={<div>Mis Pedidos</div>} />
         </Route>
 
-        {/* Flujo de compra y otras rutas protegidas fuera del layout de cuenta */}
-        <Route path="carrito" element={<div>Mi Carrito</div>} />
-        <Route path="finalizar-compra" element={<div>Proceso de Pago</div>} />
+        {/* Flujo de compra - protegidas con Header y Footer */}
+        <Route element={<StoreLayout />}>
+            <Route path="finalizar-compra" element={<CheckoutPage />} />
+        </Route>
     </>
 );
 
 export default CustomerRoutes;
+

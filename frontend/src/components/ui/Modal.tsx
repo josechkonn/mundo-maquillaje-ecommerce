@@ -1,16 +1,23 @@
-import { useEffect, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import React, { useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
-  children: ReactNode;
+  title: string;
+  children: React.ReactNode;
+  maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
 }
 
-const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
-  // Manejar el scroll del body cuando el modal está abierto
+const Modal = ({ 
+  isOpen, 
+  onClose, 
+  title, 
+  children, 
+  maxWidth = "md" 
+}: ModalProps) => {
+  
+  // Bloquear el scroll del body cuando el modal está abierto
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -22,51 +29,45 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
     };
   }, [isOpen]);
 
-  // Manejar la tecla Escape para cerrar
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    if (isOpen) {
-      window.addEventListener("keydown", handleEscape);
-    }
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
-
   if (!isOpen) return null;
 
-  return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
+  const maxWidthClasses = {
+    sm: "max-w-sm",
+    md: "max-w-md",
+    lg: "max-w-lg",
+    xl: "max-w-xl",
+    "2xl": "max-w-2xl",
+    "3xl": "max-w-3xl",
+    "4xl": "max-w-4xl",
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+      {/* Backdrop con Blur */}
       <div 
-        className="absolute inset-0 bg-neutral-800/40 backdrop-blur-sm transition-opacity animate-fade-in" 
+        className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm transition-opacity animate-fade-in"
         onClick={onClose}
-      />
-      
-      {/* Modal Content */}
-      <div 
-        className="relative bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-slide-in-right max-h-[90vh] flex flex-col"
-      >
+      ></div>
+
+      {/* Contenedor del Modal */}
+      <div className={`relative bg-white w-full ${maxWidthClasses[maxWidth]} rounded-[32px] shadow-2xl overflow-hidden animate-scale-in`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h3 className="text-h4-b font-bold text-text-base">
-            {title || "Información"}
-          </h3>
+        <div className="px-8 py-6 border-b border-neutral-100 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-neutral-800">{title}</h2>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-brand-50 rounded-full text-text-muted transition-colors"
+            className="p-2 rounded-full hover:bg-neutral-100 transition-colors text-neutral-500 hover:text-neutral-800"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-8 overflow-y-auto custom-scrollbar">
+        <div className="p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
           {children}
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
 };
 

@@ -16,6 +16,9 @@ export interface ProductVariation {
   sku: string;
   price: number;
   stock: number;
+  description?: string;
+  alertQuantity?: number;
+  isActive: boolean;
   attributeName?: string;
   attributeValue?: string;
   hexColor?: string;
@@ -34,9 +37,6 @@ export interface Product {
   id: string;
   name: string;
   slug: string;
-  sku: string;
-  description: string;
-  alertQuantity: number;
   isActive: boolean;
   category: { id: string; name: string };
   brand: { id: string; name: string };
