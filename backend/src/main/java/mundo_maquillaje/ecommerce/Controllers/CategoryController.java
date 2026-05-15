@@ -21,13 +21,32 @@ public class CategoryController {
     private final ProfileService profileService;
 
     @GetMapping
-    public List<Category> getAllCategories() {
+    public List<Category> getAllCategories(
+            @RequestParam(required = false) UUID parentId,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(defaultValue = "false") boolean onlyMain) {
+        
+        if (onlyMain) {
+            return categoryService.getMainCategories(isActive);
+        }
+        if (parentId != null) {
+            return categoryService.getCategoriesByParent(parentId, isActive);
+        }
+        if (isActive != null && isActive) {
+            return categoryService.getActiveCategories();
+        }
+        
         return categoryService.getAllCategories();
     }
 
     @GetMapping("/{id}")
     public Category getCategoryById(@PathVariable UUID id) {
         return categoryService.getCategoryById(id);
+    }
+
+    @GetMapping("/slug/{slug}")
+    public Category getCategoryBySlug(@PathVariable String slug) {
+        return categoryService.getCategoryBySlug(slug);
     }
 
     @PostMapping

@@ -64,7 +64,7 @@ const ProfilePage = () => {
                 <button
                     onClick={handleCancel}
                     type="button"
-                    className="flex items-center gap-1.5 text-neutral-600 hover:text-black transition-all mb-4 group font-medium"
+                    className="flex items-center gap-1.5 text-neutral-600 hover:text-neutral-800 transition-all mb-4 group font-medium"
                 >
                     <ArrowLongLeftIcon className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
                     <span>Volver</span>
@@ -73,13 +73,13 @@ const ProfilePage = () => {
 
             {/* Cabezal: Título y Botón Editar */}
             <div className="flex items-center justify-between mb-2">
-                <h1 className="text-h4-b  font-extrabold text-neutral-900 tracking-tight">
+                <h1 className="text-h4-b  font-extrabold text-neutral-800 tracking-tight">
                     {isEditing ? "Editar Cuenta" : "Tu Cuenta"}
                 </h1>
                 {!isEditing && (
                     <button
                         onClick={() => setIsEditing(true)}
-                        className="flex items-center gap-2 text-neutral-800 hover:text-black transition-colors font-semibold px-2 py-1 rounded-lg hover:bg-neutral-50"
+                        className="flex items-center gap-2 text-neutral-800 hover:text-neutral-800 transition-colors font-semibold px-2 py-1 rounded-lg hover:bg-neutral-50"
                     >
                         <PencilSquareIcon className="w-5 h-5" />
                         <span className="text-sm">Editar</span>

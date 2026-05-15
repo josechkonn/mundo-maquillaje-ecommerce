@@ -54,7 +54,7 @@ const Footer = () => {
           allowTouchMove={false}
           className="payment-swiper pointer-events-none"
         >
-          {[...paymentMethods, ...paymentMethods].map((method, index) => (
+          {[...paymentMethods, ...paymentMethods, ...paymentMethods, ...paymentMethods].map((method, index) => (
             <SwiperSlide key={index} className="!w-auto">
               <div className="flex items-center gap-4">
                 <span className="text-p-xs md:text-sm font-medium whitespace-nowrap uppercase tracking-wider">
@@ -99,18 +99,18 @@ const Footer = () => {
               onClick={() => toggleSection('atencion')}
               className="w-full flex justify-between items-center py-5 px-6 lg:p-0 text-left lg:cursor-default"
             >
-              <h4 className="text-[16px] font-bold uppercase tracking-wide">Atención al cliente</h4>
+              <h4 className="text-h4-s md:text-h4-b font-bold  tracking-wider text-neutral-800">Atención al cliente</h4>
               <ChevronDownIcon className={`w-5 h-5 transition-transform lg:hidden ${openSection === 'atencion' ? 'rotate-180' : ''}`} />
             </button>
             <div className={`overflow-hidden transition-all duration-300 lg:h-auto lg:opacity-100 ${openSection === 'atencion' ? 'max-h-40 py-4 px-6 lg:p-0 opacity-100' : 'max-h-0 lg:max-h-none opacity-0 lg:block'}`}>
               <div className="space-y-4 text-sm mt-4 lg:mt-6">
                 <div>
-                  <p className="font-bold mb-1">Lunes a Viernes:</p>
-                  <p>{config?.hoursMonFri || 'de 8:30a.m a 6:00p.m'}</p>
+                  <p className="font-bold mb-1 text-neutral-700">Lunes a Viernes:</p>
+                  <p className="text-neutral-600">{config?.hoursMonFri || 'de 8:30a.m a 6:00p.m'}</p>
                 </div>
                 <div>
-                  <p className="font-bold mb-1">Sábados:</p>
-                  <p>{config?.hoursSat || 'de 8:30a.m a 5:30p.m'}</p>
+                  <p className="font-bold mb-1 text-neutral-700">Sábados:</p>
+                  <p className="text-neutral-600">{config?.hoursSat || 'de 8:30a.m a 5:30p.m'}</p>
                 </div>
               </div>
             </div>
@@ -122,18 +122,18 @@ const Footer = () => {
               onClick={() => toggleSection('contacto')}
               className="w-full flex justify-between items-center py-5 px-6 lg:p-0 text-left lg:cursor-default"
             >
-              <h4 className="text-[16px] font-bold uppercase tracking-wide">Contacto</h4>
+              <h4 className="text-h4-s md:text-h4-b font-bold  tracking-wider text-neutral-800">Contacto</h4>
               <ChevronDownIcon className={`w-5 h-5 transition-transform lg:hidden ${openSection === 'contacto' ? 'rotate-180' : ''}`} />
             </button>
             <div className={`overflow-hidden transition-all duration-300 lg:h-auto lg:opacity-100 ${openSection === 'contacto' ? 'max-h-60 py-4 px-6 lg:p-0 opacity-100' : 'max-h-0 lg:max-h-none opacity-0 lg:block'}`}>
               <div className="space-y-6 text-sm mt-4 lg:mt-6">
                 <div>
-                  <p className="font-bold mb-1">Línea Whatsapp:</p>
-                  <p>{config?.whatsapp || '+58 422-2772709'}</p>
+                  <p className="font-bold mb-1 text-neutral-700">Línea Whatsapp:</p>
+                  <p className="text-neutral-600">{config?.whatsapp || '+58 422-2772709'}</p>
                 </div>
                 <div>
-                  <p className="font-bold mb-1">Sede Física:</p>
-                  <p className="leading-relaxed">{config?.address || 'Carrera 5 con calle 6, San Juan de Colón, Táchira'}</p>
+                  <p className="font-bold mb-1 text-neutral-700">Sede Física:</p>
+                  <p className="leading-relaxed text-neutral-600">{config?.address || 'Carrera 5 con calle 6, San Juan de Colón, Táchira'}</p>
                 </div>
               </div>
             </div>
@@ -145,14 +145,13 @@ const Footer = () => {
               onClick={() => toggleSection('enlaces')}
               className="w-full flex justify-between items-center py-5 px-6 lg:p-0 text-left lg:cursor-default"
             >
-              <h4 className="text-[16px] font-bold uppercase tracking-wide">Enlaces de interés</h4>
+              <h4 className="text-h4-s md:text-h4-b font-bold  tracking-wider text-neutral-800">Enlaces de interés</h4>
               <ChevronDownIcon className={`w-5 h-5 transition-transform lg:hidden ${openSection === 'enlaces' ? 'rotate-180' : ''}`} />
             </button>
             <div className={`overflow-hidden transition-all duration-300 lg:h-auto lg:opacity-100 ${openSection === 'enlaces' ? 'max-h-40 py-4 px-6 lg:p-0 opacity-100' : 'max-h-0 lg:max-h-none opacity-0 lg:block'}`}>
               <ul className="space-y-4 text-sm mt-4 lg:mt-6">
-                <li><Link to="/categorias" className="hover:text-brand-600 transition-colors">Categorías</Link></li>
-                <li><Link to="/tienda" className="hover:text-brand-600 transition-colors">Tienda</Link></li>
-                <li><Link to="/nosotros" className="hover:text-brand-600 transition-colors">Sobre Nosotros</Link></li>
+                <li><Link to="/productos" className="text-neutral-600 hover:text-brand-600 transition-colors">Productos</Link></li>
+                <li><Link to="/nosotros" className="text-neutral-600 hover:text-brand-600 transition-colors">Sobre Nosotros</Link></li>
               </ul>
             </div>
           </div>

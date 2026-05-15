@@ -4,9 +4,12 @@ interface QuantitySelectorProps {
   quantity: number;
   maxStock: number;
   onChange: (qty: number) => void;
+  className?: string;
+  hideLabel?: boolean;
+  variant?: "default" | "compact";
 }
 
-const QuantitySelector = ({ quantity, maxStock, onChange }: QuantitySelectorProps) => {
+const QuantitySelector = ({ quantity, maxStock, onChange, className, hideLabel = false, variant = "default" }: QuantitySelectorProps) => {
   const handleDecrease = () => {
     if (quantity > 1) onChange(quantity - 1);
   };
@@ -15,13 +18,38 @@ const QuantitySelector = ({ quantity, maxStock, onChange }: QuantitySelectorProp
     if (quantity < maxStock) onChange(quantity + 1);
   };
 
+  if (variant === "compact") {
+    return (
+      <div className={`inline-flex items-center bg-brand-50 rounded-full px-2 py-1 gap-3 h-8 ${className}`}>
+        <button
+          onClick={handleDecrease}
+          disabled={quantity <= 1}
+          className="text-brand-400 disabled:opacity-30 p-0.5"
+        >
+          <MinusIcon className="w-4 h-4" />
+        </button>
+        <span className="text-p-xs font-bold text-text-base w-4 text-center">
+          {quantity}
+        </span>
+        <button
+          onClick={handleIncrease}
+          disabled={quantity >= maxStock}
+          className="text-brand-400 disabled:opacity-30 p-0.5"
+        >
+          <PlusIcon className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="mb-8">
-      <p className="text-p-s text-text-muted mb-3 font-medium">
-        Cantidad
-      </p>
-      {/* Diseño exacto a la imagen: + a la izquierda, - a la derecha, fondo rosa sólido */}
-      <div className="inline-flex items-center bg-[#F7C5D2] rounded-[18px] px-2 h-11 w-32 justify-between">
+    <div className={className ?? "mb-8"}>
+      {!hideLabel && (
+        <p className="text-p-s text-text-muted mb-3 font-medium">
+          Cantidad
+        </p>
+      )}
+      <div className="inline-flex items-center bg-brand-50 rounded-[18px] px-2 h-11 w-32 justify-between">
         <button
           onClick={handleDecrease}
           disabled={quantity <= 1}

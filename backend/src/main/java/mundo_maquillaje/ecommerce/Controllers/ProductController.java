@@ -22,10 +22,43 @@ public class ProductController {
     private final ProfileService profileService;
 
     @GetMapping
-    public Page<Product> getAllProducts(
+    public ResponseEntity<?> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return productService.getAllProducts(PageRequest.of(page, size));
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) UUID parentCategoryId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) UUID lastId,
+            @RequestParam(required = false) UUID brandId,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) Double targetRate,
+            @RequestParam(required = false) String targetCurrencyCode) {
+        
+        if (lastId != null) {
+            return ResponseEntity.ok(productService.searchProductsCursor(search, lastId, size));
+        }
+
+        // Si hay filtros complejos, usamos la nueva lógica de especificaciones
+        if (brandId != null || minPrice != null || maxPrice != null || sortBy != null) {
+            return ResponseEntity.ok(productService.getFilteredProducts(search, categoryId, brandId, minPrice, maxPrice, sortBy, targetRate, targetCurrencyCode, page, size));
+        }
+
+        PageRequest pageable = PageRequest.of(page, size);
+
+        if (search != null && !search.trim().isEmpty()) {
+            return ResponseEntity.ok(productService.searchProducts(search, pageable));
+        }
+        
+        if (categoryId != null) {
+            return ResponseEntity.ok(productService.getProductsByCategory(categoryId, pageable));
+        }
+        if (parentCategoryId != null) {
+            return ResponseEntity.ok(productService.getProductsByParentCategory(parentCategoryId, pageable));
+        }
+        
+        return ResponseEntity.ok(productService.getAllProducts(pageable));
     }
 
     @GetMapping("/{id}")
@@ -61,5 +94,10 @@ public class ProductController {
         }
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/price-range")
+    public ResponseEntity<?> getPriceRange() {
+        return ResponseEntity.ok(productService.getPriceRange());
     }
 }

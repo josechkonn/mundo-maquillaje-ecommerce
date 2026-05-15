@@ -13,6 +13,7 @@ interface ProductCarouselProps {
   products: Product[];
   id: string; // ID único para el contenedor de paginación
   autoplayDelay?: number;
+  onLoadMore?: () => void;
 }
 
 const ProductCarousel = ({
@@ -36,7 +37,7 @@ const ProductCarousel = ({
           spaceBetween={12}
           slidesPerView={2}
           slidesPerGroup={2}
-          loop={products.length > 5}
+          loop={products.length >= 10}
           autoplay={{ delay: autoplayDelay, disableOnInteraction: false }}
           navigation={{
             prevEl: `.${prevClass}`,

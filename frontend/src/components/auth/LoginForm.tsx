@@ -57,7 +57,7 @@ const LoginForm = ({ onSwitchToRegister, visible }: LoginFormProps) => {
             }}
         >
             <h1 className="text-center font-bold text-text-base">Inicia Sesión</h1>
-            <p className="text-center text-h4-b text-neutral-900 mb-5">
+            <p className="text-center text-h4-b text-neutral-800 mb-5">
                 Ingresa tu correo y contraseña para continuar
             </p>
 

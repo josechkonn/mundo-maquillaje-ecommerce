@@ -35,14 +35,14 @@ export default {
           600: "#8B7177",
           700: "#6A575B",
           800: "#222222",
-          900: "#000000",
+          900: "#222222",
         },
         surface: {
           DEFAULT: "#FEF0F3",  // fondo páginas auth
           card: "#ffffff",  // fondo tarjetas
         },
         text: {
-          base: "#1a1a2e",  // títulos
+          base: "#222222",  // títulos
           muted: "#6A575B",  // subtítulos / placeholders
           link: "#ec4899",  // links
         },
@@ -110,7 +110,7 @@ export default {
       boxShadow: {
         brand: "0 4px 14px rgba(236,72,153,0.35)",
         "brand-lg": "0 6px 20px rgba(236,72,153,0.45)",
-        "card-custom": "4px 4px 14px 0px rgba(93, 93, 93, 0.25)",
+        "card-custom": "0px 4px 4px 0px rgba(0, 0, 0, 0.25)",
       },
     },
   },

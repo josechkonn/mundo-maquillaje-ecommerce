@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
 import { HeartIcon } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
+import { CheckIcon } from "@heroicons/react/24/solid";
 import { type Product, type ProductVariation } from "../../services/productService";
 import { convertAndFormatPrice } from "../../lib/formatters";
 import { useCurrencyStore } from "../../store/currencyStore";
+import { useFavoritesStore } from "../../store/favoritesStore";
+import { useAuthStore } from "../../store/authStore";
+import { useCartStore } from "../../store/cartStore";
 import VariationSelector from "./VariationSelector";
 import QuantitySelector from "./QuantitySelector";
 import DescriptionViewer from "./DescriptionViewer";
@@ -17,9 +21,22 @@ interface ProductInfoProps {
 
 const ProductInfo = ({ product, onVariationChange, onHoverVariation }: ProductInfoProps) => {
   const { selectedCurrency, currencies } = useCurrencyStore();
+  const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
+  const user = useAuthStore(state => state.user);
+  const { addItem, setIsDrawerOpen } = useCartStore();
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
+
+  const favorited = isFavorite(product.id);
+
+  const toggleFavorite = () => {
+    if (favorited) {
+      removeFavorite(product.id, !!user);
+    } else {
+      addFavorite(product, !!user);
+    }
+  };
 
   // Seleccionar la primera variación por defecto al cargar
   useEffect(() => {
@@ -72,11 +89,12 @@ const ProductInfo = ({ product, onVariationChange, onHoverVariation }: ProductIn
           </h3>
         </div>
         <button
-          onClick={() => setIsFavorite(!isFavorite)}
-          className={`p-3 rounded-full transition-all duration-300 ${isFavorite ? "text-brand-500 scale-110" : "text-gray-300 hover:text-brand-500"
+          onClick={toggleFavorite}
+          className={`p-3 rounded-full transition-all duration-300 ${favorited ? "text-brand-500 scale-110" : "text-gray-300 hover:text-brand-500"
             }`}
+          title={favorited ? "Quitar de favoritos" : "Añadir a favoritos"}
         >
-          {isFavorite ? (
+          {favorited ? (
             <HeartIconSolid className="w-8 h-8" />
           ) : (
             <HeartIcon className="w-8 h-8" />
@@ -110,16 +128,48 @@ const ProductInfo = ({ product, onVariationChange, onHoverVariation }: ProductIn
       {/* CTA Button Reutilizable */}
       <div className="space-y-4">
         <Button
-          onClick={() => console.log("Añadir al carrito:", product.name, quantity)}
+          onClick={() => {
+            if (!selectedVariation) return;
+            const mainImg = selectedVariation.images?.find(img => img.isMain)?.urlImage
+              || selectedVariation.images?.[0]?.urlImage
+              || "/placeholder-product.png";
+
+            addItem({
+              variationId: selectedVariation.id,
+              productId: product.id,
+              productName: product.name,
+              productSlug: product.slug,
+              variationName: selectedVariation.attributeValue || selectedVariation.name,
+              price: selectedVariation.price,
+              quantity,
+              maxStock: selectedVariation.stock,
+              imageUrl: mainImg,
+              hexColor: selectedVariation.hexColor,
+              currencyId: product.currency.id,
+              currencyCode: product.currency.code,
+              currencySymbol: product.currency.symbol,
+              currencyDecimalPlaces: product.currency.decimalPlaces,
+              currencySymbolPosition: product.currency.symbolPosition,
+              currencyExchangeRate: product.currency.exchangeRate,
+            }, !!user);
+
+            setAddedToCart(true);
+            setIsDrawerOpen(true);
+            setTimeout(() => setAddedToCart(false), 2000);
+          }}
           disabled={currentStock <= 0}
-          className="shadow-brand/20 shadow-lg"
+          className={`shadow-brand/20 shadow-lg transition-all duration-300 ${
+            addedToCart ? "!bg-green-500 !hover:bg-green-600" : ""
+          }`}
         >
-          {currentStock > 0 ? "Agregar al carrito" : "Agotado"}
+          {addedToCart ? (
+            <><CheckIcon className="w-5 h-5" /> Añadido al carrito</>
+          ) : currentStock > 0 ? "Agregar al carrito" : "Agotado"}
         </Button>
       </div>
 
       {/* Description Viewer */}
-      <DescriptionViewer description={product.description} name={product.name} />
+      <DescriptionViewer description={selectedVariation?.description || ""} name={product.name} />
     </div>
   );
 };

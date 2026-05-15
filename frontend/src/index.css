@@ -108,9 +108,4 @@
 }
 
 /* Ocultar flechas en móvil si no se usa display: none en el componente */
-@media (max-width: 1024px) {
-  .swiper-button-next,
-  .swiper-button-prev {
-    display: none !important;
-  }
-}
+

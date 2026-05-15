@@ -110,18 +110,19 @@ const BrandsCarousel = () => {
             freeMode={true}
             centeredSlides={true}
             autoplay={{
-              delay: 2000,
+              delay: 3000,
               disableOnInteraction: false,
             }}
+            speed={800}
             breakpoints={{
               640: { slidesPerView: 2.2, spaceBetween: 40, centeredSlides: false },
               1024: { slidesPerView: 3.2, spaceBetween: 60, centeredSlides: false },
               1280: { slidesPerView: 4.2, spaceBetween: 80, centeredSlides: false },
             }}
-            className="w-full"
+            className="w-full brands-swiper"
           >
-            {brands.map((brand) => (
-              <SwiperSlide key={brand.id} className="flex items-center justify-center h-full">
+            {[...brands, ...brands, ...brands].map((brand, index) => (
+              <SwiperSlide key={`${brand.id}-${index}`} className="flex items-center justify-center h-full">
                 <div className="flex items-center justify-center w-full h-full px-1 md:px-6 hover:grayscale-0 transition-all duration-300">
                   <img
                     src={brand.logoUrl}

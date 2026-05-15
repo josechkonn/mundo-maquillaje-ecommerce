@@ -16,6 +16,9 @@ export interface ProductVariation {
   sku: string;
   price: number;
   stock: number;
+  description?: string;
+  alertQuantity?: number;
+  isActive: boolean;
   attributeName?: string;
   attributeValue?: string;
   hexColor?: string;
@@ -34,9 +37,6 @@ export interface Product {
   id: string;
   name: string;
   slug: string;
-  sku: string;
-  description: string;
-  alertQuantity: number;
   isActive: boolean;
   category: { id: string; name: string };
   brand: { id: string; name: string };
@@ -55,10 +55,41 @@ export interface PageResponse<T> {
 
 export const productService = {
   /**
-   * Obtiene productos paginados
+   * Obtiene productos paginados, opcionalmente filtrados por categoría
    */
-  getAllProducts: async (page = 0, size = 10): Promise<PageResponse<Product>> => {
-    return api.get(`/products?page=${page}&size=${size}`);
+  getAllProducts: async (
+    page = 0, 
+    size = 10, 
+    categoryId?: string, 
+    parentCategoryId?: string, 
+    search?: string, 
+    lastId?: string,
+    brandId?: string,
+    minPrice?: number,
+    maxPrice?: number,
+    sortBy?: string,
+    targetRate?: number,
+    targetCurrencyCode?: string
+  ): Promise<PageResponse<Product> | Product[]> => {
+    let url = `/products?page=${page}&size=${size}`;
+    if (categoryId) url += `&categoryId=${categoryId}`;
+    if (parentCategoryId) url += `&parentCategoryId=${parentCategoryId}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (lastId) url += `&lastId=${lastId}`;
+    if (brandId) url += `&brandId=${brandId}`;
+    if (minPrice !== undefined) url += `&minPrice=${minPrice}`;
+    if (maxPrice !== undefined) url += `&maxPrice=${maxPrice}`;
+    if (sortBy) url += `&sortBy=${sortBy}`;
+    if (targetRate) url += `&targetRate=${targetRate}`;
+    if (targetCurrencyCode) url += `&targetCurrencyCode=${targetCurrencyCode}`;
+    return api.get(url);
+  },
+
+  /**
+   * Obtiene el rango de precios (min y max) dinámico
+   */
+  getPriceRange: async () => {
+    return api.get("/products/price-range");
   },
 
   /**
