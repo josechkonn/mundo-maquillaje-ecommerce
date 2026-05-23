@@ -6,7 +6,7 @@ import { useCurrencyStore } from "../../store/currencyStore";
 import { convertAndFormatPrice, formatPrice } from "../../lib/formatters";
 import { type Currency } from "../../services/productService";
 import Button from "../ui/Button";
-import Input from "../ui/Input";
+import FormField from "../ui/FormField";
 
 interface CartSummaryProps {
   items: CartItem[];
@@ -14,6 +14,7 @@ interface CartSummaryProps {
   onApplyDiscount: (code: string, subtotal: number) => Promise<any>;
   onRemoveDiscount: () => void;
   shippingCost?: number;
+  shippingLabel?: string;
   isCheckout?: boolean;
   onProcessCheckout?: () => void;
 }
@@ -24,6 +25,7 @@ const CartSummary = ({
   onApplyDiscount,
   onRemoveDiscount,
   shippingCost = 0,
+  shippingLabel,
   isCheckout = false,
   onProcessCheckout,
 }: CartSummaryProps) => {
@@ -54,13 +56,31 @@ const CartSummary = ({
 
   const subtotal = calculateSubtotal();
   
+  // Convertimos el costo del envío (que está en USD base) a la moneda seleccionada
+  const usdCurrency: Currency = {
+    id: "USD",
+    name: "US Dollar",
+    code: "USD",
+    symbol: "$",
+    exchangeRate: 1,
+    decimalPlaces: 2,
+    symbolPosition: "LEFT"
+  };
+
+  const convertedShippingCost = convertToNumeric(
+    shippingCost,
+    usdCurrency,
+    selectedCurrency,
+    currencies
+  );
+
   // El descuento ya viene calculado en discountAmount (en la moneda en que se aplicó, 
   // usualmente USD o la base del sistema). Necesitamos asegurarnos de que se reste correctamente.
   // Si discountInfo.discountAmount está disponible, lo usamos.
   const discountAmount = discountInfo ? discountInfo.discountAmount : 0;
   
-  // El total es subtotal - descuento + envío
-  const total = Math.max(0, subtotal - discountAmount + shippingCost);
+  // El total es subtotal - descuento + envío convertido
+  const total = Math.max(0, subtotal - discountAmount + convertedShippingCost);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -102,11 +122,12 @@ const CartSummary = ({
               ¿Tienes un código de descuento?
             </p>
             <div className="flex gap-2">
-              <Input
+              <FormField
                 placeholder="Código"
                 value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-                className="!py-2.5 !px-4 !text-xs !rounded-2xl"
+                onChange={(e: any) => setCouponCode(e.target.value)}
+                roundedClass="!rounded-2xl"
+                className="!py-2.5 !px-4 !text-xs"
                 error={couponError || undefined}
               />
               <Button
@@ -133,8 +154,8 @@ const CartSummary = ({
 
           <div className="flex justify-between items-center text-p-s">
             <span className="text-text-base">Envío:</span>
-            <span className="text-text-base">
-              {shippingCost === 0 && !isCheckout ? "A calcular" : shippingCost === 0 ? "Gratis" : formatPrice(shippingCost, selectedCurrency || undefined)}
+            <span className="text-text-base font-bold">
+              {shippingLabel ? shippingLabel : shippingCost === 0 && !isCheckout ? "A calcular" : shippingCost === 0 ? "Gratis" : formatPrice(convertedShippingCost, selectedCurrency || undefined)}
             </span>
           </div>
 

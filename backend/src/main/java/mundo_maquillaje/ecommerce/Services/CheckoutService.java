@@ -84,8 +84,23 @@ public class CheckoutService {
             orderProducts.add(op);
         }
 
+        double shippingCost = 0.0;
+        String methodName = shipping.getName().toLowerCase();
+        
+        if (methodName.contains("delivery")) {
+            if (shipping.getFreeShippingThreshold() != null && subtotal >= shipping.getFreeShippingThreshold()) {
+                shippingCost = 0.0;
+            } else {
+                shippingCost = shipping.getPrice();
+            }
+        } else {
+            // Zoom, MRW, etc. son Cobro en Destino (o prepagados por la tienda si se supera el umbral),
+            // lo que significa que el total facturado por la tienda para el envío es 0.0.
+            shippingCost = 0.0;
+        }
+
         order.setSubtotal(subtotal);
-        order.setTotalAmount(subtotal + shipping.getPrice()); // Simplificado: Subtotal + Envío
+        order.setTotalAmount(subtotal + shippingCost);
         
         // 5. Guardar Orden y Detalles
         Order savedOrder = orderRepository.save(order);

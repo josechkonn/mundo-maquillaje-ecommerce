@@ -1,8 +1,8 @@
 import EyeIcon from "./EyeIcon";
 
 export type FormFieldProps = {
-    id: string;
-    label: string;
+    id?: string;
+    label?: string;
     type?: string;
     placeholder?: string;
     error?: string;
@@ -10,15 +10,15 @@ export type FormFieldProps = {
     onToggleVisibility?: () => void;
     /** Estado actual de visibilidad (solo relevante cuando onToggleVisibility está definido). */
     visible?: boolean;
-    /** Objeto de registro de react-hook-form (`register("field")`). */
-    registration: object;
+    /** Objeto de registro de react-hook-form (`register("field")`). Opcional para poder usarse como input controlado normal. */
+    registration?: object;
     /** Clase de fondo opcional para el input. Por defecto bg-white. */
     bgClass?: string;
     /** Clase de redondeado opcional. Por defecto rounded-xl. */
     roundedClass?: string;
     /** Clase de borde opcional. Por defecto border-brand-300 o border-red-400. */
     borderClass?: string;
-    /** Cualquier otra prop nativa del input (readOnly, disabled, etc.) */
+    /** Cualquier otra prop nativa del input (readOnly, disabled, value, onChange, etc.) */
     [key: string]: any;
 };
 
@@ -29,15 +29,20 @@ const FormField = ({
     roundedClass = "rounded-xl",
     borderClass = "",
     ...rest
-}: FormFieldProps) => (
+}: FormFieldProps) => {
+    // Generar un ID aleatorio si no se provee uno
+    const inputId = id || `input-${Math.random().toString(36).substring(2, 9)}`;
+    return (
     <div className="flex flex-col gap-1.5 w-full">
-        <label htmlFor={id} className="text-sm font-semibold text-text-base">
-            {label}
-        </label>
+        {label && (
+            <label htmlFor={inputId} className="text-sm font-semibold text-text-base">
+                {label}
+            </label>
+        )}
 
         <div className="relative">
             <input
-                id={id}
+                id={inputId}
                 type={type}
                 placeholder={placeholder}
                 className={`w-full px-4 py-2.5 ${roundedClass} border text-sm text-text-base
@@ -46,7 +51,7 @@ const FormField = ({
                     ${error ? "border-red-400" : (borderClass || "border-brand-300")}
                     ${onToggleVisibility ? "pr-12" : ""}
                     ${rest.readOnly ? "bg-neutral-50 cursor-default" : bgClass}`}
-                {...registration}
+                {...(registration || {})}
                 {...rest}
             />
 
@@ -67,6 +72,7 @@ const FormField = ({
             <span className="text-xs text-red-500 mt-0.5">{error}</span>
         )}
     </div>
-);
+  );
+};
 
 export default FormField;

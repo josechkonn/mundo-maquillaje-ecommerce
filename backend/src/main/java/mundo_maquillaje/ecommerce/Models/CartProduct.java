@@ -12,7 +12,9 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "cart_products")
+@Table(name = "cart_products", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"id_cart", "id_variation"})
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

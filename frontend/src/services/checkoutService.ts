@@ -18,6 +18,7 @@ export interface ShippingMethod {
   name: string;
   description: string;
   price: number;
+  freeShippingThreshold?: number;
   isActive: boolean;
 }
 

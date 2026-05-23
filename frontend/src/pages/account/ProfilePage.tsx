@@ -7,6 +7,13 @@ import { useAuthStore } from "../../store/authStore";
 import { supabase } from "../../lib/supabase";
 import toast from "react-hot-toast";
 
+interface ProfileFormData {
+    name: string;
+    surname: string;
+    email: string;
+    phone: string;
+}
+
 /**
  * Página de perfil del usuario.
  * Muestra la información de la cuenta en modo lectura por defecto,
@@ -21,17 +28,16 @@ const ProfilePage = () => {
     const [firstName, ...lastNameParts] = fullName.split(" ");
     const lastName = lastNameParts.join(" ");
 
-    const { register, handleSubmit, formState: { isSubmitting }, reset } = useForm({
+    const { register, handleSubmit, formState: { isSubmitting }, reset } = useForm<ProfileFormData>({
         defaultValues: {
             name: firstName || "",
             surname: lastName || "",
             email: user?.email || "",
             phone: user?.phone || "",
-            password: "",
         }
     });
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: ProfileFormData) => {
         const id = toast.loading("Actualizando perfil...");
         try {
             const { error } = await supabase.auth.updateUser({
@@ -46,9 +52,10 @@ const ProfilePage = () => {
 
             toast.success("¡Información actualizada! ✨", { id });
             setIsEditing(false);
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error update profile:", error);
-            toast.error(error.message || "No se pudo actualizar la información", { id });
+            const err = error as Error;
+            toast.error(err.message || "No se pudo actualizar la información", { id });
         }
     };
 
@@ -129,7 +136,7 @@ const ProfilePage = () => {
                     />
                 </div>
 
-                {/* Teléfono y Contraseña */}
+                {/* Teléfono */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
                     <FormField
                         id="profile-phone"
@@ -139,17 +146,6 @@ const ProfilePage = () => {
                         borderClass="border-neutral-300"
                         roundedClass="rounded-3xl"
                         readOnly={!isEditing}
-                    />
-                    <FormField
-                        id="profile-password"
-                        label="Contraseña"
-                        type="text"
-                        placeholder="Contraseña123"
-                        registration={register("password", { disabled: !isEditing })}
-                        borderClass="border-neutral-300"
-                        roundedClass="rounded-3xl"
-                        readOnly={!isEditing}
-                        disabled={!isEditing}
                     />
                 </div>
 

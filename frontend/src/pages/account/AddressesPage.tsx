@@ -7,6 +7,7 @@ import { api } from "../../lib/api";
 interface Address {
   id: string;
   name: string;
+  fullname: string;
   phone: string;
   direction: string;
   municipality: string;

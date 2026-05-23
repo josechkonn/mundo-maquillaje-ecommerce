@@ -3,7 +3,8 @@ import {
   HomeIcon,
   ClipboardDocumentListIcon,
   MapPinIcon,
-  HeartIcon
+  HeartIcon,
+  LockClosedIcon
 } from "@heroicons/react/24/outline";
 import { supabase } from "../../lib/supabase";
 
@@ -17,10 +18,11 @@ const AccountSidebar = () => {
     { to: "/cuenta/pedidos", label: "Pedidos realizados", icon: ClipboardDocumentListIcon },
     { to: "/cuenta/direcciones", label: "Direcciones", icon: MapPinIcon },
     { to: "/cuenta/favoritos", label: "Productos Favoritos", icon: HeartIcon },
+    { to: "/cuenta/cambiar-contrasena", label: "Cambiar Contraseña", icon: LockClosedIcon },
   ];
 
   return (
-    <aside className="w-80 bg-brand-200 rounded-3xl p-6 flex flex-col gap-8 h-fit sticky top-28">
+    <aside className="w-80 bg-brand-200 rounded-3xl p-6 flex flex-col gap-8 h-fit sticky top-28 hidden lg:flex">
       <nav className="flex flex-col gap-8">
         {LINKS.map(link => (
           <NavLink
@@ -34,10 +36,7 @@ const AccountSidebar = () => {
                 : "text-white hover:text-brand-400 font-medium"}`
             }
           >
-            <link.icon className={`w-6 h-6 transition-colors duration-200 ${
-              // Note: the user said hover makes text darker (brand-400), active makes it white on brand-300.
-              "" // Classes handled by parent group colors
-              }`} />
+            <link.icon className="w-6 h-6 transition-colors duration-200" />
             <span className="text-sm tracking-wide">{link.label}</span>
           </NavLink>
         ))}

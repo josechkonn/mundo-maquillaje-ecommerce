@@ -24,6 +24,9 @@ public class ShippingMethod {
     @Column(nullable = false)
     private Double price;
 
+    @Column(name = "free_shipping_threshold")
+    private Double freeShippingThreshold;
+
     @Column(nullable = false)
     private Boolean isActive = true;
 }

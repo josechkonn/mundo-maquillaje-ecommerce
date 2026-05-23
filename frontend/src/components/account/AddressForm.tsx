@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Button from "../ui/Button";
-import Input from "../ui/Input";
+import FormField from "../ui/FormField";
 
 interface Address {
   id?: string;
@@ -75,15 +75,16 @@ const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = 
       <form onSubmit={handleSubmit} className="space-y-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
           {/* Fila 1: Datos Personales */}
-          <Input
+          <FormField
             label="Nombre del receptor:"
             name="fullname"
             value={formData.fullname}
             onChange={handleChange}
             placeholder="Emi"
             required
+            roundedClass="rounded-full"
           />
-          <Input
+          <FormField
             label="Numero de telefono:"
             type="tel"
             name="phone"
@@ -91,60 +92,67 @@ const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = 
             onChange={handleChange}
             placeholder="0412-1578413"
             required
+            roundedClass="rounded-full"
           />
 
           {/* Fila 2: Ubicación Principal */}
-          <Input
+          <FormField
             label="Estado:"
             name="state"
             value={formData.state}
             onChange={handleChange}
             placeholder="Táchira"
             required
+            roundedClass="rounded-full"
           />
-          <Input
+          <FormField
             label="Ciudad:"
             name="city"
             value={formData.city}
             onChange={handleChange}
             placeholder="San Juan de Colón"
             required
+            roundedClass="rounded-full"
           />
 
           {/* Fila 3: Ubicación Secundaria */}
-          <Input
+          <FormField
             label="Municipio:"
             name="municipality"
             value={formData.municipality}
             onChange={handleChange}
             placeholder="Ayacucho"
             required
+            roundedClass="rounded-full"
           />
-          <Input
+          <FormField
             label="Parroquia:"
             name="parish"
             value={formData.parish}
             onChange={handleChange}
             placeholder="San Juan de Colón"
             required
+            roundedClass="rounded-full"
           />
 
           {/* Fila 4: Detalles */}
-          <Input
+          <FormField
             label="Dirección:"
             name="direction"
             value={formData.direction}
             onChange={handleChange}
             placeholder="Prolongación calle 9"
             required
+            roundedClass="rounded-full"
           />
-          <Input
+          <FormField
             label="Nombre de dirección:"
             name="name"
             value={formData.name}
             onChange={handleChange}
             placeholder="Casa"
             required
+            roundedClass="rounded-full"
           />
         </div>
 
