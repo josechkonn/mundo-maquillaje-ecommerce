@@ -65,6 +65,8 @@ public class ProductService {
             switch (sortBy) {
                 case "name_asc" -> sort = org.springframework.data.domain.Sort.by("name").ascending();
                 case "name_desc" -> sort = org.springframework.data.domain.Sort.by("name").descending();
+                case "created_at_asc" -> sort = org.springframework.data.domain.Sort.by("createdAt").ascending();
+                case "created_at_desc" -> sort = org.springframework.data.domain.Sort.by("createdAt").descending();
                 // price_asc / price_desc se manejan dentro de ProductSpecifications
             }
         }

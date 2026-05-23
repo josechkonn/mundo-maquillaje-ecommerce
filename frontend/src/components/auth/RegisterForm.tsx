@@ -56,7 +56,7 @@ const RegisterForm = ({ onSwitchToLogin, visible }: RegisterFormProps) => {
             }}
         >
             <h1 className="text-center font-bold text-text-base">Regístrate</h1>
-            <p className="text-center text-h4-b text-neutral-800 mb-5">
+            <p className="text-center text-h4-s  md:text-h4-b text-neutral-800 mb-5">
                 Ingresa tus datos para crear tu cuenta
             </p>
 

@@ -312,15 +312,14 @@ const ProductsPage = () => {
   const anyFilterApplied = appliedCategoryId !== undefined || appliedBrandId !== undefined || appliedSortBy !== "name_asc" || (appliedMinPrice !== undefined && appliedMinPrice !== absoluteMin) || (appliedMaxPrice !== undefined && appliedMaxPrice !== absoluteMax);
 
   return (
-    <div className="min-h-screen bg-neutral-100 animate-fade-in pb-8 md:pb-16 relative overflow-x-hidden text-neutral-800">
-
+    <>
       {/* ── DRAW DE FILTROS ── */}
-      <div className={`fixed inset-0 z-[100] transition-all duration-500 ${isFilterOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+      <div className={`fixed inset-0 z-[200] transition-all duration-500 ${isFilterOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
         <div className="absolute inset-0 bg-neutral-800/10 backdrop-blur-[2px]" onClick={() => setIsFilterOpen(false)} />
 
         <div className={`absolute left-0 top-0 h-full w-[85vw] md:w-[475px] bg-[#FFF2F4] shadow-[10px_0_30px_rgba(0,0,0,0.05)] transition-transform duration-500 ease-in-out transform ${isFilterOpen ? "translate-x-0" : "-translate-x-full"} flex flex-col`}>
 
-          <div className="px-10 py-12 flex-1 overflow-y-auto custom-scrollbar">
+          <div className="px-10 py-12  flex-1 overflow-y-auto custom-scrollbar">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-[#222222]">Filtros</h2>
             </div>
@@ -415,6 +414,8 @@ const ProductsPage = () => {
                       { id: "name_desc", label: "Nombre descendente" },
                       { id: "price_asc", label: "Precio: menor a mayor" },
                       { id: "price_desc", label: "Precio: mayor a menor" },
+                      { id: "created_at_desc", label: "Más reciente" },
+                      { id: "created_at_asc", label: "Más antiguo" },
                     ].map(opt => (
                       <label key={opt.id} className="flex items-center gap-4 cursor-pointer group">
                         <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${tempSortBy === opt.id ? "bg-[#EA4C73] border-[#EA4C73]" : "bg-white border-neutral-200"}`}>
@@ -534,6 +535,8 @@ const ProductsPage = () => {
           </div>
         </div>
       </div>
+
+    <div className="min-h-screen bg-neutral-100 animate-fade-in pb-8 md:pb-16 relative overflow-x-hidden text-neutral-800">
 
       <div className="w-[95vw] mx-auto pt-16">
         {/* Breadcrumb Dinámico */}
@@ -698,6 +701,7 @@ const ProductsPage = () => {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #f8a5b5; border-radius: 10px; }
       `}</style>
     </div>
+    </>
   );
 };
 
