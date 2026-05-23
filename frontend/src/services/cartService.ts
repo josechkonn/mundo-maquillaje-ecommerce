@@ -17,6 +17,15 @@ export interface CartProductServer {
   };
   quantity: number;
   addedAt: string;
+  productId: string;
+  productName: string;
+  productSlug: string;
+  currencyId: string;
+  currencyCode: string;
+  currencySymbol: string;
+  currencyDecimalPlaces: number;
+  currencySymbolPosition: string;
+  currencyExchangeRate: number;
 }
 
 export const cartService = {

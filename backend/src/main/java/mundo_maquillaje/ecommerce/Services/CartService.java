@@ -1,8 +1,12 @@
 package mundo_maquillaje.ecommerce.Services;
 
 import lombok.RequiredArgsConstructor;
+import mundo_maquillaje.ecommerce.DTO.CartItemDTO;
 import mundo_maquillaje.ecommerce.Models.Cart;
 import mundo_maquillaje.ecommerce.Models.CartProduct;
+import mundo_maquillaje.ecommerce.Models.Currency;
+import mundo_maquillaje.ecommerce.Models.Product;
+import mundo_maquillaje.ecommerce.Models.ProductImage;
 import mundo_maquillaje.ecommerce.Models.ProductVariation;
 import mundo_maquillaje.ecommerce.Repositories.CartProductRepository;
 import mundo_maquillaje.ecommerce.Repositories.CartRepository;
@@ -15,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -127,5 +132,72 @@ public class CartService {
             }
         }
         return getCartItems(userId);
+    }
+
+    // ─── DTO Methods ──────────────────────────────────────────────────────────
+
+    public List<CartItemDTO> getCartAsDTOs(UUID userId) {
+        return getCartItems(userId).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public CartItemDTO addToCartAsDTO(UUID userId, UUID variationId, int quantity) {
+        return toDTO(addToCart(userId, variationId, quantity));
+    }
+
+    public CartItemDTO updateQuantityAsDTO(UUID userId, UUID productId, int quantity) {
+        CartProduct cp = updateQuantity(userId, productId, quantity);
+        return cp != null ? toDTO(cp) : null;
+    }
+
+    public List<CartItemDTO> syncCartAsDTO(UUID userId, List<Map<String, Object>> localItems) {
+        return syncCart(userId, localItems).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    private CartItemDTO toDTO(CartProduct cp) {
+        ProductVariation v = cp.getVariation();
+        Product p = v.getProduct();
+        Currency c = p.getCurrency();
+
+        List<CartItemDTO.CartImageDTO> images = v.getImages().stream()
+                .map(img -> CartItemDTO.CartImageDTO.builder()
+                        .id(img.getId())
+                        .urlImage(img.getUrlImage())
+                        .order(img.getOrder())
+                        .altText(img.getAltText())
+                        .isMain(img.getIsMain())
+                        .build())
+                .collect(Collectors.toList());
+
+        return CartItemDTO.builder()
+                .id(cp.getId())
+                .variation(CartItemDTO.CartVariationDTO.builder()
+                        .id(v.getId())
+                        .name(v.getName())
+                        .sku(v.getSku())
+                        .price(v.getPrice() != null ? v.getPrice() : 0.0)
+                        .stock(v.getStock() != null ? v.getStock() : 0)
+                        .description(v.getDescription())
+                        .attributeName(v.getAttributeName())
+                        .attributeValue(v.getAttributeValue())
+                        .hexColor(v.getHexColor())
+                        .isActive(Boolean.TRUE.equals(v.getIsActive()))
+                        .images(images)
+                        .build())
+                .quantity(cp.getQuantity() != null ? cp.getQuantity() : 0)
+                .addedAt(cp.getAddedAt())
+                .productId(p.getId())
+                .productName(p.getName())
+                .productSlug(p.getSlug())
+                .currencyId(c.getId())
+                .currencyCode(c.getCode())
+                .currencySymbol(c.getSymbol())
+                .currencyDecimalPlaces(c.getDecimalPlaces() != null ? c.getDecimalPlaces() : 0)
+                .currencySymbolPosition(c.getSymbolPosition() != null ? c.getSymbolPosition() : "LEFT")
+                .currencyExchangeRate(c.getExchangeRate() != null ? c.getExchangeRate() : 1.0)
+                .build();
     }
 }

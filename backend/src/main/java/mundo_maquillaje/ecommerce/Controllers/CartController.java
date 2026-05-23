@@ -1,7 +1,7 @@
 package mundo_maquillaje.ecommerce.Controllers;
 
 import lombok.RequiredArgsConstructor;
-import mundo_maquillaje.ecommerce.Models.CartProduct;
+import mundo_maquillaje.ecommerce.DTO.CartItemDTO;
 import mundo_maquillaje.ecommerce.Services.CartService;
 import mundo_maquillaje.ecommerce.Services.ProfileService;
 import org.springframework.http.ResponseEntity;
@@ -21,13 +21,13 @@ public class CartController {
     private final ProfileService profileService;
 
     @GetMapping
-    public List<CartProduct> getCart(Authentication authentication) {
+    public List<CartItemDTO> getCart(Authentication authentication) {
         UUID userId = profileService.getUserIdFromAuthentication(authentication);
-        return cartService.getCartItems(userId);
+        return cartService.getCartAsDTOs(userId);
     }
 
     @PostMapping
-    public ResponseEntity<CartProduct> addToCart(
+    public ResponseEntity<CartItemDTO> addToCart(
             Authentication authentication,
             @RequestBody Map<String, Object> payload
     ) {
@@ -35,8 +35,8 @@ public class CartController {
         UUID variationId = UUID.fromString((String) payload.get("variationId"));
         int quantity = ((Number) payload.get("quantity")).intValue();
 
-        CartProduct product = cartService.addToCart(userId, variationId, quantity);
-        return ResponseEntity.ok(product);
+        CartItemDTO dto = cartService.addToCartAsDTO(userId, variationId, quantity);
+        return ResponseEntity.ok(dto);
     }
 
     @PutMapping("/{id}")
@@ -48,11 +48,11 @@ public class CartController {
         UUID userId = profileService.getUserIdFromAuthentication(authentication);
         int quantity = ((Number) payload.get("quantity")).intValue();
 
-        CartProduct product = cartService.updateQuantity(userId, id, quantity);
-        if (product == null) {
+        CartItemDTO dto = cartService.updateQuantityAsDTO(userId, id, quantity);
+        if (dto == null) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(product);
+        return ResponseEntity.ok(dto);
     }
 
     @DeleteMapping("/{id}")
@@ -70,11 +70,11 @@ public class CartController {
     }
 
     @PostMapping("/sync")
-    public List<CartProduct> syncCart(
+    public List<CartItemDTO> syncCart(
             Authentication authentication,
             @RequestBody List<Map<String, Object>> localItems
     ) {
         UUID userId = profileService.getUserIdFromAuthentication(authentication);
-        return cartService.syncCart(userId, localItems);
+        return cartService.syncCartAsDTO(userId, localItems);
     }
 }

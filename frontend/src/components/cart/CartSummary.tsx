@@ -213,7 +213,10 @@ function convertToNumeric(
   const srcCode = sourceCurrency.code.toUpperCase().trim();
   const tgtCode = targetCurrency.code.toUpperCase().trim();
   if (srcCode === tgtCode) return amount;
-  
+
+  // Si no hay tasas cargadas, devolver monto original sin convertir
+  if (!allCurrencies || allCurrencies.length === 0) return amount;
+
   const getRate = (code: string) => {
     const c = allCurrencies.find(curr => {
       const dbCode = curr.code.toUpperCase().trim();

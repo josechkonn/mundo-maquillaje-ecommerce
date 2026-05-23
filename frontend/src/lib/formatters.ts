@@ -41,6 +41,11 @@ export const convertAndFormatPrice = (
   // Si son la misma moneda, no hay nada que convertir
   if (srcCode === tgtCode) return formatPrice(amount, targetCurrency);
 
+  // Si no hay tasas cargadas, mostrar precio original sin convertir
+  if (!allCurrencies || allCurrencies.length === 0) {
+    return formatPrice(amount, sourceCurrency);
+  }
+
   const getRate = (code: string) => {
     const c = allCurrencies.find(curr => {
       const dbCode = curr.code.toUpperCase().trim();

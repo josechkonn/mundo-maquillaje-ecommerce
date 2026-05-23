@@ -158,30 +158,43 @@ export const useCartStore = create<CartState>()(
           if (serverItems && serverItems.length > 0) {
             const synced: CartItem[] = serverItems.map(si => {
               const local = items.find(i => i.variationId === si.variation.id);
+
+              if (local) {
+                return {
+                  ...local,
+                  serverId: si.id,
+                  quantity: si.quantity,
+                  variationName: si.variation.name,
+                  price: si.variation.price,
+                  maxStock: si.variation.stock,
+                  hexColor: si.variation.hexColor ?? local.hexColor,
+                };
+              }
+
               return {
                 serverId: si.id,
                 variationId: si.variation.id,
-                productId: local?.productId || "",
-                productName: local?.productName || si.variation.name,
-                productSlug: local?.productSlug || "",
+                productId: si.productId || "",
+                productName: si.productName || si.variation.name,
+                productSlug: si.productSlug || "",
                 variationName: si.variation.name,
                 price: si.variation.price,
                 quantity: si.quantity,
                 maxStock: si.variation.stock,
-                imageUrl: local?.imageUrl || (si.variation.images?.[0]?.urlImage || "/placeholder-product.png"),
+                imageUrl: si.variation.images?.[0]?.urlImage || "/placeholder-product.png",
                 hexColor: si.variation.hexColor,
-                currencyId: local?.currencyId || "",
-                currencyCode: local?.currencyCode || "",
-                currencySymbol: local?.currencySymbol || "",
-                currencyDecimalPlaces: local?.currencyDecimalPlaces || 0,
-                currencySymbolPosition: local?.currencySymbolPosition || "LEFT",
-                currencyExchangeRate: local?.currencyExchangeRate || 1,
+                currencyId: si.currencyId || "",
+                currencyCode: si.currencyCode || "",
+                currencySymbol: si.currencySymbol || "",
+                currencyDecimalPlaces: si.currencyDecimalPlaces ?? 0,
+                currencySymbolPosition: si.currencySymbolPosition || "LEFT",
+                currencyExchangeRate: si.currencyExchangeRate || 1,
               };
             });
             set({ items: synced });
           }
         } catch (error) {
-          // Sync silencioso
+          // Sync silencioso — se mantiene el estado local intacto
         }
       },
 
