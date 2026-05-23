@@ -8,7 +8,8 @@ import {
   ClipboardDocumentListIcon,
   MapPinIcon,
   HeartIcon,
-  LockClosedIcon
+  LockClosedIcon,
+  ArrowLeftOnRectangleIcon
 } from "@heroicons/react/24/outline";
 
 /**
@@ -29,7 +30,7 @@ const AccountLayout = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-surface font-sans flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-surface font-sans flex flex-col">
       <Header />
 
       {/* ── MÓVIL: Barra horizontal fixed abajo del header ── */}
@@ -49,6 +50,13 @@ const AccountLayout = () => {
             <link.icon className="w-6 h-6" />
           </NavLink>
         ))}
+        <button
+          onClick={handleLogout}
+          className="flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-200 text-white hover:bg-brand-300/30"
+          title="Cerrar Sesión"
+        >
+          <ArrowLeftOnRectangleIcon className="w-6 h-6" />
+        </button>
       </nav>
 
       <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 lg:px-10 py-8 lg:py-12">
@@ -63,20 +71,8 @@ const AccountLayout = () => {
           </div>
 
           {/* Contenedor de Contenido Blanco */}
-          <div className="flex-1 w-full bg-white rounded-4xl lg:rounded-5xl border border-[#f5e1e7] p-8 lg:p-16 animate-slide-in-right min-h-[500px] flex flex-col justify-between">
-            <div className="flex-1">
-              <Outlet />
-            </div>
-
-            {/* Botón de Cerrar Sesión en móviles (al fondo del contenedor) */}
-            <div className="mt-12 lg:hidden">
-              <button
-                onClick={handleLogout}
-                className="w-full py-3.5 bg-brand-400 text-white rounded-2xl font-bold hover:bg-brand-600 transition-all shadow-sm"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
+          <div className="flex-1 w-full bg-white rounded-4xl lg:rounded-5xl border border-[#f5e1e7] p-8 lg:p-16 animate-slide-in-right min-h-[500px]">
+            <Outlet />
           </div>
 
         </div>

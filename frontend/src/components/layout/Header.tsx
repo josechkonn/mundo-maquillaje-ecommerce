@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   MagnifyingGlassIcon,
   UserIcon,
@@ -55,6 +55,8 @@ const Header = () => {
   const [mobileCategory, setMobileCategory] = useState<Category | null>(null);
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAccountPage = location.pathname.startsWith("/cuenta");
 
   const dropRef = useRef<HTMLDivElement>(null);
   const megaMenuRef = useRef<HTMLDivElement>(null);
@@ -175,43 +177,45 @@ const Header = () => {
 
             <div className="hidden lg:block w-px h-10 bg-neutral-800 mx-1" />
 
-            {/* Selector de moneda */}
-            <div ref={dropRef} className="relative">
-              <button
-                onClick={() => setDropOpen(prev => !prev)}
-                className="flex items-center justify-center gap-1 w-16 h-10 lg:w-auto lg:px-3 rounded-lg border border-neutral-800 bg-transparent text-xs lg:text-sm font-medium text-neutral-800 hover:border-brand-500 transition-all duration-200"
-              >
-                {selectedCurrency && (
-                  <>
-                    <img
-                      src={`https://flagcdn.com/w40/${getFlagCode(selectedCurrency.code)}.png`}
-                      alt=""
-                      className="w-4 h-4 lg:w-5 lg:h-5 rounded-full object-cover shadow-sm"
-                    />
-                    <span className="font-medium tracking-wide hidden sm:inline">{selectedCurrency.code}</span>
-                  </>
-                )}
-                <ChevronDownIcon
-                  className={`w-3 h-3 text-neutral-500 transition-transform duration-200 ${dropOpen ? "rotate-180" : ""}`}
-                />
-              </button>
+            {/* Selector de moneda (oculto en /cuenta) */}
+            {!isAccountPage && (
+              <div ref={dropRef} className="relative">
+                <button
+                  onClick={() => setDropOpen(prev => !prev)}
+                  className="flex items-center justify-center gap-1 w-16 h-10 lg:w-auto lg:px-3 rounded-lg border border-neutral-800 bg-transparent text-xs lg:text-sm font-medium text-neutral-800 hover:border-brand-500 transition-all duration-200"
+                >
+                  {selectedCurrency && (
+                    <>
+                      <img
+                        src={`https://flagcdn.com/w40/${getFlagCode(selectedCurrency.code)}.png`}
+                        alt=""
+                        className="w-4 h-4 lg:w-5 lg:h-5 rounded-full object-cover shadow-sm"
+                      />
+                      <span className="font-medium tracking-wide hidden sm:inline">{selectedCurrency.code}</span>
+                    </>
+                  )}
+                  <ChevronDownIcon
+                    className={`w-3 h-3 text-neutral-500 transition-transform duration-200 ${dropOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
 
-              {dropOpen && (
-                <div className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-2xl border border-brand-100 overflow-hidden z-50">
-                  {currencies.map(opt => (
-                    <button
-                      key={opt.code}
-                      onClick={() => { setSelectedCurrency(opt.code); setDropOpen(false); }}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150
-                        ${opt.code === selectedCurrency?.code ? "bg-brand-100 text-brand-700 font-semibold" : "text-neutral-700 hover:bg-brand-50"}`}
-                    >
-                      <img src={`https://flagcdn.com/w40/${getFlagCode(opt.code)}.png`} alt="" className="w-5 h-5 rounded-full object-cover" />
-                      <span>{opt.code}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+                {dropOpen && (
+                  <div className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-2xl border border-brand-100 overflow-hidden z-50">
+                    {currencies.map(opt => (
+                      <button
+                        key={opt.code}
+                        onClick={() => { setSelectedCurrency(opt.code); setDropOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150
+                          ${opt.code === selectedCurrency?.code ? "bg-brand-100 text-brand-700 font-semibold" : "text-neutral-700 hover:bg-brand-50"}`}
+                      >
+                        <img src={`https://flagcdn.com/w40/${getFlagCode(opt.code)}.png`} alt="" className="w-5 h-5 rounded-full object-cover" />
+                        <span>{opt.code}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <Link
               to={accountHref}
