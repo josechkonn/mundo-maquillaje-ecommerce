@@ -540,7 +540,7 @@ const ProductsPage = () => {
       <div className="w-[95vw] mx-auto pt-16">
         {/* Breadcrumb Dinámico */}
         <div className="flex items-center gap-2 text-[13px] mb-8 overflow-x-auto scrollbar-hide whitespace-nowrap pb-2">
-          <Link to="/" className="text-neutral-400 hover:text-brand-500 transition-colors">Inicio</Link>
+          <Link to="/" className="text-neutral-700 hover:text-brand-500 transition-colors">Inicio</Link>
           
           {appliedCategoryId && (() => {
             const currentCat = categories.find(c => c.id === appliedCategoryId);
@@ -557,17 +557,17 @@ const ProductsPage = () => {
               <>
                 {parents.map(p => (
                   <div key={p.id} className="flex items-center gap-2">
-                    <span className="text-neutral-300">/</span>
+                    <span className="text-neutral-700">/</span>
                     <button 
                       onClick={() => { setAppliedCategoryId(p.id); setTempCategoryId(p.id); setCurrentPageIndex(0); }}
-                      className="text-neutral-400 hover:text-brand-500 transition-colors"
+                      className="text-neutral-700 hover:text-brand-500 transition-colors"
                     >
                       {p.name}
                     </button>
                   </div>
                 ))}
                 <div className="flex items-center gap-2">
-                  <span className="text-neutral-300">/</span>
+                  <span className="text-neutral-700">/</span>
                   <span className="text-neutral-800 font-bold">{currentCat.name}</span>
                 </div>
               </>
@@ -576,14 +576,14 @@ const ProductsPage = () => {
 
           {!appliedCategoryId && appliedBrandId && (
             <>
-              <span className="text-neutral-300">/</span>
+              <span className="text-neutral-700">/</span>
               <span className="text-neutral-800 font-bold">{brands.find(b => b.id === appliedBrandId)?.name}</span>
             </>
           )}
           
           {!appliedCategoryId && !appliedBrandId && debouncedSearch && (
             <>
-              <span className="text-neutral-300">/</span>
+              <span className="text-neutral-700">/</span>
               <span className="text-neutral-800 font-bold">Búsqueda: {debouncedSearch}</span>
             </>
           )}
@@ -666,7 +666,7 @@ const ProductsPage = () => {
         ) : (
           <div className="py-8 md:py-16 text-center bg-neutral-100 rounded-[40px] shadow-sm border border-neutral-50">
             <div className="max-w-md mx-auto">
-              <p className="text-neutral-400 text-lg mb-8">No encontramos productos que coincidan con tus filtros.</p>
+              <p className="text-neutral-700 text-lg mb-8">No encontramos productos que coincidan con tus filtros.</p>
               <button onClick={clearFilters} className="bg-mm-filter-active text-white px-10 py-4 rounded-full font-bold hover:scale-105 transition-transform shadow-lg shadow-pink-100">
                 Limpiar Filtros
               </button>
