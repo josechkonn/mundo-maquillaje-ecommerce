@@ -100,8 +100,7 @@ export const useCartStore = create<CartState>()(
             }
           } catch (e: any) {
             set({ items: previousItems });
-            const message = e.message || "Error al agregar al carrito";
-            toastError(message);
+            throw e;
           }
         }
       },

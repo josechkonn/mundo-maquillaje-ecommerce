@@ -90,7 +90,7 @@ const ShoppingSteps = () => {
         {/* Botón Call to Action */}
         <div className="mt-4 md:mt-28">
           <button
-            onClick={() => navigate('/products')}
+            onClick={() => navigate('/productos')}
             className="bg-[#EA4C73] text-white px-8 md:px-12 py-[10px] md:py-[8px] rounded-[16px] md:rounded-[14px] text-base md:text-xl font-medium md:font-normal shadow-lg transition-all duration-300 hover:bg-[#D43D61] hover:scale-105 active:scale-95"
           >
             Empieza a comprar fácil

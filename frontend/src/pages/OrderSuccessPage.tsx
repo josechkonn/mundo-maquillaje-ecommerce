@@ -156,6 +156,10 @@ const OrderSuccessPage = () => {
 
         <div className="max-w-xs ml-auto space-y-3 text-p-s md:text-p-b text-neutral-800 font-medium">
           <div className="flex justify-between">
+            <span>Subtotal:</span>
+            <span>{formatOrderPrice(order.subtotal)}</span>
+          </div>
+          <div className="flex justify-between">
             <span>Precio de envío:</span>
             <span>{shippingCost === 0 ? "Gratis" : formatOrderPrice(shippingCost)}</span>
           </div>

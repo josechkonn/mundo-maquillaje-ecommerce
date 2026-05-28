@@ -8,6 +8,7 @@ import { useCurrencyStore } from "../../store/currencyStore";
 import { useFavoritesStore } from "../../store/favoritesStore";
 import { useAuthStore } from "../../store/authStore";
 import { useCartStore } from "../../store/cartStore";
+import { toastSuccess, toastError } from "../../lib/toasts";
 import VariationSelector from "./VariationSelector";
 import QuantitySelector from "./QuantitySelector";
 import DescriptionViewer from "./DescriptionViewer";
@@ -151,10 +152,13 @@ const ProductInfo = ({ product, onVariationChange, onHoverVariation }: ProductIn
               currencyDecimalPlaces: product.currency.decimalPlaces,
               currencySymbolPosition: product.currency.symbolPosition,
               currencyExchangeRate: product.currency.exchangeRate,
-            }, !!user);
+            }, !!user).catch((e: any) => {
+              toastError(e.message || "No se pudo añadir al carrito");
+            });
 
             setAddedToCart(true);
             setIsDrawerOpen(true);
+            toastSuccess("Producto añadido al carrito");
             setTimeout(() => setAddedToCart(false), 2000);
           }}
           disabled={currentStock <= 0}

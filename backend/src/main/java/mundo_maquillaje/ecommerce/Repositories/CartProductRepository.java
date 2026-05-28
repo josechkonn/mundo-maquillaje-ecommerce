@@ -4,10 +4,12 @@ import mundo_maquillaje.ecommerce.Models.CartProduct;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface CartProductRepository extends JpaRepository<CartProduct, UUID> {
-    Optional<CartProduct> findByCartIdAndVariationId(UUID cartId, UUID variationId);
+    Optional<CartProduct> findTopByCartIdAndVariationIdOrderByAddedAtDesc(UUID cartId, UUID variationId);
+    List<CartProduct> findAllByCartIdAndVariationId(UUID cartId, UUID variationId);
 }

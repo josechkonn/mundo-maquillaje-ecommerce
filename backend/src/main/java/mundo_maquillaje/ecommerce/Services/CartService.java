@@ -30,11 +30,24 @@ public class CartService {
     private final ProductVariationRepository productVariationRepository;
 
     private Cart getOrCreateActiveCart(UUID userId) {
-        return cartRepository.findByUserIdAndStatus(userId, "ACTIVE")
-                .orElseGet(() -> cartRepository.save(Cart.builder()
-                        .userId(userId)
-                        .status("ACTIVE")
-                        .build()));
+        Cart cart = cartRepository.findTopByUserIdAndStatusOrderByCreatedAtDesc(userId, "ACTIVE").orElse(null);
+        if (cart != null) {
+            // Limpiar carritos duplicados
+            List<Cart> allActive = cartRepository.findAllByUserIdAndStatus(userId, "ACTIVE");
+            if (allActive.size() > 1) {
+                for (Cart duplicate : allActive) {
+                    if (!duplicate.getId().equals(cart.getId())) {
+                        duplicate.setStatus("COMPLETED");
+                        cartRepository.save(duplicate);
+                    }
+                }
+            }
+            return cart;
+        }
+        return cartRepository.save(Cart.builder()
+                .userId(userId)
+                .status("ACTIVE")
+                .build());
     }
 
     public List<CartProduct> getCartItems(UUID userId) {
@@ -55,7 +68,20 @@ public class CartService {
             throw new RuntimeException("Stock insuficiente. Disponible: " + variation.getStock());
         }
 
-        Optional<CartProduct> existing = cartProductRepository.findByCartIdAndVariationId(cart.getId(), variationId);
+        // Limpiar duplicados de CartProduct para esta variación
+        List<CartProduct> duplicates = cartProductRepository.findAllByCartIdAndVariationId(cart.getId(), variationId);
+        if (duplicates.size() > 1) {
+            CartProduct latest = duplicates.get(0);
+            int totalQty = duplicates.stream().mapToInt(CartProduct::getQuantity).sum();
+            latest.setQuantity(Math.min(totalQty, variation.getStock()));
+            cartProductRepository.save(latest);
+            for (int i = 1; i < duplicates.size(); i++) {
+                cartProductRepository.delete(duplicates.get(i));
+            }
+            return latest;
+        }
+
+        Optional<CartProduct> existing = cartProductRepository.findTopByCartIdAndVariationIdOrderByAddedAtDesc(cart.getId(), variationId);
         if (existing.isPresent()) {
             CartProduct product = existing.get();
             int newQty = product.getQuantity() + quantity;
@@ -133,7 +159,7 @@ public class CartService {
             UUID variationId = UUID.fromString((String) localItem.get("variationId"));
             int quantity = ((Number) localItem.get("quantity")).intValue();
 
-            Optional<CartProduct> existing = cartProductRepository.findByCartIdAndVariationId(cart.getId(), variationId);
+            Optional<CartProduct> existing = cartProductRepository.findTopByCartIdAndVariationIdOrderByAddedAtDesc(cart.getId(), variationId);
             if (existing.isPresent()) {
                 CartProduct p = existing.get();
                 int clampedQty = Math.min(quantity, p.getVariation().getStock());

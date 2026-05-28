@@ -3,12 +3,13 @@ import { HeartIcon as HeartOutline } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import { CheckIcon } from "@heroicons/react/24/solid";
 import { useState } from "react";
-import { type Product } from "../../services/productService";
+import { type Product, type ProductVariation } from "../../services/productService";
 import { convertAndFormatPrice } from "../../lib/formatters";
 import { useCurrencyStore } from "../../store/currencyStore";
 import { useFavoritesStore } from "../../store/favoritesStore";
 import { useAuthStore } from "../../store/authStore";
 import { useCartStore } from "../../store/cartStore";
+import { toastSuccess, toastError } from "../../lib/toasts";
 import Button from "./Button";
 
 interface ProductCardProps {
@@ -21,6 +22,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const user = useAuthStore(state => state.user);
   const { addItem } = useCartStore();
   const [addedToCart, setAddedToCart] = useState(false);
+  const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(product.variations?.[0] || null);
   
   const favorited = isFavorite(product.id);
 
@@ -34,27 +36,65 @@ const ProductCard = ({ product }: ProductCardProps) => {
     }
   };
 
-  // Verificar si la primera variación tiene stock (es la que se agrega al carrito)
-  const firstVariation = product.variations?.[0];
-  const hasStock = firstVariation ? firstVariation.stock > 0 : false;
+  const hasStock = selectedVariation ? selectedVariation.stock > 0 : false;
 
-  // Usar el precio mínimo de TODAS las variaciones (coincide con el sort del backend)
-  const minVariationPrice = product.variations?.length
-    ? Math.min(...product.variations.map(v => v.price))
-    : 0;
+  const currentPrice = selectedVariation?.price || 0;
 
   const formattedPrice = convertAndFormatPrice(
-    minVariationPrice,
+    currentPrice,
     product.currency,
     selectedCurrency,
     currencies
   );
 
-  // Imagen principal: primera imagen de la primera variación (main preferida)
-  const firstVariationImages = product.variations?.[0]?.images ?? [];
+  const firstVariationImages = selectedVariation?.images ?? product.variations?.[0]?.images ?? [];
   const mainImage = firstVariationImages.find((img) => img.isMain)?.urlImage
     || firstVariationImages[0]?.urlImage
     || "/placeholder-product.png";
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selectedVariation) return;
+
+    const mainImg = selectedVariation.images?.find(img => img.isMain)?.urlImage
+      || selectedVariation.images?.[0]?.urlImage
+      || "/placeholder-product.png";
+
+    addItem({
+      variationId: selectedVariation.id,
+      productId: product.id,
+      productName: product.name,
+      productSlug: product.slug,
+      variationName: selectedVariation.attributeValue || selectedVariation.name,
+      price: selectedVariation.price,
+      quantity: 1,
+      maxStock: selectedVariation.stock,
+      imageUrl: mainImg,
+      hexColor: selectedVariation.hexColor,
+      currencyId: product.currency.id,
+      currencyCode: product.currency.code,
+      currencySymbol: product.currency.symbol,
+      currencyDecimalPlaces: product.currency.decimalPlaces,
+      currencySymbolPosition: product.currency.symbolPosition,
+      currencyExchangeRate: product.currency.exchangeRate,
+    }, !!user).catch((err: any) => {
+      toastError(err.message || "No se pudo añadir al carrito");
+    });
+
+    setAddedToCart(true);
+    toastSuccess("Producto añadido al carrito");
+    setTimeout(() => setAddedToCart(false), 1500);
+  };
+
+  const groups = product.variations?.length && product.variations.length > 1
+    ? product.variations.reduce<Record<string, ProductVariation[]>>((acc, v) => {
+        const key = v.attributeName || "Variantes";
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(v);
+        return acc;
+      }, {})
+    : {};
 
   return (
     <div className="bg-white rounded-2xl md:p-4 shadow-sm hover:shadow-md transition-shadow duration-300 group flex flex-col h-full border border-gray-100">
@@ -85,11 +125,60 @@ const ProductCard = ({ product }: ProductCardProps) => {
           </h5>
         </Link>
 
-        <p className="text-brand-600 font-bold text-p-s mb-6">
+        <p className="text-brand-600 font-bold text-p-s mb-3">
           {formattedPrice}
         </p>
 
-        {/* Botón de Acción Reutilizable */}
+        {/* Selector de Variantes */}
+        {Object.keys(groups).length > 0 && (
+          <div className="mb-3">
+            {Object.entries(groups).map(([groupName, groupVariations]) => (
+              <div key={groupName} className="flex flex-wrap gap-1.5 justify-center items-center">
+                {groupVariations.map((v) => {
+                  const isSelected = selectedVariation?.id === v.id;
+                  const hasColor = !!v.hexColor;
+                  const outOfStock = v.stock <= 0;
+
+                  return (
+                    <button
+                      key={v.id}
+                      onClick={() => !outOfStock && setSelectedVariation(v)}
+                      disabled={outOfStock}
+                      title={v.attributeValue || v.name}
+                      className={`relative focus:outline-none transition-all duration-200 ${outOfStock ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+                    >
+                      {hasColor ? (
+                        <div
+                          className={`w-6 h-6 rounded-full transition-all duration-200
+                            ${isSelected ? "ring-2 ring-brand-500 ring-offset-1 scale-110" : "hover:scale-110"}
+                          `}
+                        >
+                          <div
+                            className="w-full h-full rounded-full border border-neutral-800/10 shadow-inner"
+                            style={{ backgroundColor: v.hexColor }}
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className={`px-3 py-1 rounded-full border text-[11px] font-medium whitespace-nowrap
+                            ${isSelected
+                              ? "border-brand-500 bg-[#FFF0F3] text-brand-600"
+                              : "border-neutral-200 text-neutral-500 hover:border-brand-300 bg-white"
+                            }
+                          `}
+                        >
+                          {v.attributeValue || v.name}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Botón de Acción */}
         <Button
           disabled={!hasStock}
           className={`mt-auto !text-p-xs font-medium transition-all duration-300 ${
@@ -97,38 +186,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           } ${
             addedToCart ? "!bg-green-500 !hover:bg-green-600" : ""
           }`}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const firstVariation = product.variations?.[0];
-            if (!firstVariation) return;
-
-            const mainImg = firstVariation.images?.find(img => img.isMain)?.urlImage
-              || firstVariation.images?.[0]?.urlImage
-              || "/placeholder-product.png";
-
-            addItem({
-              variationId: firstVariation.id,
-              productId: product.id,
-              productName: product.name,
-              productSlug: product.slug,
-              variationName: firstVariation.attributeValue || firstVariation.name,
-              price: firstVariation.price,
-              quantity: 1,
-              maxStock: firstVariation.stock,
-              imageUrl: mainImg,
-              hexColor: firstVariation.hexColor,
-              currencyId: product.currency.id,
-              currencyCode: product.currency.code,
-              currencySymbol: product.currency.symbol,
-              currencyDecimalPlaces: product.currency.decimalPlaces,
-              currencySymbolPosition: product.currency.symbolPosition,
-              currencyExchangeRate: product.currency.exchangeRate,
-            }, !!user);
-
-            setAddedToCart(true);
-            setTimeout(() => setAddedToCart(false), 1500);
-          }}
+          onClick={handleAddToCart}
         >
           {addedToCart ? (
             <><CheckIcon className="w-4 h-4" /> Añadido</>
