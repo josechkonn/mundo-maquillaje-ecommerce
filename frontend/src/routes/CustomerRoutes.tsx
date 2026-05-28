@@ -7,10 +7,11 @@ import ChangePasswordPage from "../pages/account/ChangePasswordPage";
 import OrdersPage from "../pages/account/OrdersPage";
 import CheckoutPage from "../pages/CheckoutPage";
 import StoreLayout from "../layouts/StoreLayout";
+import CheckoutLayout from "../layouts/CheckoutLayout";
+import OrderSuccessPage from "../pages/OrderSuccessPage";
 
 const CustomerRoutes = (
     <>
-        {/* Rutas del Centro de Usuarios - Con Layout y Sidebar */}
         <Route path="cuenta" element={<AccountLayout />}>
             <Route index element={<ProfilePage />} />
             <Route path="direcciones" element={<AddressesPage />} />
@@ -19,9 +20,12 @@ const CustomerRoutes = (
             <Route path="pedidos" element={<OrdersPage />} />
         </Route>
 
-        {/* Flujo de compra - protegidas con Header y Footer */}
-        <Route element={<StoreLayout />}>
+        <Route element={<CheckoutLayout />}>
             <Route path="finalizar-compra" element={<CheckoutPage />} />
+        </Route>
+
+        <Route element={<StoreLayout />}>
+            <Route path="compra-finalizada" element={<OrderSuccessPage />} />
         </Route>
     </>
 );

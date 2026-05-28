@@ -34,6 +34,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
     }
   };
 
+  // Verificar si la primera variación tiene stock (es la que se agrega al carrito)
+  const firstVariation = product.variations?.[0];
+  const hasStock = firstVariation ? firstVariation.stock > 0 : false;
+
   // Usar el precio mínimo de TODAS las variaciones (coincide con el sort del backend)
   const minVariationPrice = product.variations?.length
     ? Math.min(...product.variations.map(v => v.price))
@@ -87,7 +91,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
         {/* Botón de Acción Reutilizable */}
         <Button
+          disabled={!hasStock}
           className={`mt-auto !text-p-xs font-medium transition-all duration-300 ${
+            !hasStock ? "!bg-neutral-300 !cursor-not-allowed" : ""
+          } ${
             addedToCart ? "!bg-green-500 !hover:bg-green-600" : ""
           }`}
           onClick={(e) => {
@@ -125,7 +132,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         >
           {addedToCart ? (
             <><CheckIcon className="w-4 h-4" /> Añadido</>
-          ) : "Añadir a carrito"}
+          ) : !hasStock ? "Agotado" : "Añadir a carrito"}
         </Button>
       </div>
     </div>

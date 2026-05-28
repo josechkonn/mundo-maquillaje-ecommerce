@@ -73,38 +73,42 @@
 }
 
 .swiper-pagination-bullet {
-  display: inline-block !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   width: 11px !important;
   height: 11px !important;
-  aspect-ratio: 1 / 1 !important;
   background: #CBD5E1 !important;
   opacity: 1 !important;
   margin: 0 10px !important;
   transition: all 0.3s ease !important;
-  position: relative;
+  position: relative !important;
   border-radius: 50% !important;
   flex-shrink: 0 !important;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  vertical-align: middle !important;
 }
 
 .swiper-pagination-bullet-active {
   width: 11px !important;
+  height: 11px !important;
   background: #E7446B !important;
 }
 
-/* El anillo alrededor del punto activo - Mejorado para evitar recortes */
+/* El anillo alrededor del punto activo - Centrado perfecto */
 .swiper-pagination-bullet-active::after {
   content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%); /* Centrado absoluto infalible */
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
   width: 21px !important;
   height: 21px !important;
   border: 2.5px solid #E7446B;
   border-radius: 50% !important;
   opacity: 1;
-  box-sizing: border-box;
+  box-sizing: border-box !important;
+  pointer-events: none;
 }
 
 /* Ocultar flechas en móvil si no se usa display: none en el componente */

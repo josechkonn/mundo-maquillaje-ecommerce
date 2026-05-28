@@ -8,6 +8,7 @@ import { useCurrencyStore } from "../../store/currencyStore";
 import { useFavoritesStore } from "../../store/favoritesStore";
 import { useAuthStore } from "../../store/authStore";
 import { useCartStore } from "../../store/cartStore";
+import { toastError } from "../../lib/toasts";
 import VariationSelector from "./VariationSelector";
 import QuantitySelector from "./QuantitySelector";
 import DescriptionViewer from "./DescriptionViewer";

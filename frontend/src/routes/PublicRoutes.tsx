@@ -5,13 +5,14 @@ import ProductDetailsPage from "../pages/ProductDetailsPage";
 import CategoryPage from "../pages/CategoryPage";
 import ProductsPage from "../pages/ProductsPage";
 import CartPage from "../pages/CartPage";
+import NosotrosPage from "../pages/NosotrosPage";
 
 const PublicRoutes = (
   <Route element={<StoreLayout />}>
     <Route index element={<HomePage />} />
     <Route path="contacto" element={<div>Página de Contacto</div>} />
     <Route path="tienda" element={<div>Catálogo de Productos</div>} />
-    <Route path="nosotros" element={<div>Sobre Nosotros</div>} />
+    <Route path="nosotros" element={<NosotrosPage />} />
     <Route path="categorias" element={<div>Lista General de Categorias</div>} />
     <Route path="productos" element={<ProductsPage />} />
     <Route path="producto/:slug" element={<ProductDetailsPage />} />

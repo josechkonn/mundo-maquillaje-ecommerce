@@ -32,6 +32,16 @@ public class Order {
     @JoinColumn(name = "id_pmethod", nullable = false)
     private PaymentMethod paymentMethod;
 
+    @Column(unique = true)
+    private String orderNumber;
+
+    @ManyToOne
+    @JoinColumn(name = "id_currency", nullable = false)
+    private Currency currency;
+
+    @Column(nullable = false)
+    private Double shippingCost = 0.0;
+
     @Column(nullable = false)
     private Double subtotal;
 

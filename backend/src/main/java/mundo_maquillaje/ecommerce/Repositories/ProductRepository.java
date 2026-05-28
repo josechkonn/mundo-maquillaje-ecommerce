@@ -27,24 +27,26 @@ public interface ProductRepository extends JpaRepository<Product, UUID>,
 
        Optional<Product> findBySlug(String slug);
 
-       @EntityGraph(attributePaths = { "category", "brand", "currency", "variations" })
+       @EntityGraph(attributePaths = { "category", "category.parent", "brand", "currency", "variations" })
        @org.springframework.data.jpa.repository.Query("SELECT DISTINCT p FROM Product p JOIN p.variations v WHERE " +
-                     "LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-                     "LOWER(v.description) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-                     "LOWER(v.sku) LIKE LOWER(CONCAT('%', :query, '%'))")
+                 "p.isActive = true AND v.stock > 0 AND " +
+                 "LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                 "LOWER(v.description) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                 "LOWER(v.sku) LIKE LOWER(CONCAT('%', :query, '%'))")
        Page<Product> searchProducts(@org.springframework.data.repository.query.Param("query") String query,
-                     Pageable pageable);
+                 Pageable pageable);
 
        @EntityGraph(attributePaths = { "category", "brand", "currency", "variations" })
        @org.springframework.data.jpa.repository.Query("SELECT DISTINCT p FROM Product p JOIN p.variations v WHERE " +
-                     "(LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-                     "LOWER(v.description) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-                     "LOWER(v.sku) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
-                     "(:lastId IS NULL OR p.id > :lastId) " +
-                     "ORDER BY p.id ASC")
+                 "p.isActive = true AND v.stock > 0 AND " +
+                 "(LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                 "LOWER(v.description) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                 "LOWER(v.sku) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
+                 "(:lastId IS NULL OR p.id > :lastId) " +
+                 "ORDER BY p.id ASC")
        List<Product> findNextProducts(@org.springframework.data.repository.query.Param("query") String query,
-                     @org.springframework.data.repository.query.Param("lastId") UUID lastId,
-                     Pageable pageable);
+                 @org.springframework.data.repository.query.Param("lastId") UUID lastId,
+                 Pageable pageable);
 
        @org.springframework.data.jpa.repository.Query(value = "SELECT exchange_rate FROM currencies WHERE code = :code", nativeQuery = true)
        Double findExchangeRateByCode(@org.springframework.data.repository.query.Param("code") String code);

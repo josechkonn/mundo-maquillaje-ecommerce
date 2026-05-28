@@ -6,6 +6,8 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -22,6 +24,11 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
+
+import java.net.Proxy;
+import java.time.Duration;
 import java.util.Arrays;
 
 @Configuration
@@ -77,11 +84,22 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CacheManager jwkCacheManager() {
+        return new ConcurrentMapCacheManager("jwks");
+    }
+
+    @Bean
     public JwtDecoder jwtDecoder() {
-        // Supabase uses ES256 (Elliptic Curve) signatures for your project.
-        // We must explicitly allow ES256 because Spring Security defaults to RS256.
+        RestTemplate restTemplate = new RestTemplate();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10000);
+        factory.setReadTimeout(10000);
+        restTemplate.setRequestFactory(factory);
+
         return NimbusJwtDecoder.withJwkSetUri(jwkSetUri)
                 .jwsAlgorithm(SignatureAlgorithm.ES256)
+                .restOperations(restTemplate)
+                .cache(jwkCacheManager().getCache("jwks"))
                 .build();
     }
 
@@ -92,7 +110,6 @@ public class SecurityConfig {
         return new BearerTokenResolver() {
             @Override
             public String resolve(HttpServletRequest request) {
-                // Do not resolve tokens for auth endpoints (login, sync-session)
                 String path = request.getRequestURI();
                 if (path != null && path.startsWith("/api/auth/")) {
                     return null;
@@ -104,21 +121,13 @@ public class SecurityConfig {
                         if ("access_token".equals(cookie.getName())) {
                             String token = cookie.getValue();
                             if (token != null && !token.isEmpty()) {
-                                logger.info("Token resolved from COOKIE for path: {}", request.getRequestURI());
                                 return token;
                             }
                         }
                     }
-                } else {
-                    logger.warn("NO COOKIES received for path: {}", request.getRequestURI());
                 }
 
                 String token = defaultResolver.resolve(request);
-                if (token != null) {
-                    logger.info("Token resolved from HEADER for path: {}", request.getRequestURI());
-                } else {
-                    logger.warn("No token resolved (Header or Cookie) for path: {}", request.getRequestURI());
-                }
                 return token;
             }
         };

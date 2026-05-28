@@ -1,4 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toastError, toastSuccess, toastLoading, dismissToast } from "../lib/toasts";
 import { useCheckoutStore } from "../store/checkoutStore";
 import { useCartStore } from "../store/cartStore";
 import { useCurrencyStore } from "../store/currencyStore";
@@ -7,11 +9,14 @@ import CartSummary from "../components/cart/CartSummary";
 import AddressCard from "../components/account/AddressCard";
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
+import AlertModal from "../components/ui/AlertModal";
 import AddressForm from "../components/account/AddressForm";
 import ReceiptUploader from "../components/checkout/ReceiptUploader";
+import { checkoutService } from "../services/checkoutService";
 
 
 const CheckoutPage = () => {
+  const navigate = useNavigate();
   const {
     fetchConfig,
     isLoading,
@@ -22,17 +27,86 @@ const CheckoutPage = () => {
     selectedShippingId,
     selectedPaymentId,
     receiptUrl,
+    paymentReference,
     setSelectedAddress,
     setSelectedShipping,
     setSelectedPayment,
-    setReceiptUrl
+    setReceiptUrl,
+    setPaymentReference,
+    reset
   } = useCheckoutStore();
 
-  const { items, discountInfo, applyDiscount, removeDiscount } = useCartStore();
-  const { currencies, selectedCurrency } = useCurrencyStore();
+  const { items, discountInfo, applyDiscount, removeDiscount, clearCart } = useCartStore();
+  const { currencies, selectedCurrency, setSelectedCurrency } = useCurrencyStore();
 
   const [isAddressModalOpen, setIsAddressModalOpen] = React.useState(false);
   const [editingAddress, setEditingAddress] = React.useState<any>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  const validateCheckout = (): boolean => {
+    const errors: string[] = [];
+
+    if (!selectedAddressId) {
+      errors.push("Selecciona una dirección de envío");
+    }
+    if (!selectedShippingId) {
+      errors.push("Selecciona un método de envío");
+    }
+    if (!selectedPaymentId) {
+      errors.push("Selecciona un método de pago");
+    }
+    if (!receiptUrl) {
+      errors.push("Sube el comprobante de pago");
+    }
+    if (!paymentReference.trim()) {
+      errors.push("Ingresa la referencia del pago");
+    }
+
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      setShowValidationModal(true);
+      return false;
+    }
+    return true;
+  };
+
+  const handleFinalizePurchase = async () => {
+    if (!validateCheckout()) {
+      return;
+    }
+
+    setIsProcessing(true);
+    const loadingId = toastLoading("Procesando tu compra...");
+
+    try {
+      const response = await checkoutService.processCheckout({
+        addressId: selectedAddressId,
+        shippingMethodId: selectedShippingId,
+        paymentMethodId: selectedPaymentId,
+        paymentReference: paymentReference,
+        receiptUrl: receiptUrl,
+        discountCode: discountInfo?.code || undefined
+      });
+
+      dismissToast(loadingId);
+      toastSuccess("¡Compra realizada con éxito!");
+      
+      await clearCart(true);
+      
+      navigate("/compra-finalizada", { state: { order: response } });
+      
+      reset();
+    } catch (error: any) {
+      dismissToast(loadingId);
+      console.error("Error al procesar la compra:", error);
+      const errorMessage = error.response?.data || error.message || "Ocurrió un error al procesar la compra.";
+      toastError(errorMessage, { duration: 5000 });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const usdSubtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
@@ -87,7 +161,6 @@ const CheckoutPage = () => {
     );
   }
 
-  const selectedPaymentMethod = paymentMethods.find(m => m.id === selectedPaymentId);
 
   const handleOpenAddAddress = () => {
     setEditingAddress(null);
@@ -105,6 +178,14 @@ const CheckoutPage = () => {
     setIsAddressModalOpen(false);
   };
 
+  const handleSelectPayment = (id: string) => {
+    setSelectedPayment(id);
+    const method = paymentMethods.find(m => m.id === id);
+    if (method?.currency?.code) {
+      setSelectedCurrency(method.currency.code);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-primary-50 pt-12 pb-20 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
@@ -114,10 +195,10 @@ const CheckoutPage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12 lg:items-start">
-          {/* Lado Izquierdo: Pasos (Timeline) */}
+          {/* Lado Izquierdo: Pasos 1-3 (Timeline) */}
           <div className="relative space-y-16">
-            {/* Línea vertical conectora sólida (Imagen) */}
-            <div className="absolute left-[18px] top-5 bottom-10 w-[4px] bg-brand-400 hidden md:block"></div>
+            {/* Línea vertical conectora sólida */}
+            <div className="absolute left-[18px] top-[20px] bottom-0 w-[4px] bg-brand-400 hidden md:block"></div>
 
             {/* Paso 1: Dirección */}
             <CheckoutStep number={1} title="Selecciona la dirección de envío">
@@ -174,7 +255,7 @@ const CheckoutPage = () => {
                     key={method.id}
                     title={method.name}
                     isSelected={selectedPaymentId === method.id}
-                    onSelect={() => setSelectedPayment(method.id)}
+                    onSelect={() => handleSelectPayment(method.id)}
                     showFields={selectedPaymentId === method.id}
                     fields={method.fields}
                   />
@@ -185,7 +266,7 @@ const CheckoutPage = () => {
           </div>
 
           {/* Lado Derecho: Resumen (Sticky) */}
-          <div className="lg:sticky lg:top-44 space-y-6 lg:mt-10">
+          <div className="lg:sticky lg:top-52 space-y-6 lg:mt-10">
             <CartSummary
               items={items}
               shippingCost={calculatedShippingCost}
@@ -194,31 +275,51 @@ const CheckoutPage = () => {
               discountInfo={discountInfo}
               onApplyDiscount={applyDiscount}
               onRemoveDiscount={removeDiscount}
-              onProcessCheckout={() => console.log("Finalizando compra")}
+              onProcessCheckout={handleFinalizePurchase}
             />
           </div>
         </div>
 
-        {/* Sección inferior para Paso 4 y Botón de Finalizar (para que el sticky termine en el Paso 3) */}
-        <div className="mt-16 border-t border-neutral-100 pt-16 max-w-4xl">
-          <div className="space-y-16">
-            {/* Paso 4: Comprobante */}
-            <CheckoutStep number={4} title="Ingresa aquí el comprobante de pago">
-              <ReceiptUploader
-                onUploadComplete={setReceiptUrl}
-                currentUrl={receiptUrl}
-              />
-            </CheckoutStep>
+        {/* Conector entre paso 3 y paso 4 */}
+        <div className="relative max-w-4xl mt-16">
+          <div className="absolute left-[18px] -top-16 bottom-0 w-[4px] bg-brand-400 hidden md:block"></div>
 
-            <div className="flex justify-center pt-8">
-              <Button
-                variant="primary"
-                fullWidth={false}
-              >
-                Finalizar compra
-              </Button>
-            </div>
+          {/* Paso 4: Comprobante */}
+          <div className="relative space-y-16 md:pl-0">
+            <CheckoutStep number={4} title="Ingresa aquí el comprobante de pago">
+              <div className="space-y-6 bg-white p-6 md:p-8 rounded-[30px] border border-neutral-200">
+                <ReceiptUploader
+                  onUploadComplete={setReceiptUrl}
+                  currentUrl={receiptUrl}
+                />
+                <div className="space-y-2">
+                  <label className="block text-p-s font-bold text-neutral-800">
+                    Número de Referencia del Pago
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentReference}
+                    onChange={(e) => setPaymentReference(e.target.value)}
+                    placeholder="Ingrese el número de confirmación o referencia"
+                    className="w-full bg-white border border-neutral-300 rounded-[20px] px-5 py-3.5 text-p-s text-neutral-800 focus:outline-none focus:border-brand-400 placeholder-neutral-400"
+                  />
+                </div>
+              </div>
+            </CheckoutStep>
           </div>
+        </div>
+
+        {/* Botón de Finalizar */}
+        <div className="flex justify-center pt-16 max-w-4xl">
+          <Button
+            variant="primary"
+            fullWidth={false}
+            onClick={handleFinalizePurchase}
+            disabled={isProcessing}
+            className="!bg-brand-500 hover:!bg-brand-600 !py-4 !px-16 !rounded-[20px]"
+          >
+            {isProcessing ? "Procesando..." : "Finalizar compra"}
+          </Button>
         </div>
       </div>
 
@@ -236,6 +337,43 @@ const CheckoutPage = () => {
           hideHeader
         />
       </Modal>
+
+      {/* Modal de Validación Centralizado */}
+      <AlertModal
+        isOpen={showValidationModal}
+        onClose={() => setShowValidationModal(false)}
+        type="warning"
+        title="Campos incompletos"
+        message="Para finalizar tu compra, completa los siguientes pasos:"
+        details={validationErrors}
+        primaryAction={{
+          label: "Entendido",
+          onClick: () => {},
+        }}
+      />
+
+      {/* Pantalla de carga bonita procesando compra */}
+      {isProcessing && (
+        <div className="fixed inset-0 bg-neutral-900/40 backdrop-blur-md z-50 flex items-center justify-center animate-fade-in">
+          <div className="bg-white/95 rounded-[30px] p-8 md:p-12 max-w-sm w-[90%] text-center shadow-2xl border border-brand-100 flex flex-col items-center">
+            {/* Spinner y animación */}
+            <div className="relative mb-6">
+              <div className="w-20 h-20 rounded-full border-4 border-brand-100 border-t-brand-500 animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg className="w-8 h-8 text-brand-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-h4-s font-black text-neutral-900 mb-2">
+              Procesando tu compra
+            </h3>
+            <p className="text-p-s text-neutral-600 leading-relaxed">
+              Estamos registrando tu orden y validando los datos de pago. Por favor, no cierres esta ventana.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -257,15 +395,16 @@ const CheckoutStep = ({ number, title, children }: { number: number; title: stri
 
 const SelectionCard = ({ title, price, isSelected, onSelect, showFields, fields }: any) => {
   return (
-    <div
-      onClick={onSelect}
-      className={`rounded-[20px] transition-all cursor-pointer overflow-hidden ${isSelected
-        ? "bg-brand-100"
-        : "bg-white border border-neutral-200 hover:border-brand-100"
+    <div>
+      {/* Card cabecera */}
+      <div
+        onClick={onSelect}
+        className={`rounded-[20px] transition-all cursor-pointer px-6 py-5 flex items-center justify-between relative z-10 ${
+          isSelected
+            ? "bg-brand-100 shadow-lg shadow-[#222222]/20"
+            : "bg-white border border-neutral-200 hover:border-brand-100 hover:shadow-md hover:shadow-[#222222]/20"
         }`}
-    >
-      {/* Header del método */}
-      <div className="px-6 py-5 flex items-center justify-between">
+      >
         <div className="flex items-center gap-4">
           {isSelected ? (
             <div className="w-7 h-7 rounded-full bg-brand-400 flex items-center justify-center flex-shrink-0">
@@ -285,9 +424,9 @@ const SelectionCard = ({ title, price, isSelected, onSelect, showFields, fields 
         )}
       </div>
 
-      {/* Campos expandidos */}
+      {/* Panel expandido */}
       {showFields && fields && fields.length > 0 && (
-        <div className="bg-white   p-6 space-y-4">
+        <div className="bg-white rounded-b-[20px] shadow-lg shadow-[#222222]/20 px-6 py-5 space-y-4 -mt-4 pt-9">
           <p className="text-h5-s font-bold text-text-base">Datos para el pago</p>
           <div className="space-y-3">
             {fields.map((f: any) => (

@@ -1,5 +1,14 @@
 import { api } from "../lib/api";
 
+export interface StorePillar {
+  id?: string;
+  title: string;
+  content: string;
+  imageUrl: string;
+  isActive: boolean;
+  orderIndex: number;
+}
+
 export interface StoreConfig {
   id: string;
   address: string;
@@ -11,6 +20,23 @@ export interface StoreConfig {
   hoursMonFri: string;
   hoursSat: string;
   hoursSun: string;
+  googleMapsEmbed?: string;
+  ourEssence?: string;
+
+  // Pillars Section Config
+  showPillars?: boolean;
+  pillarsTitle?: string;
+  pillars?: StorePillar[];
+
+  // Mission and Vision Section Config
+  showMissionVision?: boolean;
+  showMission?: boolean;
+  missionTitle?: string;
+  missionContent?: string;
+
+  showVision?: boolean;
+  visionTitle?: string;
+  visionContent?: string;
 }
 
 export const configService = {

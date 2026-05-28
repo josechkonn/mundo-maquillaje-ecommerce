@@ -36,6 +36,10 @@ public class PaymentMethod {
     @JoinColumn(name = "id_currency", nullable = false)
     private Currency currency;
 
+    @ManyToOne
+    @JoinColumn(name = "id_cash_register")
+    private CashRegister cashRegister;
+
     @OneToMany(mappedBy = "paymentMethod", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PaymentMethodField> fields;
 

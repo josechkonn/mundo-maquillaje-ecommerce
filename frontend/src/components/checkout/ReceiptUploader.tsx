@@ -117,7 +117,7 @@ const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
         className="hidden"
       />
 
-      {/* Upload zone */}
+      {/* Upload zone - always rendered, hidden when image is shown */}
       <div
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
@@ -130,8 +130,8 @@ const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
             ? "border-brand-400 bg-brand-50"
             : "border-brand-200 hover:border-brand-300"
           }
+          ${showImage ? "hidden" : ""}
         `}
-        style={{ position: showImage ? "absolute" : "relative", inset: 0, visibility: showImage ? "hidden" : "visible", zIndex: showImage ? 0 : 1 }}
       >
         <div className="flex flex-col items-center">
           {isUploading ? (
@@ -162,32 +162,44 @@ const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
         </div>
       </div>
 
-      {/* Image preview */}
-      <div style={{ visibility: showImage ? "visible" : "hidden", position: showImage ? "relative" : "absolute", inset: 0, zIndex: showImage ? 1 : 0 }}>
-        <div className="max-h-[40vh] overflow-y-auto overscroll-contain rounded-[32px]">
-          <img
-            src={previewUrl!}
-            alt="Comprobante de pago"
-            className="w-full object-contain bg-white rounded-[32px]"
-          />
-        </div>
+      {/* Image preview with hover overlay */}
+      {showImage && (
+        <div className="relative group rounded-[32px]">
+          <div className="max-h-[40vh] overflow-y-auto overscroll-contain rounded-[32px]">
+            <img
+              src={previewUrl!}
+              alt="Comprobante de pago"
+              className="w-full object-contain bg-white rounded-[32px]"
+            />
+          </div>
 
-        {/* Hover overlay - outside scroll */}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-[32px] flex flex-col items-center justify-center gap-4 pointer-events-none">
-          <button
-            onClick={(e) => { e.stopPropagation(); handleButtonClick(); }}
-            className="pointer-events-auto bg-white text-text-base px-6 py-3 rounded-2xl font-bold text-p-sm hover:bg-neutral-100 transition-colors"
-          >
-            Cambiar comprobante
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); handleRemoveImage(); }}
-            className="pointer-events-auto bg-red-500 text-white px-6 py-3 rounded-2xl font-bold text-p-sm hover:bg-red-600 transition-colors"
-          >
-            Eliminar
-          </button>
+          {/* Loading overlay during upload */}
+          {isUploading && (
+            <div className="absolute inset-0 bg-black/40 rounded-[32px] flex flex-col items-center justify-center z-20 pointer-events-none">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
+              <p className="text-white font-bold text-p-sm">Subiendo comprobante...</p>
+            </div>
+          )}
+
+          {/* Hover overlay - outside scroll container */}
+          {!isUploading && (
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-[32px] flex flex-col items-center justify-center gap-4 z-20 pointer-events-none">
+              <button
+                onClick={(e) => { e.stopPropagation(); handleButtonClick(); }}
+                className="pointer-events-auto bg-white text-text-base px-6 py-3 rounded-2xl font-bold text-p-sm hover:bg-neutral-100 transition-colors"
+              >
+                Editar comprobante
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleRemoveImage(); }}
+                className="pointer-events-auto bg-red-500 text-white px-6 py-3 rounded-2xl font-bold text-p-sm hover:bg-red-600 transition-colors"
+              >
+                Eliminar
+              </button>
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 };

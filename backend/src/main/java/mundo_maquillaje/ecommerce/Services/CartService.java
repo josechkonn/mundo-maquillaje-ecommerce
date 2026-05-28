@@ -49,6 +49,9 @@ public class CartService {
                 .orElseThrow(() -> new RuntimeException("Variación no encontrada"));
 
         if (quantity > variation.getStock()) {
+            if (variation.getStock() == 0) {
+                throw new RuntimeException("Este producto está agotado. No hay stock disponible.");
+            }
             throw new RuntimeException("Stock insuficiente. Disponible: " + variation.getStock());
         }
 

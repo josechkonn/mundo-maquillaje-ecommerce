@@ -95,6 +95,15 @@ public class ProductSpecifications {
             // Solo productos activos
             predicates.add(cb.isTrue(root.get("isActive")));
 
+            // Solo productos con al menos una variación con stock > 0
+            Subquery<UUID> stockSub = query.subquery(UUID.class);
+            Root<ProductVariation> stockRoot = stockSub.from(ProductVariation.class);
+            stockSub.select(stockRoot.get("product").get("id")).where(
+                cb.equal(stockRoot.get("product").get("id"), root.get("id")),
+                cb.greaterThan(stockRoot.get("stock"), 0)
+            );
+            predicates.add(cb.exists(stockSub));
+
             // 5. Ordenamiento por precio (subquery explícito, no depende de @Formula)
             // Solo aplicar ORDER BY en la query principal, no en la count query
             if (sortBy != null && (sortBy.equals("price_asc") || sortBy.equals("price_desc"))) {

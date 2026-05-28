@@ -30,4 +30,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @Query("SELECT o FROM Order o WHERE o.profile = :profile AND o.status = :status AND " +
            "(LOWER(o.paymentMethod.name) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Order> findByProfileAndStatusAndSearchFields(@Param("profile") Profile profile, @Param("status") OrderStatus status, @Param("search") String search, Pageable pageable);
+
+    long countByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
 }

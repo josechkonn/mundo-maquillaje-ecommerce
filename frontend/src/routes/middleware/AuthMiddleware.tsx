@@ -13,7 +13,7 @@ const AuthMiddleware = () => {
     }
 
     if (!user) {
-        return <Navigate to="/" replace />;
+        return <Navigate to="/auth/login" replace />;
     }
 
     return <Outlet />;

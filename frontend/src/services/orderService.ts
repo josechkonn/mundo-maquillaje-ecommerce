@@ -32,25 +32,60 @@ export interface OrderDirectionResponse {
   state: string;
 }
 
+export interface CurrencyResponse {
+  id: string;
+  name: string;
+  code: string;
+  symbol: string;
+  exchangeRate: number;
+  decimalPlaces: number;
+  symbolPosition: string;
+}
+
+export interface CashRegisterResponse {
+  id: string;
+  name: string;
+  description?: string;
+  currency: CurrencyResponse;
+  isActive: boolean;
+}
+
 export interface PaymentMethodResponse {
   id: string;
   name: string;
   slug: string;
+  currency?: CurrencyResponse;
+  cashRegister?: CashRegisterResponse;
+}
+
+export interface TransactionResponse {
+  id: string;
+  amount: number;
+  reference?: string;
+  receiptUrl?: string;
+  status: string;
+  currency: CurrencyResponse;
+  paymentMethod: PaymentMethodResponse;
+  createdAt: string;
 }
 
 export interface BackendOrder {
   id: string;
+  orderNumber?: string;
   subtotal: number;
   taxAmount: number;
   discountAmount: number;
+  shippingCost?: number;
   totalAmount: number;
-  status: string; // PENDING, PAID, PROCESSING, SHIPPED, DELIVERED, CANCELLED
-  createdAt: string; // ISO String format
+  status: string;
+  createdAt: string;
   updatedAt: string;
   shippedAt?: string;
+  currency?: CurrencyResponse;
   shippingAddress?: OrderDirectionResponse;
   products?: OrderProductResponse[];
   paymentMethod?: PaymentMethodResponse;
+  transactions?: TransactionResponse[];
 }
 
 export const orderService = {

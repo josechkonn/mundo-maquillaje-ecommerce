@@ -3,6 +3,7 @@ import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import DataTable, { type ColumnDef } from "../../components/ui/DataTable";
 import { orderService, type BackendOrder } from "../../services/orderService";
 import { useAuthStore } from "../../store/authStore";
+import { formatPrice } from "../../lib/formatters";
 import toast from "react-hot-toast";
 
 const OrdersPage = () => {
@@ -87,7 +88,7 @@ const OrdersPage = () => {
       header: "Número de pedido",
       sortable: true,
       render: (order) => {
-        // Al usar UUIDs en Spring Boot, mostramos los primeros 8 caracteres de forma premium
+        if (order.orderNumber) return order.orderNumber;
         const idStr = String(order.id);
         return `#${idStr.slice(0, 8).toUpperCase()}`;
       }
@@ -127,6 +128,10 @@ const OrdersPage = () => {
       header: "Total Pagado",
       sortable: true,
       render: (order) => {
+        const currency = order.currency || order.paymentMethod?.currency;
+        if (currency) {
+          return formatPrice(order.totalAmount || 0, currency);
+        }
         return (order.totalAmount || 0).toLocaleString("es-VE", { 
           minimumFractionDigits: 0, 
           maximumFractionDigits: 2 

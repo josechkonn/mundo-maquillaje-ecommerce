@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { cartService } from "../services/cartService";
 import { discountService, type DiscountValidationResult } from "../services/discountService";
+import { toastError } from "../lib/toasts";
 
 export interface CartItem {
   serverId?: string;
@@ -62,6 +63,7 @@ export const useCartStore = create<CartState>()(
 
       addItem: async (item, authenticated = false) => {
         const { items } = get();
+        const previousItems = [...items];
         const existingIndex = items.findIndex(i => i.variationId === item.variationId);
         let updated: CartItem[];
 
@@ -70,23 +72,37 @@ export const useCartStore = create<CartState>()(
           const existing = updated[existingIndex];
           const newQty = Math.min(existing.quantity + item.quantity, item.maxStock);
           updated[existingIndex] = { ...existing, quantity: newQty };
-          
-          if (authenticated && existing.serverId) {
-            try { await cartService.updateQuantity(existing.serverId, newQty); } catch (e) {}
-          } else if (authenticated) {
-            try { await cartService.addToCart(item.variationId, item.quantity); } catch (e) {}
-          }
         } else {
           updated = [...items, item];
-          if (authenticated) {
-            try {
-              const serverItem = await cartService.addToCart(item.variationId, item.quantity);
-              updated[updated.length - 1].serverId = serverItem.id;
-            } catch (e) {}
-          }
         }
 
         set({ items: updated, discountCode: null, discountInfo: null });
+
+        if (authenticated) {
+          try {
+            if (existingIndex >= 0) {
+              const existing = updated[existingIndex];
+              if (existing.serverId) {
+                await cartService.updateQuantity(existing.serverId, existing.quantity);
+              } else {
+                await cartService.addToCart(item.variationId, existing.quantity);
+              }
+            } else {
+              const serverItem = await cartService.addToCart(item.variationId, item.quantity);
+              const { items: current } = get();
+              const idx = current.findIndex(i => i.variationId === item.variationId);
+              if (idx >= 0) {
+                const refreshed = [...current];
+                refreshed[idx] = { ...refreshed[idx], serverId: serverItem.id };
+                set({ items: refreshed });
+              }
+            }
+          } catch (e: any) {
+            set({ items: previousItems });
+            const message = e.message || "Error al agregar al carrito";
+            toastError(message);
+          }
+        }
       },
 
       removeItem: async (variationId, authenticated = false) => {

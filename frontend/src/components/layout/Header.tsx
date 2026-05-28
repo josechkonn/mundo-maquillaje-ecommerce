@@ -57,6 +57,7 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isAccountPage = location.pathname.startsWith("/cuenta");
+  const isOrderSuccessPage = location.pathname === "/compra-finalizada";
 
   const dropRef = useRef<HTMLDivElement>(null);
   const megaMenuRef = useRef<HTMLDivElement>(null);
@@ -177,8 +178,8 @@ const Header = () => {
 
             <div className="hidden lg:block w-px h-10 bg-neutral-800 mx-1" />
 
-            {/* Selector de moneda (oculto en /cuenta) */}
-            {!isAccountPage && (
+            {/* Selector de moneda (oculto en /cuenta y /compra-finalizada) */}
+            {!isAccountPage && !isOrderSuccessPage && (
               <div ref={dropRef} className="relative">
                 <button
                   onClick={() => setDropOpen(prev => !prev)}
@@ -412,7 +413,7 @@ const Header = () => {
             to="/nosotros"
             className={({ isActive }) =>
               `text-sm tracking-wide transition-all duration-300 rounded-full px-8 py-2.5
-              ${isActive ? "bg-neutral-200 text-neutral-50 shadow-md scale-105" : "text-neutral-50 hover:text-brand-500"}`
+              ${isActive ? "bg-brand-400 text-white shadow-md scale-105" : "text-white hover:text-brand-400"}`
             }
           >
             Sobre Nosotros

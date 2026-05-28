@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { TicketIcon, ShieldCheckIcon, ChevronRightIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useCartStore, type CartItem, type DiscountInfo } from "../../store/cartStore";
 import { useCurrencyStore } from "../../store/currencyStore";
+import { useAuthStore } from "../../store/authStore";
 import { convertAndFormatPrice, formatPrice } from "../../lib/formatters";
 import { type Currency } from "../../services/productService";
 import Button from "../ui/Button";
@@ -31,9 +32,52 @@ const CartSummary = ({
 }: CartSummaryProps) => {
   const navigate = useNavigate();
   const { selectedCurrency, currencies } = useCurrencyStore();
+  const { user } = useAuthStore();
   const [couponCode, setCouponCode] = useState("");
   const [isApplying, setIsApplying] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+  const dragRef = useRef<HTMLDivElement>(null);
+  const startY = useRef(0);
+  const isDragging = useRef(false);
+
+  useEffect(() => {
+    const el = dragRef.current;
+    if (!el) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      startY.current = e.touches[0].clientY;
+      isDragging.current = true;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isDragging.current) return;
+      e.preventDefault();
+      const currentY = e.touches[0].clientY;
+      const diff = startY.current - currentY;
+      if (diff > 50) {
+        setIsMobileExpanded(true);
+        isDragging.current = false;
+      } else if (diff < -50) {
+        setIsMobileExpanded(false);
+        isDragging.current = false;
+      }
+    };
+
+    const onTouchEnd = () => {
+      isDragging.current = false;
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
 
   // Calcular subtotal sumando cada item convertido a la moneda seleccionada
   const calculateSubtotal = () => {
@@ -103,13 +147,15 @@ const CartSummary = ({
   const handleCheckout = () => {
     if (isCheckout && onProcessCheckout) {
       onProcessCheckout();
+    } else if (!user) {
+      navigate("/auth/login");
     } else {
       navigate("/finalizar-compra");
     }
   };
 
-  return (
-    <div className="bg-white rounded-[32px] shadow-card-custom border border-neutral-100/50 overflow-hidden flex flex-col">
+  const summaryContent = (
+    <>
       <div className="p-8">
         <h3 className="text-center text-h4-s md:text-h4-b font-extrabold text-text-base mb-6">
           Resumen de Compra
@@ -191,11 +237,58 @@ const CartSummary = ({
           onClick={handleCheckout}
           className="shadow-[#E6426E]/20 shadow-lg !py-3.5 !rounded-2xl !bg-[#E6426E] hover:!bg-[#d43a63] font-bold text-white group"
         >
-          {isCheckout ? "Finalizar compra" : "Continuar compra"}
+          {isCheckout ? "Continuar con el pago" : "Continuar compra"}
           <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </Button>
       </div>
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop: sticky card */}
+      <div className="hidden md:flex bg-white rounded-[32px] shadow-card-custom border border-neutral-100/50 overflow-hidden flex-col">
+        {summaryContent}
+      </div>
+
+      {/* Mobile: fixed bottom bar */}
+      <div className="md:hidden">
+        {/* Backdrop */}
+        <div
+          onClick={() => setIsMobileExpanded(false)}
+          className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+            isMobileExpanded ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
+        />
+
+        {/* Bottom sheet */}
+        <div
+          ref={dragRef}
+          className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[32px] shadow-[0_-4px_20px_rgba(0,0,0,0.15)] transition-transform duration-300 ease-in-out ${
+            isMobileExpanded ? "translate-y-0" : "translate-y-[calc(100%-64px)]"
+          }`}
+        >
+          {/* Drag handle + collapsed bar */}
+          <div
+            onClick={() => setIsMobileExpanded(!isMobileExpanded)}
+            className="flex flex-col items-center cursor-pointer pt-3 pb-4"
+          >
+            <div className="w-10 h-1 bg-neutral-300 rounded-full mb-3" />
+            <div className="flex items-center justify-between w-full px-6">
+              <span className="text-p-b font-bold text-text-base">Total a Pagar:</span>
+              <span className="text-h4-s font-black text-[#E6426E]">
+                {formatPrice(total, selectedCurrency || undefined)}
+              </span>
+            </div>
+          </div>
+
+          {/* Full summary (scrollable) */}
+          <div className="max-h-[70vh] overflow-y-auto overscroll-contain">
+            {summaryContent}
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 
