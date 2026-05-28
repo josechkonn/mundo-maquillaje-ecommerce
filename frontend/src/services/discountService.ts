@@ -11,7 +11,7 @@ export interface DiscountValidationResult {
 }
 
 export const discountService = {
-  validateDiscount: async (code: string, subtotal: number): Promise<DiscountValidationResult> => {
-    return api.post("/discount-codes/validate", { code, subtotal });
+  validateDiscount: async (code: string, subtotal: number, currencyCode?: string): Promise<DiscountValidationResult> => {
+    return api.post("/discount-codes/validate", { code, subtotal, currencyCode });
   },
 };

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { collectionService, type ProductCollection } from "../../services/collectionService";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Pagination } from "swiper/modules";
 import Skeleton from 'react-loading-skeleton';
 import { useIntersectionObserver } from "../../hooks/useIntersectionObserver";
 
@@ -96,7 +95,7 @@ const CollectionsSection = () => {
         <section className="w-full pt-4 pb-12 md:py-16 bg-[#FEF0F3] overflow-hidden animate-fade-in">
           <div className="max-w-7xl mx-auto">
             <div className="px-4 text-center mb-6 md:mb-20">
-              <h2 className="text-h3-s md:text-h2-b font-bold text-[#222222] tracking-tight">
+              <h2 className="text-h3-s md:text-h2-b font-bold text-[#222222] tracking-tight hover:text-[#E6426E] cursor-pointer transition-colors duration-300 hover:underline hover:decoration-[#E6426E] hover:decoration-2 hover:underline-offset-[6px]">
                 Conoce Nuestras Colecciones
               </h2>
             </div>

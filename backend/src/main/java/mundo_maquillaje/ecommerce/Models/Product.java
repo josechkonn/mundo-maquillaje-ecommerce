@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
@@ -19,6 +20,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "products")
 @Data
+@EqualsAndHashCode(exclude = {"category", "brand", "currency", "variations"})
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -59,12 +61,13 @@ public class Product {
 
     @org.hibernate.annotations.Formula("(SELECT COALESCE(MIN(" +
             "CASE " +
-            "  WHEN p2.id_currency = 'd496cda6-bcaf-49c8-ab46-021db20b8164' THEN v.price * (SELECT c1.exchange_rate FROM currencies c1 WHERE c1.id = '23792dea-1aa4-4bc1-ad9d-a9848cafbc6f') * (SELECT c2.exchange_rate FROM currencies c2 WHERE c2.id = 'e78c3ca1-a5a5-40fd-863c-7b7de36575a3') " +
-            "  WHEN p2.id_currency = '23792dea-1aa4-4bc1-ad9d-a9848cafbc6f' THEN v.price * (SELECT c3.exchange_rate FROM currencies c3 WHERE c3.id = 'e78c3ca1-a5a5-40fd-863c-7b7de36575a3') " +
+            "  WHEN c.code = 'USD' THEN v.price * (SELECT ves.exchange_rate FROM currencies ves WHERE ves.code = 'VES') * (SELECT cop.exchange_rate FROM currencies cop WHERE cop.code = 'COP') " +
+            "  WHEN c.code = 'VES' THEN v.price * (SELECT cop.exchange_rate FROM currencies cop WHERE cop.code = 'COP') " +
             "  ELSE v.price " +
             "END), 0) " +
             "FROM products_variations v " +
             "JOIN products p2 ON v.id_product = p2.id " +
+            "JOIN currencies c ON p2.id_currency = c.id " +
             "WHERE v.id_product = id)")
     private Double minPrice;
 

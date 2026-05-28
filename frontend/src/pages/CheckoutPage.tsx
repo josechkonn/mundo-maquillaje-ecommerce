@@ -13,6 +13,7 @@ import AlertModal from "../components/ui/AlertModal";
 import AddressForm from "../components/account/AddressForm";
 import ReceiptUploader from "../components/checkout/ReceiptUploader";
 import { checkoutService } from "../services/checkoutService";
+import { addressService } from "../services/addressService";
 
 
 const CheckoutPage = () => {
@@ -73,7 +74,7 @@ const CheckoutPage = () => {
   };
 
   const handleFinalizePurchase = async () => {
-    if (!validateCheckout()) {
+    if (!validateCheckout() || !selectedAddressId || !selectedShippingId || !selectedPaymentId) {
       return;
     }
 
@@ -172,10 +173,18 @@ const CheckoutPage = () => {
     setIsAddressModalOpen(true);
   };
 
-  const handleSaveAddress = (data: any) => {
-    console.log("Guardando dirección:", data);
-    // Aquí iría la llamada al store/API para persistir
-    setIsAddressModalOpen(false);
+  const handleSaveAddress = async (data: any) => {
+    try {
+      if (editingAddress) {
+        await addressService.update(editingAddress.id, data);
+      } else {
+        await addressService.create(data);
+      }
+      await fetchConfig();
+      setIsAddressModalOpen(false);
+    } catch (error: any) {
+      toastError(error.message || "Error al guardar la dirección");
+    }
   };
 
   const handleSelectPayment = (id: string) => {

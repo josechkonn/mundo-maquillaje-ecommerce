@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -27,6 +28,8 @@ public class CheckoutService {
     private final CartService cartService;
     private final OrderNumberService orderNumberService;
     private final CurrencyRepository currencyRepository;
+    private final DiscountCodeRepository discountCodeRepository;
+    private final DiscountCodeService discountCodeService;
 
     @Transactional
     public Order processCheckout(UUID userId, CheckoutRequestDTO request, String receiptUrl) {
@@ -79,17 +82,21 @@ public class CheckoutService {
         
         for (CartProduct cartItem : cartItems) {
             ProductVariation variation = cartItem.getVariation();
-            Currency sourceCurrency = variation.getProduct().getCurrency();
-            
-            if (variation.getStock() < cartItem.getQuantity()) {
-                throw new RuntimeException("Stock insuficiente para: " + variation.getProduct().getName());
+
+            ProductVariation lockedVariation = productVariationRepository.findByIdWithLock(variation.getId())
+                    .orElseThrow(() -> new RuntimeException("Variación no encontrada: " + variation.getProduct().getName()));
+
+            if (lockedVariation.getStock() < cartItem.getQuantity()) {
+                throw new RuntimeException("Stock insuficiente para: " + lockedVariation.getProduct().getName());
             }
 
-            variation.setStock(variation.getStock() - cartItem.getQuantity());
-            productVariationRepository.save(variation);
+            lockedVariation.setStock(lockedVariation.getStock() - cartItem.getQuantity());
+            productVariationRepository.save(lockedVariation);
+
+            Currency sourceCurrency = lockedVariation.getProduct().getCurrency();
 
             double convertedPrice = convertCurrency(
-                    variation.getPrice(),
+                    lockedVariation.getPrice(),
                     sourceCurrency,
                     targetCurrency,
                     allCurrencies
@@ -97,9 +104,9 @@ public class CheckoutService {
 
             OrderProduct op = new OrderProduct();
             op.setOrder(order);
-            op.setVariation(variation);
-            op.setProductName(variation.getProduct().getName());
-            op.setVariationName(variation.getAttributeValue());
+            op.setVariation(lockedVariation);
+            op.setProductName(lockedVariation.getProduct().getName());
+            op.setVariationName(lockedVariation.getAttributeValue());
             op.setPrice(convertedPrice);
             op.setQuantity(cartItem.getQuantity());
             op.setSubtotal(convertedPrice * cartItem.getQuantity());
@@ -127,9 +134,27 @@ public class CheckoutService {
             }
         }
 
+        double discountAmount = 0.0;
+        if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
+            String targetCurrencyCode = targetCurrency != null ? targetCurrency.getCode() : null;
+            Map<String, Object> validation = discountCodeService.validateDiscountCode(request.getDiscountCode().trim(), subtotal, targetCurrencyCode);
+            if (Boolean.TRUE.equals(validation.get("valid"))) {
+                discountAmount = (double) validation.get("discountAmount");
+                String discountIdStr = (String) validation.get("discountId");
+                if (discountIdStr != null) {
+                    DiscountCode dc = discountCodeRepository.findById(UUID.fromString(discountIdStr)).orElse(null);
+                    if (dc != null) {
+                        dc.setTimesUsed(dc.getTimesUsed() != null ? dc.getTimesUsed() + 1 : 1);
+                        discountCodeRepository.save(dc);
+                    }
+                }
+            }
+        }
+
         order.setSubtotal(subtotal);
+        order.setDiscountAmount(discountAmount);
         order.setShippingCost(shippingCost);
-        order.setTotalAmount(subtotal + shippingCost);
+        order.setTotalAmount(subtotal + shippingCost - discountAmount);
         
         Order savedOrder = orderRepository.save(order);
         List<OrderProduct> savedProducts = orderProductRepository.saveAll(orderProducts);

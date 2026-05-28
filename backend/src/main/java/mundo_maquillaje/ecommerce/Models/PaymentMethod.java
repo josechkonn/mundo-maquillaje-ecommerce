@@ -47,5 +47,6 @@ public class PaymentMethod {
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    private LocalDateTime editAt;
+    @Column(name = "edit_at")
+    private LocalDateTime updatedAt;
 }

@@ -4,30 +4,59 @@ import { supabase } from "../lib/supabase";
 import { useFavoritesStore } from "./favoritesStore";
 import { useCartStore } from "./cartStore";
 
+export interface Profile {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  avatarUrl?: string;
+  role: "USER" | "ADMIN";
+}
+
 interface AuthState {
   user: User | null;
   session: Session | null;
+  profile: Profile | null;
   isLoading: boolean;
   setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
+  setProfile: (profile: Profile | null) => void;
   setIsLoading: (isLoading: boolean) => void;
   signOut: () => Promise<void>;
+  fetchProfile: () => Promise<void>;
   initializeAuthListener: () => () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
+  profile: null,
   isLoading: true,
   setUser: (user) => set({ user }),
   setSession: (session) => set({ session }),
+  setProfile: (profile) => set({ profile }),
   setIsLoading: (isLoading) => set({ isLoading }),
+
+  fetchProfile: async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/auth/me", {
+        credentials: "include",
+      });
+      if (res.ok) {
+        const profile = await res.json();
+        set({ profile });
+      } else {
+        set({ profile: null });
+      }
+    } catch {
+      set({ profile: null });
+    }
+  },
+
   signOut: async () => {
     await supabase.auth.signOut();
-    set({ user: null, session: null });
+    set({ user: null, session: null, profile: null });
     useFavoritesStore.getState().clearFavorites();
-    // No borramos el carrito al cerrar sesión para que los productos 
-    // se mantengan localmente como invitado.
   },
 
   initializeAuthListener: () => {
@@ -49,6 +78,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ session, user, isLoading: false });
       if (session) {
         syncTokensWithBackend(session.access_token, session.refresh_token);
+        get().fetchProfile();
         useFavoritesStore.getState().syncFavorites();
         useCartStore.getState().syncCart();
       }
@@ -61,12 +91,13 @@ export const useAuthStore = create<AuthState>((set) => ({
 
         if (freshSession) {
           syncTokensWithBackend(freshSession.access_token, freshSession.refresh_token);
+          get().fetchProfile();
           useFavoritesStore.getState().syncFavorites();
           useCartStore.getState().syncCart();
         } else {
           syncTokensWithBackend(null, null);
+          set({ profile: null });
           useFavoritesStore.getState().clearFavorites();
-          // No limpiamos el carrito aquí automáticamente para no borrar el de los invitados al recargar
         }
       }
     );

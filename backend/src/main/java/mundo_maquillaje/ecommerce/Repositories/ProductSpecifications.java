@@ -10,9 +10,6 @@ import java.util.UUID;
 
 public class ProductSpecifications {
 
-    private static final UUID USD_ID = UUID.fromString("d496cda6-bcaf-49c8-ab46-021db20b8164");
-    private static final UUID VES_ID = UUID.fromString("23792dea-1aa4-4bc1-ad9d-a9848cafbc6f");
-
     public static Specification<Product> filterBy(
             String search,
             UUID categoryId,
@@ -140,10 +137,12 @@ public class ProductSpecifications {
             Double rateVES,
             Double rateCOP) {
 
+        Expression<String> currencyCode = productJoin.get("currency").get("code");
+
         return cb.selectCase()
-                .when(cb.equal(productJoin.get("currency").get("id"), USD_ID),
+                .when(cb.equal(cb.upper(currencyCode), "USD"),
                       cb.prod(variationRoot.get("price"), rateVES * rateCOP))
-                .when(cb.equal(productJoin.get("currency").get("id"), VES_ID),
+                .when(cb.equal(cb.upper(currencyCode), "VES"),
                       cb.prod(variationRoot.get("price"), rateCOP))
                 .otherwise(variationRoot.get("price"))
                 .as(Double.class);

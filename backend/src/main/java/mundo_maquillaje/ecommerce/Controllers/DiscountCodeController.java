@@ -40,7 +40,7 @@ public class DiscountCodeController {
 
     /**
      * Endpoint público para validar un código de descuento.
-     * Recibe { code, subtotal } y devuelve el resultado de validación.
+     * Recibe { code, subtotal, currencyCode } y devuelve el resultado de validación.
      */
     @PostMapping("/validate")
     public ResponseEntity<Map<String, Object>> validateDiscountCode(@RequestBody Map<String, Object> payload) {
@@ -48,8 +48,9 @@ public class DiscountCodeController {
         Double subtotal = payload.get("subtotal") instanceof Integer
                 ? ((Integer) payload.get("subtotal")).doubleValue()
                 : ((Number) payload.get("subtotal")).doubleValue();
+        String currencyCode = payload.get("currencyCode") != null ? payload.get("currencyCode").toString() : null;
 
-        Map<String, Object> result = discountCodeService.validateDiscountCode(code, subtotal);
+        Map<String, Object> result = discountCodeService.validateDiscountCode(code, subtotal, currencyCode);
         return ResponseEntity.ok(result);
     }
 }

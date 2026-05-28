@@ -39,7 +39,7 @@ export interface CurrencyResponse {
   symbol: string;
   exchangeRate: number;
   decimalPlaces: number;
-  symbolPosition: string;
+  symbolPosition: "LEFT" | "RIGHT";
 }
 
 export interface CashRegisterResponse {
@@ -98,7 +98,9 @@ export const orderService = {
     search?: string,
     status?: string,
     sortBy = "createdAt",
-    sortDesc = true
+    sortDesc = true,
+    startDate?: string,
+    endDate?: string
   ): Promise<PageResponse<BackendOrder>> => {
     let url = `/orders?page=${page}&size=${size}&sortBy=${sortBy}&sortDesc=${sortDesc}`;
     if (search && search.trim() !== "") {
@@ -107,6 +109,19 @@ export const orderService = {
     if (status && status.trim() !== "") {
       url += `&status=${encodeURIComponent(status.trim())}`;
     }
+    if (startDate && startDate.trim() !== "") {
+      url += `&startDate=${encodeURIComponent(startDate.trim())}`;
+    }
+    if (endDate && endDate.trim() !== "") {
+      url += `&endDate=${encodeURIComponent(endDate.trim())}`;
+    }
     return api.get(url);
+  },
+
+  /**
+   * Obtiene un pedido específico del usuario por ID
+   */
+  getUserOrderById: async (orderId: string): Promise<BackendOrder> => {
+    return api.get(`/orders/${orderId}`);
   }
 };

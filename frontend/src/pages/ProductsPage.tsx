@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { productService, type Product, type PageResponse } from "../services/productService";
+import { productService, type Product } from "../services/productService";
 import { categoryService, type Category } from "../services/categoryService";
 import { brandService, type Brand } from "../services/brandService";
 import ProductCard from "../components/ui/ProductCard";
@@ -57,7 +57,6 @@ const ProductsPage = () => {
   const [tempSortBy, setTempSortBy] = useState<string>("name_asc");
   const [tempMinPrice, setTempMinPrice] = useState<number>(0);
   const [tempMaxPrice, setTempMaxPrice] = useState<number>(0);
-  const [activeThumb, setActiveThumb] = useState<"min" | "max">("min");
 
   const [openAccordion, setOpenAccordion] = useState<string | null>("sort");
   const isFirstRender = useRef(true);

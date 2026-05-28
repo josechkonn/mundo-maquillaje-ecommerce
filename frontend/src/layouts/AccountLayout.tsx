@@ -71,7 +71,7 @@ const AccountLayout = () => {
           </div>
 
           {/* Contenedor de Contenido Blanco */}
-          <div className="flex-1 w-full bg-white rounded-4xl lg:rounded-5xl border border-[#f5e1e7] p-8 lg:p-16 animate-slide-in-right min-h-[500px]">
+          <div className="flex-1 w-full min-w-0 bg-white rounded-4xl lg:rounded-5xl border border-[#f5e1e7] p-8 lg:p-16 animate-slide-in-right min-h-[500px]">
             <Outlet />
           </div>
 

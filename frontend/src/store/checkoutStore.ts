@@ -3,8 +3,7 @@ import {
   type Address, 
   type ShippingMethod, 
   type PaymentMethod, 
-  checkoutService, 
-  type CheckoutConfig 
+  checkoutService
 } from "../services/checkoutService";
 
 interface CheckoutState {

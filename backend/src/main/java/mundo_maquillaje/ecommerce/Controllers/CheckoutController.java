@@ -1,8 +1,10 @@
 package mundo_maquillaje.ecommerce.Controllers;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import mundo_maquillaje.ecommerce.DTO.CheckoutRequestDTO;
-import mundo_maquillaje.ecommerce.Models.*;
+import mundo_maquillaje.ecommerce.Models.Address;
+import mundo_maquillaje.ecommerce.Models.Order;
 import mundo_maquillaje.ecommerce.Repositories.PaymentMethodRepository;
 import mundo_maquillaje.ecommerce.Repositories.ShippingMethodRepository;
 import mundo_maquillaje.ecommerce.Services.AddressService;
@@ -20,6 +22,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/checkout")
 @RequiredArgsConstructor
+@Slf4j
 public class CheckoutController {
 
     private final CheckoutService checkoutService;
@@ -35,11 +38,11 @@ public class CheckoutController {
     @GetMapping("/config")
     public ResponseEntity<?> getCheckoutConfig(Authentication authentication) {
         UUID userId = profileService.getUserIdFromAuthentication(authentication);
-        System.out.println("Cargando config de checkout para usuario: " + userId);
+        log.info("Cargando config de checkout para usuario: {}", userId);
         
         Map<String, Object> config = new HashMap<>();
         List<Address> addresses = addressService.getAddressesByProfileId(userId);
-        System.out.println("Direcciones encontradas: " + addresses.size());
+        log.debug("Direcciones encontradas: {}", addresses.size());
         
         config.put("addresses", addresses);
         config.put("shippingMethods", shippingMethodRepository.findByIsActiveTrue());

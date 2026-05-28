@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import DataTable, { type ColumnDef } from "../../components/ui/DataTable";
 import { orderService, type BackendOrder } from "../../services/orderService";
@@ -7,6 +8,7 @@ import { formatPrice } from "../../lib/formatters";
 import toast from "react-hot-toast";
 
 const OrdersPage = () => {
+  const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
   
   const [orders, setOrders] = useState<BackendOrder[]>([]);
@@ -15,6 +17,8 @@ const OrdersPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   
   // Sorting states
   const [sortBy, setSortBy] = useState("createdAt");
@@ -37,7 +41,9 @@ const OrdersPage = () => {
         searchQuery, 
         selectedStatus,
         sortBy,
-        sortDesc
+        sortDesc,
+        startDate,
+        endDate
       );
       
       setOrders(response.content || []);
@@ -48,7 +54,7 @@ const OrdersPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, currentPage, searchQuery, selectedStatus, sortBy, sortDesc, itemsPerPage]);
+  }, [user, currentPage, searchQuery, selectedStatus, sortBy, sortDesc, itemsPerPage, startDate, endDate]);
 
   useEffect(() => {
     fetchOrders();
@@ -64,9 +70,9 @@ const OrdersPage = () => {
   const filterConfig = [
     {
       key: "status",
-      label: "Estado de pedido",
+      label: "Estado de la orden",
       options: [
-        { label: "Pendiente de pago", value: "PENDING" },
+        { label: "Pendiente", value: "PENDING" },
         { label: "Pagado", value: "PAID" },
         { label: "Procesando", value: "PROCESSING" },
         { label: "Enviado", value: "SHIPPED" },
@@ -117,13 +123,6 @@ const OrdersPage = () => {
       }
     },
     {
-      key: "paymentMethod",
-      header: "Método de pago",
-      render: (order) => {
-        return order.paymentMethod?.name || "No especificado";
-      }
-    },
-    {
       key: "totalAmount",
       header: "Total Pagado",
       sortable: true,
@@ -139,12 +138,45 @@ const OrdersPage = () => {
       }
     },
     {
+      key: "status",
+      header: "Estado",
+      sortable: true,
+      render: (order) => {
+        const status = order.status;
+        let badgeClass = "";
+        let label = "";
+
+        if (status === "PENDING") {
+          badgeClass = "bg-[#E9D5FF] text-[#482A70] border border-[#E9D5FF]";
+          label = "Pendiente";
+        } else if (status === "PAID" || status === "DELIVERED") {
+          badgeClass = "bg-[#C6F6D5] text-[#155724] border border-[#C6F6D5]";
+          label = "Completado";
+        } else if (status === "PROCESSING" || status === "SHIPPED") {
+          badgeClass = "bg-[#FEF08A] text-[#713F12] border border-[#FEF08A]";
+          label = "En proceso";
+        } else if (status === "CANCELLED") {
+          badgeClass = "bg-[#FECACA] text-[#991B1B] border border-[#FECACA]";
+          label = "Cancelado";
+        } else {
+          badgeClass = "bg-neutral-100 text-neutral-800 border border-neutral-200";
+          label = status;
+        }
+
+        return (
+          <span className={`px-4 py-1.5 rounded-xl text-xs font-bold inline-block text-center whitespace-nowrap select-none ${badgeClass}`}>
+            {label}
+          </span>
+        );
+      }
+    },
+    {
       key: "details",
       header: "Detalles de pedido",
-      render: (_order) => (
+      render: (order) => (
         <button 
-          className="text-brand-400 hover:text-brand-500 transition-colors"
-          onClick={() => toast("Ver detalles - Próximamente", { icon: "ℹ️" })}
+          className="text-neutral-800 hover:text-[#E6426E] transition-colors"
+          onClick={() => navigate(`/cuenta/pedidos/${order.id}`)}
         >
           <InformationCircleIcon className="w-6 h-6 stroke-2" />
         </button>
@@ -161,6 +193,13 @@ const OrdersPage = () => {
         data={orders}
         isLoading={isLoading}
         onSearch={handleSearch}
+        startDate={startDate}
+        endDate={endDate}
+        onDateRangeChange={(start, end) => {
+          setStartDate(start);
+          setEndDate(end);
+          setCurrentPage(1);
+        }}
         filters={filterConfig}
         sortBy={sortBy}
         sortDesc={sortDesc}

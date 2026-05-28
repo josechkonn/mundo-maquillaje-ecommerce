@@ -4,7 +4,7 @@ import { XMarkIcon, MagnifyingGlassIcon, ArrowRightIcon } from "@heroicons/react
 import { productService, type Product } from "../../services/productService";
 import { categoryService, type Category } from "../../services/categoryService";
 import { useCurrencyStore } from "../../store/currencyStore";
-import { formatPrice, convertAndFormatPrice } from "../../lib/formatters";
+import { convertAndFormatPrice } from "../../lib/formatters";
 
 interface SearchOverlayProps {
   isOpen: boolean;

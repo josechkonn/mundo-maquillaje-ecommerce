@@ -12,7 +12,7 @@ public class OrderNumberService {
 
     private final OrderRepository orderRepository;
 
-    public String generateOrderNumber() {
+    public synchronized String generateOrderNumber() {
         int year = Year.now().getValue();
 
         long countForYear = orderRepository.countByCreatedAtBetween(

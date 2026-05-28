@@ -27,8 +27,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
-import java.net.Proxy;
-import java.time.Duration;
 import java.util.Arrays;
 
 @Configuration
@@ -36,9 +34,6 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
-
-    @Value("${jwt.secret}")
-    private String jwtSecret;
 
     @Value("${supabase.jwk-set-uri}")
     private String jwkSetUri;
@@ -54,7 +49,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/sync-session").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/brands", "/api/brands/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories", "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/currencies", "/api/currencies/**").permitAll()
@@ -111,7 +106,7 @@ public class SecurityConfig {
             @Override
             public String resolve(HttpServletRequest request) {
                 String path = request.getRequestURI();
-                if (path != null && path.startsWith("/api/auth/")) {
+                if (path != null && path.equals("/api/auth/sync-session")) {
                     return null;
                 }
 

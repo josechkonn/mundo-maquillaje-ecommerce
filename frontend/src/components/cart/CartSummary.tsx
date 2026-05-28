@@ -1,10 +1,10 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { TicketIcon, ShieldCheckIcon, ChevronRightIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { useCartStore, type CartItem, type DiscountInfo } from "../../store/cartStore";
+import { ChevronRightIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { type CartItem, type DiscountInfo } from "../../store/cartStore";
 import { useCurrencyStore } from "../../store/currencyStore";
 import { useAuthStore } from "../../store/authStore";
-import { convertAndFormatPrice, formatPrice } from "../../lib/formatters";
+import { formatPrice } from "../../lib/formatters";
 import { type Currency } from "../../services/productService";
 import Button from "../ui/Button";
 import FormField from "../ui/FormField";
@@ -162,7 +162,7 @@ const CartSummary = ({
         </h3>
 
         {/* Coupon Input */}
-        {!discountInfo && !isCheckout && (
+        {!discountInfo && (
           <div className="mb-6">
             <p className="text-p-xs font-bold text-text-base mb-2">
               ¿Tienes un código de descuento?

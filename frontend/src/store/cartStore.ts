@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { cartService } from "../services/cartService";
 import { discountService, type DiscountValidationResult } from "../services/discountService";
 import { toastError } from "../lib/toasts";
+import { useCurrencyStore } from "./currencyStore";
 
 export interface CartItem {
   serverId?: string;
@@ -140,12 +141,22 @@ export const useCartStore = create<CartState>()(
       clearCart: async (authenticated = false) => {
         set({ items: [], discountCode: null, discountInfo: null });
         if (authenticated) {
-          try { await cartService.clearCart(); } catch (e) {}
+          try {
+            await cartService.clearCart();
+          } catch (e: any) {
+            console.error("Error clearing backend cart:", e);
+            setTimeout(async () => {
+              try { await cartService.clearCart(); } catch (retryErr) {
+                console.error("Retry clearCart failed:", retryErr);
+              }
+            }, 2000);
+          }
         }
       },
 
       applyDiscount: async (code: string, subtotal: number) => {
-        const result = await discountService.validateDiscount(code, subtotal);
+        const currencyCode = useCurrencyStore.getState().selectedCurrency?.code;
+        const result = await discountService.validateDiscount(code, subtotal, currencyCode);
         if (result.valid && result.discountId) {
           set({
             discountCode: code,

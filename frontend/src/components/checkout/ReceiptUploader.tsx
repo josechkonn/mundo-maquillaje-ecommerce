@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import toast from "react-hot-toast";
 
@@ -14,7 +14,17 @@ const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentUrl || null);
+  const [hasImage, setHasImage] = useState(!!currentUrl);
+
+  // Sincronizar con currentUrl externo
+  useEffect(() => {
+    if (currentUrl && currentUrl !== previewUrl) {
+      setPreviewUrl(currentUrl);
+      setHasImage(true);
+    }
+  }, [currentUrl]);
 
   const uploadFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -47,7 +57,18 @@ const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
         .getPublicUrl(filePath);
 
       const publicUrl = urlData.publicUrl;
+
+      // Precargar la imagen en memoria antes de mostrarla
+      await new Promise<void>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("No se pudo cargar la imagen"));
+        img.src = publicUrl;
+      });
+
+      // Ahora que la imagen ya está en caché, actualizar el estado
       setPreviewUrl(publicUrl);
+      setHasImage(true);
       onUploadComplete(publicUrl);
       toast.success("Comprobante subido correctamente");
     } catch (error: any) {
@@ -99,13 +120,17 @@ const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
 
   const handleRemoveImage = () => {
     setPreviewUrl(null);
+    setHasImage(false);
+    setIsImageLoading(false);
     onUploadComplete("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  const showImage = !!previewUrl;
+  const handleImageLoad = () => {
+    setIsImageLoading(false);
+  };
 
   return (
     <div className="relative rounded-[32px] shadow-sm">
@@ -117,7 +142,7 @@ const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
         className="hidden"
       />
 
-      {/* Upload zone - always rendered, hidden when image is shown */}
+      {/* Upload zone */}
       <div
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
@@ -130,7 +155,7 @@ const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
             ? "border-brand-400 bg-brand-50"
             : "border-brand-200 hover:border-brand-300"
           }
-          ${showImage ? "hidden" : ""}
+          ${hasImage ? "hidden" : ""}
         `}
       >
         <div className="flex flex-col items-center">
@@ -162,18 +187,19 @@ const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
         </div>
       </div>
 
-      {/* Image preview with hover overlay */}
-      {showImage && (
+      {/* Image preview */}
+      {hasImage && (
         <div className="relative group rounded-[32px]">
           <div className="max-h-[40vh] overflow-y-auto overscroll-contain rounded-[32px]">
             <img
               src={previewUrl!}
               alt="Comprobante de pago"
+              onLoad={handleImageLoad}
               className="w-full object-contain bg-white rounded-[32px]"
             />
           </div>
 
-          {/* Loading overlay during upload */}
+          {/* Loading overlay */}
           {isUploading && (
             <div className="absolute inset-0 bg-black/40 rounded-[32px] flex flex-col items-center justify-center z-20 pointer-events-none">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
@@ -181,7 +207,7 @@ const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
             </div>
           )}
 
-          {/* Hover overlay - outside scroll container */}
+          {/* Hover overlay */}
           {!isUploading && (
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-[32px] flex flex-col items-center justify-center gap-4 z-20 pointer-events-none">
               <button

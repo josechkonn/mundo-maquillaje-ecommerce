@@ -1,15 +1,10 @@
 package mundo_maquillaje.ecommerce.Controllers;
 
 import lombok.RequiredArgsConstructor;
-import mundo_maquillaje.ecommerce.Models.Order;
-import mundo_maquillaje.ecommerce.Models.Profile;
-import mundo_maquillaje.ecommerce.Models.OrderStatus;
-import mundo_maquillaje.ecommerce.Repositories.OrderRepository;
-import mundo_maquillaje.ecommerce.Services.ProfileService;
+import mundo_maquillaje.ecommerce.DTO.OrderListResponseDTO;
+import mundo_maquillaje.ecommerce.Services.OrderService;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,65 +15,46 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OrderController {
 
-    private final OrderRepository orderRepository;
-    private final ProfileService profileService;
+    private final OrderService orderService;
 
     @GetMapping
-    public Page<Order> getOrders(
+    public Page<OrderListResponseDTO> getOrders(
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "true") boolean sortDesc) {
-        
-        UUID userId = profileService.getUserIdFromAuthentication(authentication);
-        Profile profile = profileService.getProfile(userId);
-        
-        Sort sort = sortDesc ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        OrderStatus orderStatus = null;
-        if (status != null && !status.trim().isEmpty()) {
-            try {
-                orderStatus = OrderStatus.valueOf(status.trim().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // Invalid status string, ignore it
-            }
-        }
 
-        if (orderStatus != null) {
-            if (search != null && !search.trim().isEmpty()) {
-                String searchStr = search.trim();
-                if (isValidUUID(searchStr)) {
-                    return orderRepository.findByProfileAndStatusAndId(profile, orderStatus, UUID.fromString(searchStr), pageable);
-                } else {
-                    return orderRepository.findByProfileAndStatusAndSearchFields(profile, orderStatus, searchStr, pageable);
-                }
-            } else {
-                return orderRepository.findByProfileAndStatus(profile, orderStatus, pageable);
-            }
-        } else {
-            if (search != null && !search.trim().isEmpty()) {
-                String searchStr = search.trim();
-                if (isValidUUID(searchStr)) {
-                    return orderRepository.findByProfileAndId(profile, UUID.fromString(searchStr), pageable);
-                } else {
-                    return orderRepository.findByProfileAndSearchFields(profile, searchStr, pageable);
-                }
-            } else {
-                return orderRepository.findByProfile(profile, pageable);
-            }
-        }
+        return orderService.getUserOrders(
+                authentication,
+                page,
+                size,
+                search,
+                status,
+                sortBy,
+                sortDesc,
+                startDate,
+                endDate
+        );
     }
 
-    private boolean isValidUUID(String str) {
+    @GetMapping("/{orderId}")
+    public ResponseEntity<OrderListResponseDTO> getOrderById(
+            Authentication authentication,
+            @PathVariable String orderId) {
+
+        UUID parsedId;
         try {
-            UUID.fromString(str);
-            return true;
+            parsedId = UUID.fromString(orderId);
         } catch (IllegalArgumentException e) {
-            return false;
+            return ResponseEntity.badRequest().build();
         }
+
+        OrderListResponseDTO order = orderService.getUserOrderById(authentication, parsedId);
+        return ResponseEntity.ok(order);
     }
 }

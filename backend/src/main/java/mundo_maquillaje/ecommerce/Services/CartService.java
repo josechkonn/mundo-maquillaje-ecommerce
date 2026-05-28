@@ -110,6 +110,7 @@ public class CartService {
     public void clearCart(UUID userId) {
         Cart cart = getOrCreateActiveCart(userId);
         cart.getProducts().clear();
+        cart.setStatus("COMPLETED");
         cartRepository.save(cart);
     }
 
@@ -117,6 +118,17 @@ public class CartService {
     public List<CartProduct> syncCart(UUID userId, List<Map<String, Object>> localItems) {
         Cart cart = getOrCreateActiveCart(userId);
         
+        List<UUID> localVariationIds = localItems.stream()
+                .map(item -> UUID.fromString((String) item.get("variationId")))
+                .collect(Collectors.toList());
+
+        List<CartProduct> toRemove = cart.getProducts().stream()
+                .filter(cp -> !localVariationIds.contains(cp.getVariation().getId()))
+                .collect(Collectors.toList());
+
+        cart.getProducts().removeAll(toRemove);
+        cartProductRepository.deleteAll(toRemove);
+
         for (Map<String, Object> localItem : localItems) {
             UUID variationId = UUID.fromString((String) localItem.get("variationId"));
             int quantity = ((Number) localItem.get("quantity")).intValue();
@@ -124,14 +136,16 @@ public class CartService {
             Optional<CartProduct> existing = cartProductRepository.findByCartIdAndVariationId(cart.getId(), variationId);
             if (existing.isPresent()) {
                 CartProduct p = existing.get();
-                if (quantity > p.getQuantity()) {
-                    p.setQuantity(Math.min(quantity, p.getVariation().getStock()));
+                int clampedQty = Math.min(quantity, p.getVariation().getStock());
+                if (clampedQty <= 0) {
+                    cart.getProducts().remove(p);
+                    cartProductRepository.delete(p);
+                } else {
+                    p.setQuantity(clampedQty);
                     cartProductRepository.save(p);
                 }
             } else {
-                try {
-                    addToCart(userId, variationId, quantity);
-                } catch (Exception ignored) {}
+                addToCart(userId, variationId, quantity);
             }
         }
         return getCartItems(userId);

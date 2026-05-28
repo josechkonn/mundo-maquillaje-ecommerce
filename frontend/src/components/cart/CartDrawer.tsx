@@ -170,6 +170,7 @@ const CartDrawer = () => {
         </div>
 
         {/* Footer */}
+        {items.length > 0 && (
         <div className="p-6 bg-neutral-50 border-t border-neutral-100">
           <div className="flex justify-between items-center mb-6">
             <span className="text-p-sm font-medium text-text-muted">Subtotal estimado:</span>
@@ -188,6 +189,7 @@ const CartDrawer = () => {
             </Link>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
