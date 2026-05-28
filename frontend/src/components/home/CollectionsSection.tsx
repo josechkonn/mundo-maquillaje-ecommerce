@@ -42,7 +42,7 @@ const CollectionsSection = () => {
 
     return (
       <div
-        className="group relative flex flex-col bg-brand-200 rounded-[24px] overflow-hidden transition-all duration-300 h-full border-4 border-white/5"
+        className="group relative flex flex-col bg-brand-200 rounded-[24px] overflow-hidden transition-all duration-300 h-full border-4 border-white/5 hover:shadow-lg hover:scale-[1.02] cursor-pointer"
       >
         <div className="p-2 pb-[16px] flex-shrink-0">
           <div className="relative aspect-[1.4/1] overflow-hidden rounded-[18px]">
@@ -95,7 +95,7 @@ const CollectionsSection = () => {
         <section className="w-full pt-4 pb-12 md:py-16 bg-[#FEF0F3] overflow-hidden animate-fade-in">
           <div className="max-w-7xl mx-auto">
             <div className="px-4 text-center mb-6 md:mb-20">
-              <h2 className="text-h3-s md:text-h2-b font-bold text-[#222222] tracking-tight hover:text-[#E6426E] cursor-pointer transition-colors duration-300 hover:underline hover:decoration-[#E6426E] hover:decoration-2 hover:underline-offset-[6px]">
+              <h2 className="text-h3-s md:text-h2-b font-bold text-[#222222] tracking-tight">
                 Conoce Nuestras Colecciones
               </h2>
             </div>
