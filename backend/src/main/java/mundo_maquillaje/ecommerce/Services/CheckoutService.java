@@ -30,6 +30,7 @@ public class CheckoutService {
     private final CurrencyRepository currencyRepository;
     private final DiscountCodeRepository discountCodeRepository;
     private final DiscountCodeService discountCodeService;
+    private final DiscountUsageRepository discountUsageRepository;
 
     @Transactional
     public Order processCheckout(UUID userId, CheckoutRequestDTO request, String receiptUrl) {
@@ -137,7 +138,7 @@ public class CheckoutService {
         double discountAmount = 0.0;
         if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
             String targetCurrencyCode = targetCurrency != null ? targetCurrency.getCode() : null;
-            Map<String, Object> validation = discountCodeService.validateDiscountCode(request.getDiscountCode().trim(), subtotal, targetCurrencyCode);
+            Map<String, Object> validation = discountCodeService.validateDiscountCode(request.getDiscountCode().trim(), subtotal, targetCurrencyCode, userId);
             if (Boolean.TRUE.equals(validation.get("valid"))) {
                 discountAmount = (double) validation.get("discountAmount");
                 String discountIdStr = (String) validation.get("discountId");
@@ -146,6 +147,12 @@ public class CheckoutService {
                     if (dc != null) {
                         dc.setTimesUsed(dc.getTimesUsed() != null ? dc.getTimesUsed() + 1 : 1);
                         discountCodeRepository.save(dc);
+
+                        DiscountUsage usage = DiscountUsage.builder()
+                                .discountCode(dc)
+                                .profile(profileRepository.findById(userId).orElse(null))
+                                .build();
+                        discountUsageRepository.save(usage);
                     }
                 }
             }

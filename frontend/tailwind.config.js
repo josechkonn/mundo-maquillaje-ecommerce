@@ -30,7 +30,7 @@ export default {
           100: "#FEF0F3",
           200: "#FEE8EE",
           300: "#FDCED9",
-          400: "#E6BBC5",
+          400: "#E1E1E2",
           500: "#B4929A",
           600: "#8B7177",
           700: "#6A575B",
@@ -45,6 +45,46 @@ export default {
           base: "#222222",  // títulos
           muted: "#6A575B",  // subtítulos / placeholders
           link: "#ec4899",  // links
+        },
+
+        // ─────────────────────────────────────────────
+        // 📦 ESTADOS DE PEDIDO
+        // Usa estas clases para badges de estado:
+        //   bg-mm-status-pending text-mm-status-pending-text border-mm-status-pending-border
+        // ─────────────────────────────────────────────
+        mm: {
+          status: {
+            pending: {
+              DEFAULT: "#E9D5FF",
+              text: "#482A70",
+              border: "#E9D5FF",
+            },
+            completed: {
+              DEFAULT: "#C6F6D5",
+              text: "#155724",
+              border: "#C6F6D5",
+            },
+            processing: {
+              DEFAULT: "#FEF08A",
+              text: "#713F12",
+              border: "#FEF08A",
+            },
+            cancelled: {
+              DEFAULT: "#FECACA",
+              text: "#991B1B",
+              border: "#FECACA",
+            },
+          },
+          filter: {
+            active: "#EA4C73",
+            activeHover: "#d43d63",
+            selected: "#E6426E",
+            selectedHover: "#d43a63",
+            drawer: "#FCE8ED",
+            track: "#F9CDD6",
+            trashBg: "#FDD0D5",
+            trashHover: "#FCA5A5",
+          },
         },
       },
 

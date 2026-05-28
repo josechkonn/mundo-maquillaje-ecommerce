@@ -7,7 +7,6 @@ import { useAuthStore } from "../../store/authStore";
 import { formatPrice } from "../../lib/formatters";
 import { type Currency } from "../../services/productService";
 import Button from "../ui/Button";
-import FormField from "../ui/FormField";
 
 interface CartSummaryProps {
   items: CartItem[];
@@ -128,6 +127,10 @@ const CartSummary = ({
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
+    if (!user) {
+      setCouponError("Debes iniciar sesión para aplicar un cupón");
+      return;
+    }
     setIsApplying(true);
     setCouponError(null);
     try {
@@ -167,24 +170,29 @@ const CartSummary = ({
             <p className="text-p-xs font-bold text-text-base mb-2">
               ¿Tienes un código de descuento?
             </p>
-            <div className="flex gap-2">
-              <FormField
-                placeholder="Código"
-                value={couponCode}
-                onChange={(e: any) => setCouponCode(e.target.value)}
-                roundedClass="!rounded-2xl"
-                className="!py-2.5 !px-4 !text-xs"
-                error={couponError || undefined}
-              />
-              <Button
-                variant="primary"
-                fullWidth={false}
-                onClick={handleApplyCoupon}
-                isLoading={isApplying}
-                className="!bg-[#E6426E] hover:!bg-[#d43a63] !text-white !py-2.5 !px-6 !text-xs !rounded-2xl shadow-none font-bold"
-              >
-                Aplicar
-              </Button>
+            <div>
+              <div className="flex gap-2">
+                <div className="flex-1 min-w-0">
+                  <input
+                    placeholder="Código"
+                    value={couponCode}
+                    onChange={(e: any) => setCouponCode(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-2xl border text-xs text-text-base placeholder-neutral-400 outline-none transition-all duration-200 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 border-neutral-800 bg-white"
+                  />
+                </div>
+                <Button
+                  variant="primary"
+                  fullWidth={false}
+                  onClick={handleApplyCoupon}
+                  isLoading={isApplying}
+                  className="!bg-flt-selected hover:!bg-flt-selected-hover !text-white !py-2.5 !px-6 !text-xs !rounded-2xl shadow-none font-bold"
+                >
+                  Aplicar
+                </Button>
+              </div>
+              {couponError && (
+                <span className="text-xs text-red-500 mt-0.5 block">{couponError}</span>
+              )}
             </div>
           </div>
         )}
@@ -226,7 +234,7 @@ const CartSummary = ({
 
           <div className="pt-4 border-t border-neutral-300 flex justify-between items-center">
             <span className="text-p-b font-extrabold text-text-base">Total a pagar:</span>
-            <span className="text-h4-s font-black text-[#E6426E]">
+            <span className="text-h4-s font-black text-flt-selected">
               {formatPrice(total, selectedCurrency || undefined)}
             </span>
           </div>
@@ -235,7 +243,7 @@ const CartSummary = ({
         {/* Action Button */}
         <Button
           onClick={handleCheckout}
-          className="shadow-[#E6426E]/20 shadow-lg !py-3.5 !rounded-2xl !bg-[#E6426E] hover:!bg-[#d43a63] font-bold text-white group"
+          className="shadow-flt-selected/20 shadow-lg !py-3.5 !rounded-2xl !bg-flt-selected hover:!bg-flt-selected-hover font-bold text-white group"
         >
           {isCheckout ? "Continuar con el pago" : "Continuar compra"}
           <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -276,7 +284,7 @@ const CartSummary = ({
             <div className="w-10 h-1 bg-neutral-300 rounded-full mb-3" />
             <div className="flex items-center justify-between w-full px-6">
               <span className="text-p-b font-bold text-text-base">Total a Pagar:</span>
-              <span className="text-h4-s font-black text-[#E6426E]">
+              <span className="text-h4-s font-black text-flt-selected">
                 {formatPrice(total, selectedCurrency || undefined)}
               </span>
             </div>

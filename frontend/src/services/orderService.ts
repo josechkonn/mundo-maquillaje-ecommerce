@@ -123,5 +123,12 @@ export const orderService = {
    */
   getUserOrderById: async (orderId: string): Promise<BackendOrder> => {
     return api.get(`/orders/${orderId}`);
+  },
+
+  /**
+   * Obtiene un pedido específico del usuario por orderNumber
+   */
+  getUserOrderByNumber: async (orderNumber: string): Promise<BackendOrder> => {
+    return api.get(`/orders?search=${encodeURIComponent(orderNumber)}&size=1`);
   }
 };

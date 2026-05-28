@@ -316,7 +316,7 @@ const ProductsPage = () => {
       <div className={`fixed inset-0 z-[200] transition-all duration-500 ${isFilterOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
         <div className="absolute inset-0 bg-neutral-800/10 backdrop-blur-[2px]" onClick={() => setIsFilterOpen(false)} />
 
-        <div className={`absolute left-0 top-0 h-full w-[85vw] md:w-[475px] bg-[#FFF2F4] shadow-[10px_0_30px_rgba(0,0,0,0.05)] transition-transform duration-500 ease-in-out transform ${isFilterOpen ? "translate-x-0" : "-translate-x-full"} flex flex-col`}>
+        <div className={`absolute left-0 top-0 h-full w-[85vw] md:w-[475px] bg-brand-50 shadow-[10px_0_30px_rgba(0,0,0,0.05)] transition-transform duration-500 ease-in-out transform ${isFilterOpen ? "translate-x-0" : "-translate-x-full"} flex flex-col`}>
 
           <div className="px-10 py-12  flex-1 overflow-y-auto custom-scrollbar">
             <div className="text-center mb-12">
@@ -327,18 +327,18 @@ const ProductsPage = () => {
               {/* Categorías */}
               <div className="border-b border-pink-100 pb-3">
                 <button onClick={() => setOpenAccordion(openAccordion === "cat" ? null : "cat")} className="w-full flex justify-between items-center py-3 text-left">
-                  <span className="text-[16px] font-semibold text-neutral-700">Categorías</span>
-                  <ChevronDownIcon className={`w-4 h-4 text-neutral-400 transition-transform ${openAccordion === "cat" ? "rotate-180" : ""}`} />
+                  <span className="text-[16px] font-semibold text-neutral-800">Categorías</span>
+                  <ChevronDownIcon className={`w-4 h-4 text-neutral-800 transition-transform ${openAccordion === "cat" ? "rotate-180" : ""}`} />
                 </button>
                 {openAccordion === "cat" && (
                   <div className="mt-2 space-y-4 pb-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                     {/* Categoría "Todas" */}
                     <label className="flex items-center gap-3 cursor-pointer group">
-                      <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${tempCategoryId === undefined ? "bg-[#EA4C73] border-[#EA4C73]" : "bg-white border-neutral-200"}`}>
+                      <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${tempCategoryId === undefined ? "bg-mm-filter-active border-mm-filter-active" : "bg-white border-neutral-200"}`}>
                         <input type="radio" name="category" className="hidden" checked={tempCategoryId === undefined} onChange={() => setTempCategoryId(undefined)} />
                         {tempCategoryId === undefined && <div className="w-2 h-2 bg-white rounded-full" />}
                       </div>
-                      <span className={`text-[15px] transition-colors ${tempCategoryId === undefined ? "text-[#EA4C73] font-medium" : "text-neutral-500"}`}>Todas</span>
+                      <span className={`text-[15px] transition-colors ${tempCategoryId === undefined ? "text-mm-filter-active font-medium" : "text-neutral-800"}`}>Todas</span>
                     </label>
 
                     {/* Mapeo Jerárquico */}
@@ -346,21 +346,21 @@ const ProductsPage = () => {
                       <div key={parent.id} className="space-y-4">
                         {/* Categoría Padre */}
                         <label className="flex items-center gap-3 cursor-pointer group">
-                          <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${tempCategoryId === parent.id ? "bg-[#EA4C73] border-[#EA4C73]" : "bg-white border-neutral-200"}`}>
+                          <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${tempCategoryId === parent.id ? "bg-mm-filter-active border-mm-filter-active" : "bg-white border-neutral-200"}`}>
                             <input type="radio" name="category" className="hidden" checked={tempCategoryId === parent.id} onChange={() => setTempCategoryId(parent.id)} />
                             {tempCategoryId === parent.id && <div className="w-2 h-2 bg-white rounded-full" />}
                           </div>
-                          <span className={`text-[15px] transition-colors ${tempCategoryId === parent.id ? "text-[#EA4C73] font-medium" : "text-neutral-500 font-semibold"}`}>{parent.name}</span>
+                          <span className={`text-[15px] transition-colors ${tempCategoryId === parent.id ? "text-mm-filter-active font-medium" : "text-neutral-800 font-semibold"}`}>{parent.name}</span>
                         </label>
 
                         {/* Subcategorías Hijas */}
                         {categories.filter(child => child.parent?.id === parent.id).map(child => (
                           <label key={child.id} className="flex items-center gap-3 cursor-pointer group ml-6 border-l-2 border-pink-50 pl-3">
-                            <div className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all ${tempCategoryId === child.id ? "bg-[#EA4C73] border-[#EA4C73]" : "bg-white border-neutral-200"}`}>
+                            <div className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all ${tempCategoryId === child.id ? "bg-mm-filter-active border-mm-filter-active" : "bg-white border-neutral-200"}`}>
                               <input type="radio" name="category" className="hidden" checked={tempCategoryId === child.id} onChange={() => setTempCategoryId(child.id)} />
                               {tempCategoryId === child.id && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
                             </div>
-                            <span className={`text-[14px] transition-colors ${tempCategoryId === child.id ? "text-[#EA4C73] font-medium" : "text-neutral-400 group-hover:text-neutral-600"}`}>{child.name}</span>
+                            <span className={`text-[14px] transition-colors ${tempCategoryId === child.id ? "text-mm-filter-active font-medium" : "text-neutral-800 group-hover:text-neutral-800"}`}>{child.name}</span>
                           </label>
                         ))}
                       </div>
@@ -372,25 +372,25 @@ const ProductsPage = () => {
               {/* Marcas */}
               <div className="border-b border-pink-100 pb-3">
                 <button onClick={() => setOpenAccordion(openAccordion === "brand" ? null : "brand")} className="w-full flex justify-between items-center py-3 text-left">
-                  <span className="text-[16px] font-semibold text-neutral-700">Marcas</span>
-                  <ChevronDownIcon className={`w-4 h-4 text-neutral-400 transition-transform ${openAccordion === "brand" ? "rotate-180" : ""}`} />
+                  <span className="text-[16px] font-semibold text-neutral-800">Marcas</span>
+                  <ChevronDownIcon className={`w-4 h-4 text-neutral-800 transition-transform ${openAccordion === "brand" ? "rotate-180" : ""}`} />
                 </button>
                 {openAccordion === "brand" && (
                   <div className="mt-2 space-y-4 pb-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                     <label className="flex items-center gap-3 cursor-pointer group">
-                      <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${tempBrandId === undefined ? "bg-[#EA4C73] border-[#EA4C73]" : "bg-white border-neutral-200"}`}>
+                      <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${tempBrandId === undefined ? "bg-mm-filter-active border-mm-filter-active" : "bg-white border-neutral-200"}`}>
                         <input type="radio" name="brand" className="hidden" checked={tempBrandId === undefined} onChange={() => setTempBrandId(undefined)} />
                         {tempBrandId === undefined && <div className="w-2 h-2 bg-white rounded-full" />}
                       </div>
-                      <span className={`text-[15px] transition-colors ${tempBrandId === undefined ? "text-[#EA4C73] font-medium" : "text-neutral-500"}`}>Todas</span>
+                      <span className={`text-[15px] transition-colors ${tempBrandId === undefined ? "text-mm-filter-active font-medium" : "text-neutral-800"}`}>Todas</span>
                     </label>
                     {brands.map(brand => (
                       <label key={brand.id} className="flex items-center gap-3 cursor-pointer group">
-                        <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${tempBrandId === brand.id ? "bg-[#EA4C73] border-[#EA4C73]" : "bg-white border-neutral-200"}`}>
+                        <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${tempBrandId === brand.id ? "bg-mm-filter-active border-mm-filter-active" : "bg-white border-neutral-200"}`}>
                           <input type="radio" name="brand" className="hidden" checked={tempBrandId === brand.id} onChange={() => setTempBrandId(brand.id)} />
                           {tempBrandId === brand.id && <div className="w-2 h-2 bg-white rounded-full" />}
                         </div>
-                        <span className={`text-[15px] transition-colors ${tempBrandId === brand.id ? "text-[#EA4C73] font-medium" : "text-neutral-500"}`}>{brand.name}</span>
+                        <span className={`text-[15px] transition-colors ${tempBrandId === brand.id ? "text-mm-filter-active font-medium" : "text-neutral-800"}`}>{brand.name}</span>
                       </label>
                     ))}
                   </div>
@@ -401,10 +401,10 @@ const ProductsPage = () => {
               <div className="border-b border-pink-100 pb-3">
                 <button onClick={() => setOpenAccordion(openAccordion === "sort" ? null : "sort")} className="w-full flex justify-between items-center py-3 text-left">
                   <div className="flex items-center gap-2">
-                    <span className="text-[16px] font-semibold text-neutral-700">Ordenar por</span>
-                    {sortSelected && <span className="bg-[#EA4C73] text-white text-[11px] w-5 h-5 rounded-full flex items-center justify-center font-bold">1</span>}
+                    <span className="text-[16px] font-semibold text-neutral-800">Ordenar por</span>
+                    {sortSelected && <span className="bg-mm-filter-active text-white text-[11px] w-5 h-5 rounded-full flex items-center justify-center font-bold">1</span>}
                   </div>
-                  <ChevronDownIcon className={`w-4 h-4 text-neutral-400 transition-transform ${openAccordion === "sort" ? "rotate-180" : ""}`} />
+                  <ChevronDownIcon className={`w-4 h-4 text-neutral-800 transition-transform ${openAccordion === "sort" ? "rotate-180" : ""}`} />
                 </button>
                 {openAccordion === "sort" && (
                   <div className="mt-2 space-y-5 pb-4">
@@ -417,11 +417,11 @@ const ProductsPage = () => {
                       { id: "created_at_asc", label: "Más antiguo" },
                     ].map(opt => (
                       <label key={opt.id} className="flex items-center gap-4 cursor-pointer group">
-                        <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${tempSortBy === opt.id ? "bg-[#EA4C73] border-[#EA4C73]" : "bg-white border-neutral-200"}`}>
+                        <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${tempSortBy === opt.id ? "bg-mm-filter-active border-mm-filter-active" : "bg-white border-neutral-200"}`}>
                           <input type="radio" className="hidden" checked={tempSortBy === opt.id} onChange={() => setTempSortBy(opt.id)} />
                           {tempSortBy === opt.id && <div className="w-2 h-2 bg-white rounded-full" />}
                         </div>
-                        <span className={`text-[15px] transition-colors ${tempSortBy === opt.id ? "text-[#EA4C73] font-medium" : "text-neutral-500"}`}>{opt.label}</span>
+                        <span className={`text-[15px] transition-colors ${tempSortBy === opt.id ? "text-mm-filter-active font-medium" : "text-neutral-800"}`}>{opt.label}</span>
                       </label>
                     ))}
                   </div>
@@ -432,10 +432,10 @@ const ProductsPage = () => {
               <div className="pb-3">
                 <button onClick={() => setOpenAccordion(openAccordion === "price" ? null : "price")} className="w-full flex justify-between items-center py-3 text-left">
                   <div className="flex items-center gap-2">
-                    <span className="text-[16px] font-semibold text-neutral-700">Rango de precios</span>
-                    {priceModified && <span className="bg-[#EA4C73] text-white text-[11px] w-5 h-5 rounded-full flex items-center justify-center font-bold">1</span>}
+                    <span className="text-[16px] font-semibold text-neutral-800">Rango de precios</span>
+                    {priceModified && <span className="bg-mm-filter-active text-white text-[11px] w-5 h-5 rounded-full flex items-center justify-center font-bold">1</span>}
                   </div>
-                  <ChevronDownIcon className={`w-4 h-4 text-neutral-400 transition-transform ${openAccordion === "price" ? "rotate-180" : ""}`} />
+                  <ChevronDownIcon className={`w-4 h-4 text-neutral-800 transition-transform ${openAccordion === "price" ? "rotate-180" : ""}`} />
                 </button>
                 {openAccordion === "price" && isRangeLoaded && (
                   <div className="mt-12 px-6 pb-8">
@@ -463,10 +463,10 @@ const ProductsPage = () => {
                     `}</style>
                     <div
                       ref={sliderContainerRef}
-                      className="relative h-[6px] bg-[#F9CDD6] rounded-full"
+                      className="relative h-[6px] bg-mm-filter-track rounded-full"
                     >
                       <div
-                        className="absolute h-full bg-[#EA4C73] rounded-full"
+                        className="absolute h-full bg-mm-filter-active rounded-full"
                         style={{
                           left: `${((tempMinPrice - absoluteMin) / (absoluteMax - absoluteMin || 1)) * 100}%`,
                           right: `${100 - ((tempMaxPrice - absoluteMin) / (absoluteMax - absoluteMin || 1)) * 100}%`
@@ -491,26 +491,26 @@ const ProductsPage = () => {
                           </>
                         );
                       })()}
-                      <div className="absolute top-1/2 w-5 h-5 bg-[#EA4C73] rounded-full shadow-md z-20 pointer-events-none" style={{ left: `${((tempMinPrice - absoluteMin) / (absoluteMax - absoluteMin || 1)) * 100}%`, transform: "translate(-50%, -50%)" }}>
-                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-[#EA4C73] text-white text-[11px] px-3 py-1.5 rounded-lg font-bold whitespace-nowrap shadow-md">
+                      <div className="absolute top-1/2 w-5 h-5 bg-mm-filter-active rounded-full shadow-md z-20 pointer-events-none" style={{ left: `${((tempMinPrice - absoluteMin) / (absoluteMax - absoluteMin || 1)) * 100}%`, transform: "translate(-50%, -50%)" }}>
+                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-mm-filter-active text-white text-[11px] px-3 py-1.5 rounded-lg font-bold whitespace-nowrap shadow-md">
                           {tempMinPrice.toLocaleString(undefined, {
                             minimumFractionDigits: selectedCurrency?.code === "COP" ? 0 : 2,
                             maximumFractionDigits: selectedCurrency?.code === "COP" ? 0 : 2
                           })}
-                          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-[#EA4C73] rotate-45" />
+                          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-mm-filter-active rotate-45" />
                         </div>
                       </div>
-                      <div className="absolute top-1/2 w-5 h-5 bg-[#EA4C73] rounded-full shadow-md z-20 pointer-events-none" style={{ left: `${((tempMaxPrice - absoluteMin) / (absoluteMax - absoluteMin || 1)) * 100}%`, transform: "translate(-50%, -50%)" }}>
-                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-[#EA4C73] text-white text-[11px] px-3 py-1.5 rounded-lg font-bold whitespace-nowrap shadow-md">
+                      <div className="absolute top-1/2 w-5 h-5 bg-mm-filter-active rounded-full shadow-md z-20 pointer-events-none" style={{ left: `${((tempMaxPrice - absoluteMin) / (absoluteMax - absoluteMin || 1)) * 100}%`, transform: "translate(-50%, -50%)" }}>
+                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-mm-filter-active text-white text-[11px] px-3 py-1.5 rounded-lg font-bold whitespace-nowrap shadow-md">
                           {tempMaxPrice.toLocaleString(undefined, {
                             minimumFractionDigits: selectedCurrency?.code === "COP" ? 0 : 2,
                             maximumFractionDigits: selectedCurrency?.code === "COP" ? 0 : 2
                           })}
-                          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-[#EA4C73] rotate-45" />
+                          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-mm-filter-active rotate-45" />
                         </div>
                       </div>
                     </div>
-                    <div className="flex justify-center mt-10 text-[13px] text-neutral-700 font-bold tracking-wide">
+                    <div className="flex justify-center mt-10 text-[13px] text-neutral-800 font-bold tracking-wide">
                       <span>
                         {tempMinPrice.toLocaleString(undefined, { minimumFractionDigits: selectedCurrency?.code === "COP" ? 0 : 2 })} {selectedCurrency?.code} - {tempMaxPrice.toLocaleString(undefined, { minimumFractionDigits: selectedCurrency?.code === "COP" ? 0 : 2 })} {selectedCurrency?.code}
                       </span>
@@ -524,11 +524,11 @@ const ProductsPage = () => {
             </div>
           </div>
 
-          <div className="p-8 bg-[#FFF2F4] flex gap-4">
-            <button onClick={clearFilters} className="flex-1 py-3 px-4 border border-[#EA4C73] text-[#EA4C73] rounded-full font-semibold text-xs hover:bg-white transition-all uppercase tracking-wide">
+          <div className="p-8 bg-brand-50 flex gap-4">
+            <button onClick={clearFilters} className="flex-1 py-3 px-4 border border-mm-filter-active text-mm-filter-active rounded-full font-semibold text-xs hover:bg-white transition-all uppercase tracking-wide">
               Limpiar Filtros
             </button>
-            <button onClick={applyFilters} className="flex-1 py-3 px-4 bg-[#EA4C73] text-white rounded-full font-semibold text-xs hover:bg-[#d43d63] transition-all uppercase tracking-wide shadow-md">
+            <button onClick={applyFilters} className="flex-1 py-3 px-4 bg-mm-filter-active text-white rounded-full font-semibold text-xs hover:bg-mm-filter-active-hover transition-all uppercase tracking-wide shadow-md">
               Aplicar Filtros
             </button>
           </div>
@@ -603,7 +603,7 @@ const ProductsPage = () => {
           <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-3 px-8 py-3.5 bg-neutral-100 border border-neutral-800 rounded-2xl text-neutral-800 hover:shadow-md transition-all shadow-sm">
             <AdjustmentsHorizontalIcon className="w-5 h-5 text-neutral-800" />
             <span className="font-bold text-sm">Filtros</span>
-            {anyFilterApplied && <span className="w-2 h-2 bg-[#EA4C73] rounded-full ml-1 animate-pulse" />}
+            {anyFilterApplied && <span className="w-2 h-2 bg-mm-filter-active rounded-full ml-1 animate-pulse" />}
           </button>
 
           <div className="relative w-full md:w-[450px]">
@@ -667,7 +667,7 @@ const ProductsPage = () => {
           <div className="py-8 md:py-16 text-center bg-neutral-100 rounded-[40px] shadow-sm border border-neutral-50">
             <div className="max-w-md mx-auto">
               <p className="text-neutral-400 text-lg mb-8">No encontramos productos que coincidan con tus filtros.</p>
-              <button onClick={clearFilters} className="bg-[#EA4C73] text-white px-10 py-4 rounded-full font-bold hover:scale-105 transition-transform shadow-lg shadow-pink-100">
+              <button onClick={clearFilters} className="bg-mm-filter-active text-white px-10 py-4 rounded-full font-bold hover:scale-105 transition-transform shadow-lg shadow-pink-100">
                 Limpiar Filtros
               </button>
             </div>
@@ -679,14 +679,14 @@ const ProductsPage = () => {
             <button
               onClick={handlePrevPage}
               disabled={currentPageIndex === 0 || loading}
-              className="w-14 h-14 rounded-full bg-[#EA4C73] text-white flex items-center justify-center hover:bg-[#d43d63] disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-md hover:scale-110 active:scale-95"
+              className="w-14 h-14 rounded-full bg-mm-filter-active text-white flex items-center justify-center hover:bg-mm-filter-active-hover disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-md hover:scale-110 active:scale-95"
             >
               <ChevronLeftIcon className="w-8 h-8 stroke-[3px]" />
             </button>
             <button
               onClick={handleNextPage}
               disabled={!hasMore || loading}
-              className="w-14 h-14 rounded-full bg-[#EA4C73] text-white flex items-center justify-center hover:bg-[#d43d63] disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-md hover:scale-110 active:scale-95"
+              className="w-14 h-14 rounded-full bg-mm-filter-active text-white flex items-center justify-center hover:bg-mm-filter-active-hover disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-md hover:scale-110 active:scale-95"
             >
               <ChevronRightIcon className="w-8 h-8 stroke-[3px]" />
             </button>

@@ -6,6 +6,7 @@ import mundo_maquillaje.ecommerce.Models.DiscountCode;
 import mundo_maquillaje.ecommerce.Models.DiscountType;
 import mundo_maquillaje.ecommerce.Repositories.CurrencyRepository;
 import mundo_maquillaje.ecommerce.Repositories.DiscountCodeRepository;
+import mundo_maquillaje.ecommerce.Repositories.DiscountUsageRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ public class DiscountCodeService {
 
     private final DiscountCodeRepository discountCodeRepository;
     private final CurrencyRepository currencyRepository;
+    private final DiscountUsageRepository discountUsageRepository;
 
     public List<DiscountCode> getAllDiscountCodes() {
         return discountCodeRepository.findAll();
@@ -47,6 +49,7 @@ public class DiscountCodeService {
         existing.setMinPurchase(updated.getMinPurchase());
         existing.setMaxDiscount(updated.getMaxDiscount());
         existing.setUsageLimit(updated.getUsageLimit());
+        existing.setMaxUsesPerUser(updated.getMaxUsesPerUser());
         existing.setStartsAt(updated.getStartsAt());
         existing.setExpiresAt(updated.getExpiresAt());
         existing.setIsActive(updated.getIsActive());
@@ -61,8 +64,9 @@ public class DiscountCodeService {
     /**
      * Valida un código de descuento y calcula el monto del descuento.
      * Convierte min_purchase y max_discount a la moneda del usuario antes de comparar.
+     * Si se proporciona userId, verifica el límite de usos por usuario.
      */
-    public Map<String, Object> validateDiscountCode(String code, Double subtotal, String userCurrencyCode) {
+    public Map<String, Object> validateDiscountCode(String code, Double subtotal, String userCurrencyCode, UUID userId) {
         Map<String, Object> result = new HashMap<>();
 
         DiscountCode discount = discountCodeRepository.findByCodeIgnoreCase(code.trim())
@@ -97,6 +101,16 @@ public class DiscountCodeService {
             result.put("valid", false);
             result.put("message", "Este código ha alcanzado su límite de usos");
             return result;
+        }
+
+        // Verificar límite de usos por usuario (solo si el usuario está autenticado)
+        if (userId != null && discount.getMaxUsesPerUser() != null && discount.getMaxUsesPerUser() > 0) {
+            int userUses = discountUsageRepository.countByDiscountCodeIdAndProfileId(discount.getId(), userId);
+            if (userUses >= discount.getMaxUsesPerUser()) {
+                result.put("valid", false);
+                result.put("message", "Ya has usado este código el máximo de veces permitido");
+                return result;
+            }
         }
 
         // Determinar la moneda de referencia del código (si no tiene, usar USD)

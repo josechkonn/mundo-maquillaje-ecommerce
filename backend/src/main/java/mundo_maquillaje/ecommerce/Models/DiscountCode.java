@@ -55,6 +55,14 @@ public class DiscountCode {
     @Builder.Default
     private Integer timesUsed = 0;
 
+    /**
+     * Límite de usos por usuario.
+     * 1 = un uso por usuario (default), 0 = ilimitado, N = N usos máximos por usuario.
+     */
+    @Column(name = "max_uses_per_user")
+    @Builder.Default
+    private Integer maxUsesPerUser = 1;
+
     @Column(name = "starts_at")
     private LocalDateTime startsAt;
 

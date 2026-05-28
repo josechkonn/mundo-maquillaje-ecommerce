@@ -175,7 +175,7 @@ function DataTable<T>({
       {createPortal(
         <div className={`fixed inset-0 z-[200] transition-all duration-400 sm:hidden ${isMobileFilterOpen && isFilterAnimating ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
           <div className="absolute inset-0 bg-neutral-800/10 backdrop-blur-[2px]" onClick={toggleMobileFilter} />
-          <div className={`absolute left-0 top-0 h-full w-[85vw] max-w-[360px] bg-[#FFF2F4] shadow-[10px_0_30px_rgba(0,0,0,0.05)] transition-transform duration-400 ease-in-out transform ${isMobileFilterOpen && isFilterAnimating ? "translate-x-0" : "-translate-x-full"} flex flex-col`}>
+          <div className={`absolute left-0 top-0 h-full w-[85vw] max-w-[360px] bg-[flt-drawer] shadow-[10px_0_30px_rgba(0,0,0,0.05)] transition-transform duration-400 ease-in-out transform ${isMobileFilterOpen && isFilterAnimating ? "translate-x-0" : "-translate-x-full"} flex flex-col`}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-pink-100">
               <h3 className="text-lg font-bold text-neutral-800">Filtros</h3>
               <button onClick={toggleMobileFilter} className="p-2 hover:bg-neutral-100 rounded-lg transition-colors">
@@ -228,7 +228,7 @@ function DataTable<T>({
                             }}
                             className={`w-full text-left px-4 py-2 text-sm font-normal rounded-[10px] transition-colors ${
                               filter.value === ""
-                                ? "bg-brand-50 text-[#E6426E]"
+                                ? "bg-brand-50 text-flt-selected"
                                 : "text-neutral-700 hover:bg-neutral-50"
                             }`}
                           >
@@ -243,7 +243,7 @@ function DataTable<T>({
                               }}
                               className={`w-full text-left px-4 py-2 text-sm font-normal rounded-[10px] transition-colors ${
                                 filter.value === opt.value
-                                  ? "bg-brand-50 text-[#E6426E]"
+                                  ? "bg-brand-50 text-flt-selected"
                                   : "text-neutral-700 hover:bg-neutral-50"
                               }`}
                             >
@@ -273,7 +273,7 @@ function DataTable<T>({
           <button
             onClick={onTrashClick}
             title="Limpiar selección"
-            className="w-[40px] h-[40px] bg-[#FDD0D5] hover:bg-[#FCA5A5]/60 text-[#E6426E] rounded-[10px] flex items-center justify-center transition-colors flex-shrink-0 border border-[#d5d5d5] shadow-sm active:scale-95 duration-150"
+            className="w-[40px] h-[40px] bg-flt-trash-bg hover:bg-flt-trash-hover/60 text-flt-selected rounded-[10px] flex items-center justify-center transition-colors flex-shrink-0 border border-[#d5d5d5] shadow-sm active:scale-95 duration-150"
           >
             <svg className="w-4 h-4 text-[#e6426e]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -304,7 +304,7 @@ function DataTable<T>({
             className="sm:hidden relative w-[48px] h-[58px] bg-[#eeeeef] border border-[#d5d5d5] rounded-[10px] flex items-center justify-center text-neutral-700 transition-colors active:scale-95 duration-150 flex-shrink-0"
           >
             <FunnelIcon className="w-5 h-5 stroke-[2.5px]" />
-            {hasActiveFilters && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#E6426E] rounded-full animate-pulse" />}
+            {hasActiveFilters && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-flt-selected rounded-full animate-pulse" />}
           </button>
 
           {/* Mobile Clear Button */}
@@ -312,7 +312,7 @@ function DataTable<T>({
             <button
               onClick={handleClearAll}
               title="Limpiar filtros"
-              className="sm:hidden w-[40px] h-[58px] flex items-center justify-center text-[#E6426E] rounded-[10px] transition-colors active:scale-95 duration-150 flex-shrink-0"
+              className="sm:hidden w-[40px] h-[58px] flex items-center justify-center text-flt-selected rounded-[10px] transition-colors active:scale-95 duration-150 flex-shrink-0"
             >
               <ArrowPathIcon className="w-4 h-4" />
             </button>
@@ -376,7 +376,7 @@ function DataTable<T>({
                         }}
                         className={`w-full text-left px-4 py-2 text-sm font-normal rounded-[10px] transition-colors ${
                           filter.value === ""
-                            ? "bg-brand-50 text-[#E6426E]"
+                            ? "bg-brand-50 text-flt-selected"
                             : "text-neutral-700 hover:bg-neutral-50"
                         }`}
                       >
@@ -391,7 +391,7 @@ function DataTable<T>({
                           }}
                           className={`w-full text-left px-4 py-2 text-sm font-normal rounded-[10px] transition-colors ${
                             filter.value === opt.value
-                              ? "bg-brand-50 text-[#E6426E]"
+                              ? "bg-brand-50 text-flt-selected"
                               : "text-neutral-700 hover:bg-neutral-50"
                           }`}
                         >
@@ -412,7 +412,7 @@ function DataTable<T>({
               <button
                 onClick={handleClearAll}
                 title="Limpiar filtros"
-                className="px-5 flex items-center justify-center hover:bg-[#FDD0D5] text-[#E6426E] h-full transition-colors active:scale-95"
+                className="px-5 flex items-center justify-center hover:bg-flt-trash-bg text-flt-selected h-full transition-colors active:scale-95"
               >
                 <ArrowPathIcon className="w-4 h-4" />
               </button>
@@ -563,8 +563,8 @@ function DataTable<T>({
                 disabled={isLoading}
                 className={`w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold transition-all ${
                   page === currentPage
-                    ? "bg-[#E6426E] text-white shadow-md shadow-[#E6426E]/30"
-                    : "bg-transparent text-neutral-600 hover:bg-brand-50 hover:text-[#E6426E]"
+                    ? "bg-flt-selected text-white shadow-md shadow-flt-selected/30"
+                    : "bg-transparent text-neutral-600 hover:bg-brand-50 hover:text-flt-selected"
                 }`}
               >
                 {page}

@@ -147,16 +147,16 @@ const OrdersPage = () => {
         let label = "";
 
         if (status === "PENDING") {
-          badgeClass = "bg-[#E9D5FF] text-[#482A70] border border-[#E9D5FF]";
+          badgeClass = "bg-mm-status-pending text-mm-status-pending-text border border-mm-status-pending-border";
           label = "Pendiente";
         } else if (status === "PAID" || status === "DELIVERED") {
-          badgeClass = "bg-[#C6F6D5] text-[#155724] border border-[#C6F6D5]";
+          badgeClass = "bg-mm-status-completed text-mm-status-completed-text border border-mm-status-completed-border";
           label = "Completado";
         } else if (status === "PROCESSING" || status === "SHIPPED") {
-          badgeClass = "bg-[#FEF08A] text-[#713F12] border border-[#FEF08A]";
+          badgeClass = "bg-mm-status-processing text-mm-status-processing-text border border-mm-status-processing-border";
           label = "En proceso";
         } else if (status === "CANCELLED") {
-          badgeClass = "bg-[#FECACA] text-[#991B1B] border border-[#FECACA]";
+          badgeClass = "bg-mm-status-cancelled text-mm-status-cancelled-text border border-mm-status-cancelled-border";
           label = "Cancelado";
         } else {
           badgeClass = "bg-neutral-100 text-neutral-800 border border-neutral-200";
