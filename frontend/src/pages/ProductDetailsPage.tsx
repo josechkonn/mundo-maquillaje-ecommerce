@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { productService, type Product, type ProductVariation } from "../services/productService";
+import { trackingService } from "../services/trackingService";
 import Breadcrumbs from "../components/ui/Breadcrumbs";
 import ProductGallery from "../components/product/ProductGallery";
 import ProductInfo from "../components/product/ProductInfo";
@@ -24,6 +25,7 @@ const ProductDetailsPage = () => {
         const data = await productService.getProductBySlug(slug);
         setProduct(data);
         window.scrollTo(0, 0);
+        trackingService.trackProductView(data.id).catch(() => {});
       } catch (error) {
         console.error("Error fetching product:", error);
         navigate("/");

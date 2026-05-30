@@ -1,5 +1,6 @@
 package mundo_maquillaje.ecommerce.Models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,21 +37,28 @@ public class Address {
     @Column(name = "direction", nullable = false, columnDefinition = "TEXT")
     private String direction;
 
-    @Column(name = "municipality", nullable = false, length = 100)
-    private String municipality;
-
-    @Column(name = "parish", nullable = false, length = 100)
-    private String parish;
-
     @Column(name = "city", nullable = false, length = 100)
     private String city;
 
-    @Column(name = "state", nullable = false, length = 100)
-    private String state;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_user", nullable = false)
+    @JsonIgnore
     private Profile profile;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_state")
+    @JsonIgnore
+    private State state;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_municipality")
+    @JsonIgnore
+    private Municipality municipality;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_parish")
+    @JsonIgnore
+    private Parish parish;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

@@ -5,7 +5,7 @@ import mundo_maquillaje.ecommerce.Models.ProductImage;
 import mundo_maquillaje.ecommerce.Models.ProductVariation;
 import mundo_maquillaje.ecommerce.Repositories.ProductImageRepository;
 import mundo_maquillaje.ecommerce.Repositories.ProductVariationRepository;
-import mundo_maquillaje.ecommerce.Services.ProfileService;
+import mundo_maquillaje.ecommerce.Services.PermissionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -29,7 +29,7 @@ public class ProductVariationImageController {
 
     private final ProductVariationRepository variationRepository;
     private final ProductImageRepository imageRepository;
-    private final ProfileService profileService;
+    private final PermissionService permissionService;
 
     // ─── GET: Listar imágenes de una variante ────────────────────────────────
     @GetMapping("/{variationId}/images")
@@ -46,9 +46,7 @@ public class ProductVariationImageController {
             @PathVariable UUID variationId,
             @RequestBody ProductImage imagePayload) {
 
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only admins can manage images");
-        }
+        permissionService.requirePermission(authentication, "manage.products");
 
         ProductVariation variation = variationRepository.findById(variationId)
                 .orElseThrow(() -> new RuntimeException("Variation not found"));
@@ -73,9 +71,7 @@ public class ProductVariationImageController {
             @PathVariable UUID variationId,
             @PathVariable UUID imageId) {
 
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only admins can manage images");
-        }
+        permissionService.requirePermission(authentication, "manage.products");
 
         imageRepository.deleteById(imageId);
         return ResponseEntity.noContent().build();
@@ -88,9 +84,7 @@ public class ProductVariationImageController {
             @PathVariable UUID variationId,
             @PathVariable UUID imageId) {
 
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only admins can manage images");
-        }
+        permissionService.requirePermission(authentication, "manage.products");
 
         // Quitar main de todas las imágenes de la variante
         imageRepository.findByVariationId(variationId).forEach(img -> {

@@ -10,10 +10,13 @@ interface Address {
   fullname: string;
   phone: string;
   direction: string;
-  municipality: string;
-  parish: string;
   city: string;
-  state: string;
+  stateId: string;
+  municipalityId: string;
+  parishId: string;
+  stateName?: string;
+  municipalityName?: string;
+  parishName?: string;
 }
 
 const AddressesPage = () => {

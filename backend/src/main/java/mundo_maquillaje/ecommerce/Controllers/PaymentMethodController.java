@@ -6,7 +6,7 @@ import mundo_maquillaje.ecommerce.Models.CashRegister;
 import mundo_maquillaje.ecommerce.Models.PaymentMethod;
 import mundo_maquillaje.ecommerce.Repositories.CashRegisterRepository;
 import mundo_maquillaje.ecommerce.Repositories.PaymentMethodRepository;
-import mundo_maquillaje.ecommerce.Services.ProfileService;
+import mundo_maquillaje.ecommerce.Services.PermissionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -22,7 +22,7 @@ public class PaymentMethodController {
 
     private final PaymentMethodRepository paymentMethodRepository;
     private final CashRegisterRepository cashRegisterRepository;
-    private final ProfileService profileService;
+    private final PermissionService permissionService;
 
     @GetMapping
     public List<PaymentMethod> getAllPaymentMethods() {
@@ -46,9 +46,7 @@ public class PaymentMethodController {
             @PathVariable UUID id,
             @RequestBody PaymentMethodCashRegisterDTO dto) {
 
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo administradores pueden gestionar métodos de pago");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
 
         PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Método de pago no encontrado"));
@@ -67,17 +65,13 @@ public class PaymentMethodController {
 
     @PostMapping
     public ResponseEntity<?> createPaymentMethod(Authentication authentication, @RequestBody PaymentMethod paymentMethod) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo administradores pueden gestionar métodos de pago");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentMethodRepository.save(paymentMethod));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePaymentMethod(Authentication authentication, @PathVariable UUID id, @RequestBody PaymentMethod paymentMethod) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo administradores pueden gestionar métodos de pago");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
         PaymentMethod existing = paymentMethodRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Método de pago no encontrado"));
 
@@ -93,9 +87,7 @@ public class PaymentMethodController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePaymentMethod(Authentication authentication, @PathVariable UUID id) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo administradores pueden gestionar métodos de pago");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
         paymentMethodRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }

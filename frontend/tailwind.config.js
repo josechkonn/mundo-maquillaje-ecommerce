@@ -48,6 +48,16 @@ export default {
         },
 
         // ─────────────────────────────────────────────
+        // 🟢 COLORES AUXILIARES
+        // ─────────────────────────────────────────────
+        success: {
+          500: "#54D027",
+        },
+        danger: {
+          500: "#FF3C3C",
+        },
+
+        // ─────────────────────────────────────────────
         // 📦 ESTADOS DE PEDIDO
         // Usa estas clases para badges de estado:
         //   bg-mm-status-pending text-mm-status-pending-text border-mm-status-pending-border

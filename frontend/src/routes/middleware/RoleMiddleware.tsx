@@ -1,16 +1,36 @@
-import { Navigate, Outlet } from "react-router-dom"
-import { useAuthStore } from "../../store/authStore"
+import { Navigate, Outlet } from "react-router-dom";
+import { usePermissions } from "../../hooks/usePermissions";
+import { useAuthStore } from "../../store/authStore";
+import AdminLayout from "../../layouts/AdminLayout";
+import AdminSkeleton from "../../components/admin/AdminSkeleton";
 
 const RoleMiddleware = () => {
-    const profile = useAuthStore((state) => state.profile)
+  const { hasPermission } = usePermissions();
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const profile = useAuthStore((state) => state.profile);
+  const user = useAuthStore((state) => state.user);
 
-    const isAdmin = profile?.role === "ADMIN"
+  if (isLoading || (user && !profile)) {
+    return (
+      <AdminLayout>
+        <AdminSkeleton />
+      </AdminLayout>
+    );
+  }
 
-    if (!isAdmin) {
-        return <Navigate to="/" replace />
-    }
+  if (!user) {
+    return <Navigate to="/auth/sign-in" replace />;
+  }
 
-    return <Outlet />
-}
+  if (!hasPermission("access.admin")) {
+    return <Navigate to="/" replace />;
+  }
 
-export default RoleMiddleware
+  return (
+    <AdminLayout>
+      <Outlet />
+    </AdminLayout>
+  );
+};
+
+export default RoleMiddleware;

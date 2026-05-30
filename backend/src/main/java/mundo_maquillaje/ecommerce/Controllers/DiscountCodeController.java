@@ -3,8 +3,7 @@ package mundo_maquillaje.ecommerce.Controllers;
 import lombok.RequiredArgsConstructor;
 import mundo_maquillaje.ecommerce.Models.DiscountCode;
 import mundo_maquillaje.ecommerce.Services.DiscountCodeService;
-import mundo_maquillaje.ecommerce.Services.ProfileService;
-import org.springframework.http.HttpStatus;
+import mundo_maquillaje.ecommerce.Services.PermissionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -20,37 +19,29 @@ import java.util.UUID;
 public class DiscountCodeController {
 
     private final DiscountCodeService discountCodeService;
-    private final ProfileService profileService;
+    private final PermissionService permissionService;
 
     @GetMapping
     public ResponseEntity<?> getAllDiscountCodes(Authentication authentication) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only administrators can view discount codes");
-        }
+        permissionService.requirePermission(authentication, "manage.discounts");
         return ResponseEntity.ok(discountCodeService.getAllDiscountCodes());
     }
 
     @PostMapping
     public ResponseEntity<?> createDiscountCode(Authentication authentication, @RequestBody DiscountCode discountCode) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only administrators can create discount codes");
-        }
+        permissionService.requirePermission(authentication, "manage.discounts");
         return ResponseEntity.ok(discountCodeService.createDiscountCode(discountCode));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateDiscountCode(Authentication authentication, @PathVariable UUID id, @RequestBody DiscountCode discountCode) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only administrators can update discount codes");
-        }
+        permissionService.requirePermission(authentication, "manage.discounts");
         return ResponseEntity.ok(discountCodeService.updateDiscountCode(id, discountCode));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteDiscountCode(Authentication authentication, @PathVariable UUID id) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only administrators can delete discount codes");
-        }
+        permissionService.requirePermission(authentication, "manage.discounts");
         discountCodeService.deleteDiscountCode(id);
         return ResponseEntity.noContent().build();
     }

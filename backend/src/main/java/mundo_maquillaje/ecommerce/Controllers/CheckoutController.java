@@ -2,8 +2,8 @@ package mundo_maquillaje.ecommerce.Controllers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import mundo_maquillaje.ecommerce.DTO.AddressResponse;
 import mundo_maquillaje.ecommerce.DTO.CheckoutRequestDTO;
-import mundo_maquillaje.ecommerce.Models.Address;
 import mundo_maquillaje.ecommerce.Models.Order;
 import mundo_maquillaje.ecommerce.Repositories.PaymentMethodRepository;
 import mundo_maquillaje.ecommerce.Repositories.ShippingMethodRepository;
@@ -41,7 +41,7 @@ public class CheckoutController {
         log.info("Cargando config de checkout para usuario: {}", userId);
         
         Map<String, Object> config = new HashMap<>();
-        List<Address> addresses = addressService.getAddressesByProfileId(userId);
+        List<AddressResponse> addresses = addressService.getAddressesByProfileId(userId);
         log.debug("Direcciones encontradas: {}", addresses.size());
         
         config.put("addresses", addresses);

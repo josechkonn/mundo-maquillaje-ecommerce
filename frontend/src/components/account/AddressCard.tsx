@@ -8,10 +8,13 @@ interface Address {
   fullname: string;
   phone: string;
   direction: string;
-  municipality: string;
-  parish: string;
   city: string;
-  state: string;
+  stateId: string;
+  municipalityId: string;
+  parishId: string;
+  stateName?: string;
+  municipalityName?: string;
+  parishName?: string;
 }
 
 interface AddressCardProps {
@@ -32,7 +35,6 @@ const AddressCard = ({
   onSelect
 }: AddressCardProps) => {
 
-  // Lógica de color de fondo:
   const bgColor = variant === "account"
     ? "bg-neutral-300"
     : isSelected ? "bg-neutral-300" : "bg-neutral-50";
@@ -42,7 +44,6 @@ const AddressCard = ({
       onClick={() => onSelect?.(address.id)}
       className={`relative rounded-2xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 min-h-[140px] transition-all cursor-pointer border-l-[6px] border-brand-400 shadow-sm ${bgColor}`}
     >
-      {/* Check circular arriba a la derecha (Idéntico a la imagen) */}
       {variant === "checkout" && isSelected && (
         <div className="absolute top-4 right-4 w-10 h-10 bg-brand-400 rounded-full flex items-center justify-center text-white shadow-md z-20">
           <CheckOutline className="w-6 h-6 stroke-[3.5]" />
@@ -55,6 +56,9 @@ const AddressCard = ({
           <p><span className="font-semibold text-neutral-900">Recibe:</span> {address.fullname}</p>
           <p><span className="font-semibold text-neutral-900">Dirección:</span> {address.direction}</p>
           <p><span className="font-semibold text-neutral-900">Ciudad:</span> {address.city}</p>
+          {address.stateName && (
+            <p><span className="font-semibold text-neutral-900">Estado:</span> {address.stateName}</p>
+          )}
         </div>
       </div>
 

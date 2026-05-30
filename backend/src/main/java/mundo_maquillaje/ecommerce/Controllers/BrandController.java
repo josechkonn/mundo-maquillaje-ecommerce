@@ -3,7 +3,7 @@ package mundo_maquillaje.ecommerce.Controllers;
 import lombok.RequiredArgsConstructor;
 import mundo_maquillaje.ecommerce.Models.Brand;
 import mundo_maquillaje.ecommerce.Services.BrandService;
-import mundo_maquillaje.ecommerce.Services.ProfileService;
+import mundo_maquillaje.ecommerce.Services.PermissionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,7 +18,7 @@ import java.util.UUID;
 public class BrandController {
 
     private final BrandService brandService;
-    private final ProfileService profileService;
+    private final PermissionService permissionService;
 
     @GetMapping
     public List<Brand> getAllBrands() {
@@ -32,26 +32,20 @@ public class BrandController {
 
     @PostMapping
     public ResponseEntity<?> createBrand(Authentication authentication, @RequestBody Brand brand) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only administrators can create brands");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
         return ResponseEntity.status(HttpStatus.CREATED).body(brandService.createBrand(brand));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateBrand(Authentication authentication, @PathVariable UUID id,
             @RequestBody Brand brand) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only administrators can update brands");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
         return ResponseEntity.ok(brandService.updateBrand(id, brand));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteBrand(Authentication authentication, @PathVariable UUID id) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only administrators can delete brands");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
         brandService.deleteBrand(id);
         return ResponseEntity.noContent().build();
     }

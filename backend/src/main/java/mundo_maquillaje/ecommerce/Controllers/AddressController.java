@@ -1,7 +1,8 @@
 package mundo_maquillaje.ecommerce.Controllers;
 
 import lombok.RequiredArgsConstructor;
-import mundo_maquillaje.ecommerce.Models.Address;
+import mundo_maquillaje.ecommerce.DTO.AddressRequest;
+import mundo_maquillaje.ecommerce.DTO.AddressResponse;
 import mundo_maquillaje.ecommerce.Services.AddressService;
 import mundo_maquillaje.ecommerce.Services.ProfileService;
 import org.springframework.http.ResponseEntity;
@@ -20,21 +21,21 @@ public class AddressController {
     private final ProfileService profileService;
 
     @GetMapping
-    public List<Address> getAddresses(Authentication authentication) {
+    public List<AddressResponse> getAddresses(Authentication authentication) {
         UUID userId = profileService.getUserIdFromAuthentication(authentication);
         return addressService.getAddressesByProfileId(userId);
     }
 
     @PostMapping
-    public Address createAddress(Authentication authentication, @RequestBody Address address) {
+    public AddressResponse createAddress(Authentication authentication, @RequestBody AddressRequest request) {
         UUID userId = profileService.getUserIdFromAuthentication(authentication);
-        return addressService.createAddress(userId, address);
+        return addressService.createAddress(userId, request);
     }
 
     @PutMapping("/{id}")
-    public Address updateAddress(Authentication authentication, @PathVariable UUID id, @RequestBody Address address) {
+    public AddressResponse updateAddress(Authentication authentication, @PathVariable UUID id, @RequestBody AddressRequest request) {
         UUID userId = profileService.getUserIdFromAuthentication(authentication);
-        return addressService.updateAddress(userId, id, address);
+        return addressService.updateAddress(userId, id, request);
     }
 
     @DeleteMapping("/{id}")

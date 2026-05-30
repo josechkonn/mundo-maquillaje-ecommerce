@@ -7,7 +7,7 @@ import mundo_maquillaje.ecommerce.Models.CashRegister;
 import mundo_maquillaje.ecommerce.Models.Currency;
 import mundo_maquillaje.ecommerce.Repositories.CurrencyRepository;
 import mundo_maquillaje.ecommerce.Services.CashRegisterService;
-import mundo_maquillaje.ecommerce.Services.ProfileService;
+import mundo_maquillaje.ecommerce.Services.PermissionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -24,7 +24,7 @@ public class CashRegisterController {
 
     private final CashRegisterService cashRegisterService;
     private final CurrencyRepository currencyRepository;
-    private final ProfileService profileService;
+    private final PermissionService permissionService;
 
     @GetMapping
     public List<CashRegisterResponseDTO> getAllCashRegisters() {
@@ -47,9 +47,7 @@ public class CashRegisterController {
 
     @PostMapping
     public ResponseEntity<?> createCashRegister(Authentication authentication, @RequestBody CashRegisterRequestDTO dto) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo administradores pueden gestionar cajas");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
 
         Currency currency = currencyRepository.findById(dto.getCurrencyId())
                 .orElseThrow(() -> new RuntimeException("Moneda no encontrada"));
@@ -66,9 +64,7 @@ public class CashRegisterController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateCashRegister(Authentication authentication, @PathVariable UUID id, @RequestBody CashRegisterRequestDTO dto) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo administradores pueden gestionar cajas");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
 
         Currency currency = currencyRepository.findById(dto.getCurrencyId())
                 .orElseThrow(() -> new RuntimeException("Moneda no encontrada"));
@@ -85,9 +81,7 @@ public class CashRegisterController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCashRegister(Authentication authentication, @PathVariable UUID id) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo administradores pueden gestionar cajas");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
         cashRegisterService.deleteCashRegister(id);
         return ResponseEntity.noContent().build();
     }

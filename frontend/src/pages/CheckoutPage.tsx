@@ -5,6 +5,7 @@ import { useCheckoutStore } from "../store/checkoutStore";
 import { useCartStore } from "../store/cartStore";
 import { useCurrencyStore } from "../store/currencyStore";
 import { convertAndFormatPrice } from "../lib/formatters";
+import { trackingService } from "../services/trackingService";
 import CartSummary from "../components/cart/CartSummary";
 import AddressCard from "../components/account/AddressCard";
 import Button from "../components/ui/Button";
@@ -18,6 +19,10 @@ import { addressService } from "../services/addressService";
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    trackingService.trackCheckoutStart().catch(() => {});
+  }, []);
   const {
     fetchConfig,
     isLoading,

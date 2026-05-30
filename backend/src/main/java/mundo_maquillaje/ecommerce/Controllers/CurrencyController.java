@@ -3,7 +3,7 @@ package mundo_maquillaje.ecommerce.Controllers;
 import lombok.RequiredArgsConstructor;
 import mundo_maquillaje.ecommerce.Models.Currency;
 import mundo_maquillaje.ecommerce.Services.CurrencyService;
-import mundo_maquillaje.ecommerce.Services.ProfileService;
+import mundo_maquillaje.ecommerce.Services.PermissionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,7 +18,7 @@ import java.util.UUID;
 public class CurrencyController {
 
     private final CurrencyService currencyService;
-    private final ProfileService profileService;
+    private final PermissionService permissionService;
 
     @GetMapping
     public List<Currency> getAllCurrencies() {
@@ -32,25 +32,19 @@ public class CurrencyController {
 
     @PostMapping
     public ResponseEntity<?> createCurrency(Authentication authentication, @RequestBody Currency currency) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only administrators can manage currencies");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
         return ResponseEntity.status(HttpStatus.CREATED).body(currencyService.createCurrency(currency));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateCurrency(Authentication authentication, @PathVariable UUID id, @RequestBody Currency currency) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only administrators can manage currencies");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
         return ResponseEntity.ok(currencyService.updateCurrency(id, currency));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCurrency(Authentication authentication, @PathVariable UUID id) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only administrators can manage currencies");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
         currencyService.deleteCurrency(id);
         return ResponseEntity.noContent().build();
     }

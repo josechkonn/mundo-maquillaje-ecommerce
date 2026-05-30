@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Button from "../ui/Button";
 import FormField from "../ui/FormField";
+import { locationService, type LocationItem } from "../../services/locationService";
 
 interface Address {
   id?: string;
@@ -8,10 +9,13 @@ interface Address {
   fullname: string;
   phone: string;
   direction: string;
-  state: string;
   city: string;
-  municipality: string;
-  parish: string;
+  stateId: string;
+  municipalityId: string;
+  parishId: string;
+  stateName?: string;
+  municipalityName?: string;
+  parishName?: string;
 }
 
 interface AddressFormProps {
@@ -22,27 +26,162 @@ interface AddressFormProps {
   hideHeader?: boolean;
 }
 
+const SearchableSelect: React.FC<{
+  label: string;
+  placeholder: string;
+  options: LocationItem[];
+  value: string;
+  onChange: (id: string, name: string) => void;
+  disabled?: boolean;
+  loading?: boolean;
+}> = ({ label, placeholder, options, value, onChange, disabled = false, loading = false }) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selectedName = options.find(o => o.id === value)?.name || "";
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    setSearch("");
+  }, [options]);
+
+  const filtered = search
+    ? options.filter(o => o.name.toLowerCase().includes(search.toLowerCase()))
+    : options;
+
+  return (
+    <div ref={ref} className="relative">
+      <label className="block text-p-s font-semibold text-text-base mb-1.5">{label}</label>
+      <div
+        onClick={() => !disabled && setOpen(!open)}
+        className={`w-full h-[46px] px-4 rounded-full border border-neutral-300 bg-white text-p-s flex items-center justify-between cursor-pointer transition-colors
+          ${disabled ? "opacity-50 cursor-not-allowed" : "hover:border-brand-400"}
+          ${open ? "border-brand-400 ring-2 ring-brand-100" : ""}`}
+      >
+        <span className={selectedName ? "text-text-base" : "text-text-muted"}>
+          {loading ? "Cargando..." : selectedName || placeholder}
+        </span>
+        <svg className={`w-4 h-4 text-text-muted transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-white rounded-2xl shadow-xl border border-neutral-200 overflow-hidden">
+          <div className="p-2 border-b border-neutral-100">
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar..."
+              className="w-full h-[36px] px-3 rounded-full bg-neutral-50 border border-neutral-200 text-p-s focus:outline-none focus:border-brand-400"
+              autoFocus
+            />
+          </div>
+          <div className="max-h-[200px] overflow-y-auto">
+            {filtered.length === 0 ? (
+              <p className="px-4 py-3 text-p-xs text-text-muted">Sin resultados</p>
+            ) : (
+              filtered.map(opt => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => { onChange(opt.id, opt.name); setOpen(false); }}
+                  className={`w-full text-left px-4 py-2.5 text-p-s transition-colors hover:bg-brand-50
+                    ${opt.id === value ? "bg-brand-100 text-brand-700 font-semibold" : "text-text-base"}`}
+                >
+                  {opt.name}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = false }: AddressFormProps) => {
   const [formData, setFormData] = useState<Address>({
     name: "",
     fullname: "",
     phone: "",
     direction: "",
-    state: "",
     city: "",
-    municipality: "",
-    parish: "",
+    stateId: "",
+    municipalityId: "",
+    parishId: "",
   });
+
+  const [states, setStates] = useState<LocationItem[]>([]);
+  const [municipalities, setMunicipalities] = useState<LocationItem[]>([]);
+  const [parishes, setParishes] = useState<LocationItem[]>([]);
+  const [loadingMun, setLoadingMun] = useState(false);
+  const [loadingPar, setLoadingPar] = useState(false);
+  const [statesLoaded, setStatesLoaded] = useState(false);
+
+  useEffect(() => {
+    locationService.getStates().then(setStates).catch(() => {}).finally(() => setStatesLoaded(true));
+  }, []);
 
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
+      if (initialData.stateId) {
+        setLoadingMun(true);
+        locationService.getMunicipalities(initialData.stateId)
+          .then(muns => {
+            setMunicipalities(muns);
+            if (initialData.municipalityId) {
+              setLoadingPar(true);
+              locationService.getParishes(initialData.municipalityId)
+                .then(pars => setParishes(pars))
+                .finally(() => setLoadingPar(false));
+            }
+          })
+          .finally(() => setLoadingMun(false));
+      }
     }
   }, [initialData]);
 
+  const handleStateChange = useCallback((id: string) => {
+    setFormData(prev => ({ ...prev, stateId: id, municipalityId: "", parishId: "" }));
+    setMunicipalities([]);
+    setParishes([]);
+    if (id) {
+      setLoadingMun(true);
+      locationService.getMunicipalities(id)
+        .then(setMunicipalities)
+        .finally(() => setLoadingMun(false));
+    }
+  }, []);
+
+  const handleMunicipalityChange = useCallback((id: string) => {
+    setFormData(prev => ({ ...prev, municipalityId: id, parishId: "" }));
+    setParishes([]);
+    if (id) {
+      setLoadingPar(true);
+      locationService.getParishes(id)
+        .then(setParishes)
+        .finally(() => setLoadingPar(false));
+    }
+  }, []);
+
+  const handleParishChange = useCallback((id: string) => {
+    setFormData(prev => ({ ...prev, parishId: id }));
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -52,7 +191,6 @@ const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = 
 
   return (
     <div className="w-full">
-      {/* Header Estilo Imagen */}
       {!hideHeader && (
         <div className="mb-8">
           <button
@@ -74,7 +212,6 @@ const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = 
 
       <form onSubmit={handleSubmit} className="space-y-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-          {/* Fila 1: Datos Personales */}
           <FormField
             label="Nombre del receptor:"
             name="fullname"
@@ -95,15 +232,14 @@ const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = 
             roundedClass="rounded-full"
           />
 
-          {/* Fila 2: Ubicación Principal */}
-          <FormField
+          <SearchableSelect
             label="Estado:"
-            name="state"
-            value={formData.state}
-            onChange={handleChange}
-            placeholder="Táchira"
-            required
-            roundedClass="rounded-full"
+            placeholder="Selecciona un estado"
+            options={states}
+            value={formData.stateId}
+            onChange={handleStateChange}
+            disabled={!statesLoaded}
+            loading={!statesLoaded}
           />
           <FormField
             label="Ciudad:"
@@ -115,27 +251,25 @@ const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = 
             roundedClass="rounded-full"
           />
 
-          {/* Fila 3: Ubicación Secundaria */}
-          <FormField
+          <SearchableSelect
             label="Municipio:"
-            name="municipality"
-            value={formData.municipality}
-            onChange={handleChange}
-            placeholder="Ayacucho"
-            required
-            roundedClass="rounded-full"
+            placeholder="Selecciona un municipio"
+            options={municipalities}
+            value={formData.municipalityId}
+            onChange={handleMunicipalityChange}
+            disabled={!formData.stateId}
+            loading={loadingMun}
           />
-          <FormField
+          <SearchableSelect
             label="Parroquia:"
-            name="parish"
-            value={formData.parish}
-            onChange={handleChange}
-            placeholder="San Juan de Colón"
-            required
-            roundedClass="rounded-full"
+            placeholder="Selecciona una parroquia"
+            options={parishes}
+            value={formData.parishId}
+            onChange={handleParishChange}
+            disabled={!formData.municipalityId}
+            loading={loadingPar}
           />
 
-          {/* Fila 4: Detalles */}
           <FormField
             label="Dirección:"
             name="direction"

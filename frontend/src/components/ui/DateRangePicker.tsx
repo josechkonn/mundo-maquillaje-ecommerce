@@ -8,6 +8,8 @@ interface DateRangePickerProps {
   isOpen: boolean;
   onToggle: () => void;
   label?: string;
+  hideToggle?: boolean;
+  quickRanges?: { label: string; start: string; end: string }[];
 }
 
 const MONTHS = [
@@ -23,6 +25,8 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   isOpen,
   onToggle,
   label = "Fecha",
+  hideToggle = false,
+  quickRanges = [],
 }) => {
   const [tempStart, setTempStart] = useState(startDate);
   const [tempEnd, setTempEnd] = useState(endDate);
@@ -42,6 +46,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   }, [startDate, endDate]);
 
   useEffect(() => {
+    if (hideToggle) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         onToggle();
@@ -51,7 +56,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, onToggle]);
+  }, [isOpen, onToggle, hideToggle]);
 
   const getDaysInMonth = (year: number, month: number) => {
     return new Date(year, month + 1, 0).getDate();
@@ -107,7 +112,15 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
   const handleApply = () => {
     onChange(tempStart, tempEnd);
-    onToggle();
+    if (!hideToggle) onToggle();
+  };
+
+  const handleQuickRange = (start: string, end: string) => {
+    setTempStart(start);
+    setTempEnd(end);
+    setSelecting("start");
+    onChange(start, end);
+    if (!hideToggle) onToggle();
   };
 
   const prevMonth = () => {
@@ -186,19 +199,36 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   }, [viewDate, tempStart, tempEnd, hoverDate, selecting]);
 
   return (
-    <div ref={containerRef} className="relative h-full datatable-filter-dropdown max-w-[200px]">
-      <button
-        onClick={onToggle}
-        className={`w-full flex items-center gap-2 min-w-0 hover:bg-neutral-200/60 text-neutral-700 h-full font-normal text-sm transition-colors px-5 ${
-          isOpen ? "bg-neutral-200/60" : ""
-        }`}
-      >
-        <CalendarIcon className="w-4 h-4 text-neutral-500 flex-shrink-0" />
-        <span className="truncate">{displayText}</span>
-      </button>
+    <div ref={containerRef} className={`relative ${hideToggle ? "" : "h-full datatable-filter-dropdown max-w-[200px]"}`}>
+      {!hideToggle && (
+        <button
+          onClick={onToggle}
+          className={`w-full flex items-center gap-2 min-w-0 hover:bg-neutral-200/60 text-neutral-700 h-full font-normal text-sm transition-colors px-5 ${
+            isOpen ? "bg-neutral-200/60" : ""
+          }`}
+        >
+          <CalendarIcon className="w-4 h-4 text-neutral-500 flex-shrink-0" />
+          <span className="truncate">{displayText}</span>
+        </button>
+      )}
 
-      {isOpen && (
-        <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-[10px] border border-neutral-100 shadow-xl z-50 p-4 text-left animate-fade-in select-none daterange-calendar" onMouseDown={(e) => e.stopPropagation()}>
+      {(isOpen || hideToggle) && (
+        <div className={`${hideToggle ? "" : "absolute left-0 top-full mt-2"} w-72 bg-white rounded-[10px] border border-neutral-100 shadow-xl z-50 p-4 text-left animate-fade-in select-none daterange-calendar`} onMouseDown={(e) => e.stopPropagation()}>
+          {/* Quick ranges */}
+          {quickRanges.length > 0 && (
+            <div className="flex gap-1 mb-3">
+              {quickRanges.map((range) => (
+                <button
+                  key={range.label}
+                  onClick={(e) => { e.stopPropagation(); handleQuickRange(range.start, range.end); }}
+                  className="flex-1 py-1.5 px-2 bg-brand-50 text-brand-500 rounded-lg text-[10px] font-medium hover:bg-brand-100 transition-colors"
+                >
+                  {range.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <button onClick={(e) => { e.stopPropagation(); prevMonth(); }} className="p-1 hover:bg-neutral-100 rounded-lg transition-colors">

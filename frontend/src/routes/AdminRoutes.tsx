@@ -1,24 +1,84 @@
 import { Routes, Route } from "react-router-dom";
+import RequirePermission from "../components/admin/RequirePermission";
+import DashboardPage from "../pages/admin/DashboardPage";
+import ProductsPage from "../pages/admin/ProductsPage";
+import OrdersPage from "../pages/admin/OrdersPage";
+import UsersPage from "../pages/admin/UsersPage";
+import CategoriesPage from "../pages/admin/CategoriesPage";
+import DiscountsPage from "../pages/admin/DiscountsPage";
+import ReportsPage from "../pages/admin/ReportsPage";
+import SettingsPage from "../pages/admin/SettingsPage";
 
 const AdminRoutes = () => {
-    return (
-        <Routes>
-            <Route index element={<div>Dashboard de Administración</div>} />
-
-            <Route path="productos" element={<div>Gestión de Inventario</div>} />
-            <Route path="pedidos" element={<div>Gestión de Pedidos</div>} />
-            <Route path="usuarios" element={<div>Gestión de Usuarios</div>} />
-            <Route path="categorias" element={<div>Gestión de Categorías</div>} />
-            <Route path="ajustes" element={<div>Gestión de Ajustes</div>} />
-
-            <Route path="reportes">
-                <Route index element={<div>Reportes</div>} />
-            </Route>
-
-            {/* 404 interno del Admin */}
-            <Route path="*" element={<div>Página no encontrada en el Panel</div>} />
-        </Routes>
-    );
+  return (
+    <Routes>
+      <Route
+        index
+        element={
+          <RequirePermission permission="view.dashboard">
+            <DashboardPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="productos"
+        element={
+          <RequirePermission permission="manage.products">
+            <ProductsPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="pedidos"
+        element={
+          <RequirePermission permission="manage.orders">
+            <OrdersPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="usuarios"
+        element={
+          <RequirePermission permission="manage.users">
+            <UsersPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="categorias"
+        element={
+          <RequirePermission permission="manage.categories">
+            <CategoriesPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="descuentos"
+        element={
+          <RequirePermission permission="manage.discounts">
+            <DiscountsPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="reportes"
+        element={
+          <RequirePermission permission="view.reports">
+            <ReportsPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="ajustes"
+        element={
+          <RequirePermission permission="manage.settings">
+            <SettingsPage />
+          </RequirePermission>
+        }
+      />
+      <Route path="*" element={<div>Página no encontrada en el Panel</div>} />
+    </Routes>
+  );
 };
 
 export default AdminRoutes;

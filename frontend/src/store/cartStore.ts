@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { cartService } from "../services/cartService";
 import { discountService, type DiscountValidationResult } from "../services/discountService";
+import { trackingService } from "../services/trackingService";
 import { toastError } from "../lib/toasts";
 import { useCurrencyStore } from "./currencyStore";
 
@@ -78,6 +79,7 @@ export const useCartStore = create<CartState>()(
         }
 
         set({ items: updated, discountCode: null, discountInfo: null });
+        trackingService.trackAddToCart(item.productId).catch(() => {});
 
         if (authenticated) {
           try {

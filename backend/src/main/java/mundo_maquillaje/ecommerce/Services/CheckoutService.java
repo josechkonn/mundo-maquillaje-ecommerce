@@ -172,10 +172,10 @@ public class CheckoutService {
         od.setFullname(address.getFullname());
         od.setPhone(address.getPhone());
         od.setDirection(address.getDirection());
-        od.setMunicipality(address.getMunicipality());
-        od.setParish(address.getParish());
+        od.setMunicipality(address.getMunicipality() != null ? address.getMunicipality().getName() : "");
+        od.setParish(address.getParish() != null ? address.getParish().getName() : "");
         od.setCity(address.getCity());
-        od.setState(address.getState());
+        od.setState(address.getState() != null ? address.getState().getName() : "");
         OrderDirection savedDirection = orderDirectionRepository.save(od);
 
         Transaction transaction = new Transaction();

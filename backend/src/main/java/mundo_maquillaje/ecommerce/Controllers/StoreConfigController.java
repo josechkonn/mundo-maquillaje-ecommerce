@@ -2,9 +2,8 @@ package mundo_maquillaje.ecommerce.Controllers;
 
 import lombok.RequiredArgsConstructor;
 import mundo_maquillaje.ecommerce.Models.StoreConfig;
-import mundo_maquillaje.ecommerce.Services.ProfileService;
+import mundo_maquillaje.ecommerce.Services.PermissionService;
 import mundo_maquillaje.ecommerce.Services.StoreConfigService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 public class StoreConfigController {
 
     private final StoreConfigService storeConfigService;
-    private final ProfileService profileService;
+    private final PermissionService permissionService;
 
     @GetMapping
     public StoreConfig getConfig() {
@@ -24,9 +23,7 @@ public class StoreConfigController {
 
     @PutMapping
     public ResponseEntity<?> updateConfig(Authentication authentication, @RequestBody StoreConfig config) {
-        if (!profileService.isAuthenticatedUserAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only administrators can manage store configuration");
-        }
+        permissionService.requirePermission(authentication, "manage.settings");
         return ResponseEntity.ok(storeConfigService.saveConfig(config));
     }
 }
