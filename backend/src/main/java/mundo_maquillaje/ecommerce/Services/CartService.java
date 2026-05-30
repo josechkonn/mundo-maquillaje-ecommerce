@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -69,21 +68,19 @@ public class CartService {
         }
 
         // Limpiar duplicados de CartProduct para esta variación
-        List<CartProduct> duplicates = cartProductRepository.findAllByCartIdAndVariationId(cart.getId(), variationId);
-        if (duplicates.size() > 1) {
-            CartProduct latest = duplicates.get(0);
-            int totalQty = duplicates.stream().mapToInt(CartProduct::getQuantity).sum();
-            latest.setQuantity(Math.min(totalQty, variation.getStock()));
-            cartProductRepository.save(latest);
-            for (int i = 1; i < duplicates.size(); i++) {
-                cartProductRepository.delete(duplicates.get(i));
+        List<CartProduct> existingProducts = cartProductRepository.findAllByCartIdAndVariationId(cart.getId(), variationId);
+        if (!existingProducts.isEmpty()) {
+            if (existingProducts.size() > 1) {
+                CartProduct latest = existingProducts.get(0);
+                int totalQty = existingProducts.stream().mapToInt(CartProduct::getQuantity).sum();
+                latest.setQuantity(Math.min(totalQty, variation.getStock()));
+                cartProductRepository.save(latest);
+                for (int i = 1; i < existingProducts.size(); i++) {
+                    cartProductRepository.delete(existingProducts.get(i));
+                }
+                return latest;
             }
-            return latest;
-        }
-
-        Optional<CartProduct> existing = cartProductRepository.findTopByCartIdAndVariationIdOrderByAddedAtDesc(cart.getId(), variationId);
-        if (existing.isPresent()) {
-            CartProduct product = existing.get();
+            CartProduct product = existingProducts.get(0);
             int newQty = product.getQuantity() + quantity;
             product.setQuantity(Math.min(newQty, variation.getStock()));
             return cartProductRepository.save(product);
@@ -159,9 +156,9 @@ public class CartService {
             UUID variationId = UUID.fromString((String) localItem.get("variationId"));
             int quantity = ((Number) localItem.get("quantity")).intValue();
 
-            Optional<CartProduct> existing = cartProductRepository.findTopByCartIdAndVariationIdOrderByAddedAtDesc(cart.getId(), variationId);
-            if (existing.isPresent()) {
-                CartProduct p = existing.get();
+            List<CartProduct> existingProducts = cartProductRepository.findAllByCartIdAndVariationId(cart.getId(), variationId);
+            if (!existingProducts.isEmpty()) {
+                CartProduct p = existingProducts.get(0);
                 int clampedQty = Math.min(quantity, p.getVariation().getStock());
                 if (clampedQty <= 0) {
                     cart.getProducts().remove(p);

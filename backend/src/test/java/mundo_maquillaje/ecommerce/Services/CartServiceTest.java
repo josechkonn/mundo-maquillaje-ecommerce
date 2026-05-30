@@ -108,8 +108,6 @@ class CartServiceTest {
                 .thenReturn(Optional.of(activeCart));
         when(cartProductRepository.findAllByCartIdAndVariationId(activeCart.getId(), variation1.getId()))
                 .thenReturn(List.of(cartProduct1));
-        when(cartProductRepository.findTopByCartIdAndVariationIdOrderByAddedAtDesc(activeCart.getId(), variation1.getId()))
-                .thenReturn(Optional.of(cartProduct1));
 
         List<CartProduct> result = cartService.syncCart(userId, localItems);
 
@@ -145,8 +143,6 @@ class CartServiceTest {
                 .thenReturn(Optional.of(activeCart));
         when(cartProductRepository.findAllByCartIdAndVariationId(activeCart.getId(), variation1.getId()))
                 .thenReturn(List.of(cartProduct1));
-        when(cartProductRepository.findTopByCartIdAndVariationIdOrderByAddedAtDesc(activeCart.getId(), variation1.getId()))
-                .thenReturn(Optional.of(cartProduct1));
 
         cartService.syncCart(userId, localItems);
 
@@ -230,8 +226,6 @@ class CartServiceTest {
                 .thenReturn(Optional.of(activeCart));
         when(cartProductRepository.findAllByCartIdAndVariationId(activeCart.getId(), variation1.getId()))
                 .thenReturn(List.of(cartProduct1));
-        when(cartProductRepository.findTopByCartIdAndVariationIdOrderByAddedAtDesc(activeCart.getId(), variation1.getId()))
-                .thenReturn(Optional.of(cartProduct1));
 
         List<CartProduct> result = cartService.syncCart(userId, localItems);
 
