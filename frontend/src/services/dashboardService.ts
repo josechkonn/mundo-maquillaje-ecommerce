@@ -58,4 +58,18 @@ export const dashboardService = {
     if (year) params.append("year", String(year));
     return api.get(`/admin/dashboard/monthly-goal?${params}`);
   },
+
+  getSalesByCurrency: async (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+    return api.get(`/admin/dashboard/sales-by-currency?${params}`);
+  },
+
+  getOrdersByCurrency: async (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+    return api.get(`/admin/dashboard/orders-by-currency?${params}`);
+  },
 };

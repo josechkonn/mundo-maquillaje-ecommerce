@@ -6,13 +6,18 @@ interface StatCardProps {
   value: string;
   icon: ReactNode;
   change?: number;
+  onClick?: () => void;
 }
 
-const StatCard = ({ title, value, icon, change }: StatCardProps) => {
+const StatCard = ({ title, value, icon, change, onClick }: StatCardProps) => {
   const hasChange = change !== undefined;
+  const isClickable = !!onClick;
 
   return (
-    <div className="flex flex-col justify-between bg-white rounded-[20px] p-6 shadow-sm border border-neutral-100 min-h-[190px]">
+    <div
+      className={`flex flex-col justify-between bg-white rounded-[20px] p-6 shadow-sm border border-neutral-100 min-h-[190px] ${isClickable ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`}
+      onClick={onClick}
+    >
       <div className="flex items-center justify-between">
         <h5 className="font-bold">{title}</h5>
         <div className="w-[35px] h-[35px] bg-brand-300 rounded-lg flex items-center justify-center text-white" style={{ boxShadow: "0 0 6px rgba(34,34,34,0.35)" }}>

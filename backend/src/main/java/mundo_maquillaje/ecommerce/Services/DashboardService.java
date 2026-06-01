@@ -27,11 +27,11 @@ public class DashboardService {
     // ─── Sales Summary ───────────────────────────────────────────────────────
 
     public Map<String, Object> getSalesSummary(String currencyCode, LocalDate startDate, LocalDate endDate) {
-        LocalDate prevStart = startDate.minusWeeks(1);
-        LocalDate prevEnd = endDate.minusWeeks(1);
+        LocalDate prevStart = startDate.minusDays((int) (endDate.toEpochDay() - startDate.toEpochDay() + 1));
+        LocalDate prevEnd = startDate.minusDays(1);
 
-        double current = orderRepository.sumOrderProductsByCurrencyAndDate(currencyCode, startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
-        double previous = orderRepository.sumOrderProductsByCurrencyAndDate(currencyCode, prevStart.atStartOfDay(), prevEnd.atTime(23, 59, 59));
+        double current = transactionRepository.sumRevenueByCurrencyAndDate(currencyCode, startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
+        double previous = transactionRepository.sumRevenueByCurrencyAndDate(currencyCode, prevStart.atStartOfDay(), prevEnd.atTime(23, 59, 59));
 
         double change = previous > 0 ? ((current - previous) / previous) * 100 : 0;
 
@@ -45,11 +45,11 @@ public class DashboardService {
     // ─── Orders Summary ──────────────────────────────────────────────────────
 
     public Map<String, Object> getOrdersSummary(LocalDate startDate, LocalDate endDate) {
-        LocalDate prevStart = startDate.minusWeeks(1);
-        LocalDate prevEnd = endDate.minusWeeks(1);
+        LocalDate prevStart = startDate.minusDays((int) (endDate.toEpochDay() - startDate.toEpochDay() + 1));
+        LocalDate prevEnd = startDate.minusDays(1);
 
-        long current = orderRepository.countOrdersByDate(startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
-        long previous = orderRepository.countOrdersByDate(prevStart.atStartOfDay(), prevEnd.atTime(23, 59, 59));
+        long current = orderRepository.countOrdersByStatusAndDate(startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
+        long previous = orderRepository.countOrdersByStatusAndDate(prevStart.atStartOfDay(), prevEnd.atTime(23, 59, 59));
 
         double change = previous > 0 ? ((double) (current - previous) / previous) * 100 : 0;
 
@@ -107,10 +107,20 @@ public class DashboardService {
     // ─── Revenue Over Time ───────────────────────────────────────────────────
 
     public Map<String, Object> getRevenueOverTime(String currencyCode, LocalDate startDate, LocalDate endDate, String groupBy) {
-        List<Object[]> revenueData = transactionRepository.findRevenueOverTime(
-                currencyCode, startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
-        List<Object[]> ordersData = orderRepository.findOrdersOverTime(
-                currencyCode, startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
+        boolean byMonth = "month".equals(groupBy);
+        List<Object[]> revenueData;
+        List<Object[]> ordersData;
+        if (byMonth) {
+            revenueData = transactionRepository.findRevenueOverTimeByMonth(
+                    currencyCode, startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
+            ordersData = orderRepository.findOrdersOverTimeByMonth(
+                    currencyCode, startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
+        } else {
+            revenueData = transactionRepository.findRevenueOverTime(
+                    currencyCode, startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
+            ordersData = orderRepository.findOrdersOverTime(
+                    currencyCode, startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
+        }
 
         Map<String, Double> revenueMap = new LinkedHashMap<>();
         Map<String, Long> ordersMap = new LinkedHashMap<>();
@@ -122,17 +132,29 @@ public class DashboardService {
             ordersMap.put(row[0].toString(), ((Number) row[1]).longValue());
         }
 
-        // Fill all dates in range, including those without data
+        // Fill all dates/months in range, including those without data
         List<String> labels = new ArrayList<>();
         List<Double> revenues = new ArrayList<>();
         List<Long> orders = new ArrayList<>();
-        LocalDate current = startDate;
-        while (!current.isAfter(endDate)) {
-            String key = current.toString();
-            labels.add(key);
-            revenues.add(revenueMap.getOrDefault(key, 0.0));
-            orders.add(ordersMap.getOrDefault(key, 0L));
-            current = current.plusDays(1);
+
+        if (byMonth) {
+            LocalDate current = startDate.withDayOfMonth(1);
+            while (!current.isAfter(endDate)) {
+                String key = current.getYear() + "-" + String.format("%02d", current.getMonthValue());
+                labels.add(key);
+                revenues.add(revenueMap.getOrDefault(key, 0.0));
+                orders.add(ordersMap.getOrDefault(key, 0L));
+                current = current.plusMonths(1);
+            }
+        } else {
+            LocalDate current = startDate;
+            while (!current.isAfter(endDate)) {
+                String key = current.toString();
+                labels.add(key);
+                revenues.add(revenueMap.getOrDefault(key, 0.0));
+                orders.add(ordersMap.getOrDefault(key, 0L));
+                current = current.plusDays(1);
+            }
         }
 
         return Map.of(
@@ -259,5 +281,45 @@ public class DashboardService {
         LocalDate start = ym.atDay(1);
         LocalDate end = ym.atEndOfMonth();
         return orderRepository.sumOrderProductsByCurrencyAndDate(currencyCode, start.atStartOfDay(), end.atTime(23, 59, 59));
+    }
+
+    // ─── Breakdown by Currency ───────────────────────────────────────────────
+
+    public List<Map<String, Object>> getSalesByCurrency(LocalDate startDate, LocalDate endDate) {
+        List<Object[]> results = transactionRepository.findRevenueGroupedByCurrency(
+                startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
+
+        List<Map<String, Object>> list = new ArrayList<>();
+        double grandTotal = results.stream().mapToDouble(r -> ((Number) r[2]).doubleValue()).sum();
+
+        for (Object[] row : results) {
+            double amount = ((Number) row[2]).doubleValue();
+            list.add(Map.of(
+                    "currencyCode", row[0],
+                    "symbol", row[1] != null ? row[1] : "",
+                    "amount", amount,
+                    "percentage", grandTotal > 0 ? Math.round(amount / grandTotal * 10000) / 100.0 : 0
+            ));
+        }
+        return list;
+    }
+
+    public List<Map<String, Object>> getOrdersByCurrency(LocalDate startDate, LocalDate endDate) {
+        List<Object[]> results = orderRepository.findOrdersGroupedByCurrency(
+                startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
+
+        List<Map<String, Object>> list = new ArrayList<>();
+        long grandTotal = results.stream().mapToLong(r -> ((Number) r[2]).longValue()).sum();
+
+        for (Object[] row : results) {
+            long count = ((Number) row[2]).longValue();
+            list.add(Map.of(
+                    "currencyCode", row[0],
+                    "symbol", row[1] != null ? row[1] : "",
+                    "count", count,
+                    "percentage", grandTotal > 0 ? Math.round((double) count / grandTotal * 10000) / 100.0 : 0
+            ));
+        }
+        return list;
     }
 }

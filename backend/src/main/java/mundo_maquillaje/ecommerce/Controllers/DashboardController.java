@@ -32,7 +32,7 @@ public class DashboardController {
 
         permissionService.requirePermission(authentication, "view.dashboard");
 
-        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusWeeks(1);
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusDays(6);
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
 
         return ResponseEntity.ok(dashboardService.getSalesSummary(currencyCode, start, end));
@@ -46,7 +46,7 @@ public class DashboardController {
 
         permissionService.requirePermission(authentication, "view.dashboard");
 
-        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusWeeks(1);
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusDays(6);
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
 
         return ResponseEntity.ok(dashboardService.getOrdersSummary(start, end));
@@ -60,7 +60,7 @@ public class DashboardController {
 
         permissionService.requirePermission(authentication, "view.dashboard");
 
-        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusWeeks(1);
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusDays(6);
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
 
         return ResponseEntity.ok(dashboardService.getVisitorsSummary(start, end));
@@ -75,7 +75,7 @@ public class DashboardController {
 
         permissionService.requirePermission(authentication, "view.dashboard");
 
-        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusWeeks(1);
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusDays(6);
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
 
         return ResponseEntity.ok(dashboardService.getTopCategories(currencyCode, start, end));
@@ -105,7 +105,7 @@ public class DashboardController {
 
         permissionService.requirePermission(authentication, "view.dashboard");
 
-        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusWeeks(1);
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusDays(6);
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
 
         return ResponseEntity.ok(dashboardService.getConversionFunnel(start, end));
@@ -211,5 +211,33 @@ public class DashboardController {
         ));
 
         return ResponseEntity.ok(overview);
+    }
+
+    @GetMapping("/sales-by-currency")
+    public ResponseEntity<?> getSalesByCurrency(
+            Authentication authentication,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+
+        permissionService.requirePermission(authentication, "view.dashboard");
+
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusDays(6);
+        LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
+
+        return ResponseEntity.ok(dashboardService.getSalesByCurrency(start, end));
+    }
+
+    @GetMapping("/orders-by-currency")
+    public ResponseEntity<?> getOrdersByCurrency(
+            Authentication authentication,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+
+        permissionService.requirePermission(authentication, "view.dashboard");
+
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusDays(6);
+        LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
+
+        return ResponseEntity.ok(dashboardService.getOrdersByCurrency(start, end));
     }
 }

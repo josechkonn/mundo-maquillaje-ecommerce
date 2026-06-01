@@ -22,4 +22,42 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
         ORDER BY date
         """)
     List<Object[]> findRevenueOverTime(@Param("currencyCode") String currencyCode, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("""
+        SELECT FUNCTION('TO_CHAR', t.createdAt, 'YYYY-MM') as month, SUM(t.amount) as revenue
+        FROM Transaction t JOIN t.currency c
+        WHERE c.code = :currencyCode
+          AND t.status = 'VERIFIED'
+          AND t.createdAt BETWEEN :start AND :end
+        GROUP BY FUNCTION('TO_CHAR', t.createdAt, 'YYYY-MM')
+        ORDER BY month
+        """)
+    List<Object[]> findRevenueOverTimeByMonth(@Param("currencyCode") String currencyCode, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("""
+        SELECT COALESCE(SUM(t.amount), 0)
+        FROM Transaction t JOIN t.currency c
+        WHERE c.code = :currencyCode
+          AND t.status = 'VERIFIED'
+          AND t.createdAt BETWEEN :start AND :end
+        """)
+    double sumRevenueByCurrencyAndDate(@Param("currencyCode") String currencyCode, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("""
+        SELECT COALESCE(SUM(t.amount), 0)
+        FROM Transaction t
+        WHERE t.status = 'VERIFIED'
+          AND t.createdAt BETWEEN :start AND :end
+        """)
+    double sumAllRevenueByDate(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("""
+        SELECT c.code, c.symbol, COALESCE(SUM(t.amount), 0)
+        FROM Transaction t JOIN t.currency c
+        WHERE t.status = 'VERIFIED'
+          AND t.createdAt BETWEEN :start AND :end
+        GROUP BY c.code, c.symbol
+        ORDER BY SUM(t.amount) DESC
+        """)
+    List<Object[]> findRevenueGroupedByCurrency(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }

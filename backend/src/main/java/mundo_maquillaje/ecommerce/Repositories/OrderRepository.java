@@ -53,6 +53,33 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
     long countOrdersByDate(@Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
 
     @Query("""
+        SELECT COUNT(o)
+        FROM Order o
+        WHERE o.status IN ('PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
+          AND o.createdAt BETWEEN :start AND :end
+        """)
+    long countOrdersByStatusAndDate(@Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
+
+    @Query("""
+        SELECT COUNT(o)
+        FROM Order o JOIN o.currency c
+        WHERE c.code = :currencyCode
+          AND o.status IN ('PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
+          AND o.createdAt BETWEEN :start AND :end
+        """)
+    long countOrdersByCurrencyAndDate(@Param("currencyCode") String currencyCode, @Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
+
+    @Query("""
+        SELECT c.code, c.symbol, COUNT(o)
+        FROM Order o JOIN o.currency c
+        WHERE o.status IN ('PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
+          AND o.createdAt BETWEEN :start AND :end
+        GROUP BY c.code, c.symbol
+        ORDER BY COUNT(o) DESC
+        """)
+    List<Object[]> findOrdersGroupedByCurrency(@Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
+
+    @Query("""
         SELECT cat.name, COALESCE(SUM(op.subtotal), 0)
         FROM OrderProduct op
         JOIN op.order o
@@ -89,4 +116,15 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
         ORDER BY date
         """)
     List<Object[]> findOrdersOverTime(@Param("currencyCode") String currencyCode, @Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
+
+    @Query("""
+        SELECT FUNCTION('TO_CHAR', o.createdAt, 'YYYY-MM') as month, COUNT(o) as orders
+        FROM Order o JOIN o.currency c
+        WHERE c.code = :currencyCode
+          AND o.status IN ('PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
+          AND o.createdAt BETWEEN :start AND :end
+        GROUP BY FUNCTION('TO_CHAR', o.createdAt, 'YYYY-MM')
+        ORDER BY month
+        """)
+    List<Object[]> findOrdersOverTimeByMonth(@Param("currencyCode") String currencyCode, @Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
 }
