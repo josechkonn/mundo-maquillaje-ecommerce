@@ -116,25 +116,23 @@ public class DashboardService {
         Map<String, Long> ordersMap = new LinkedHashMap<>();
 
         for (Object[] row : revenueData) {
-            revenueMap.put((String) row[0], ((Number) row[1]).doubleValue());
+            revenueMap.put(row[0].toString(), ((Number) row[1]).doubleValue());
         }
         for (Object[] row : ordersData) {
-            ordersMap.put((String) row[0], ((Number) row[1]).longValue());
+            ordersMap.put(row[0].toString(), ((Number) row[1]).longValue());
         }
 
-        // Ensure all dates in range are present
-        Set<String> allDates = new LinkedHashSet<>();
-        allDates.addAll(revenueMap.keySet());
-        allDates.addAll(ordersMap.keySet());
-
-        List<String> labels = new ArrayList<>(allDates);
-        Collections.sort(labels);
-
+        // Fill all dates in range, including those without data
+        List<String> labels = new ArrayList<>();
         List<Double> revenues = new ArrayList<>();
         List<Long> orders = new ArrayList<>();
-        for (String date : labels) {
-            revenues.add(revenueMap.getOrDefault(date, 0.0));
-            orders.add(ordersMap.getOrDefault(date, 0L));
+        LocalDate current = startDate;
+        while (!current.isAfter(endDate)) {
+            String key = current.toString();
+            labels.add(key);
+            revenues.add(revenueMap.getOrDefault(key, 0.0));
+            orders.add(ordersMap.getOrDefault(key, 0L));
+            current = current.plusDays(1);
         }
 
         return Map.of(

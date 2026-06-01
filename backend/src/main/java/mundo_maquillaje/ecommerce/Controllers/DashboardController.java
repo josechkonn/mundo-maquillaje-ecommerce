@@ -91,7 +91,7 @@ public class DashboardController {
 
         permissionService.requirePermission(authentication, "view.dashboard");
 
-        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusWeeks(1);
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusDays(6);
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
 
         return ResponseEntity.ok(dashboardService.getRevenueOverTime(currencyCode, start, end, groupBy));
@@ -153,7 +153,7 @@ public class DashboardController {
 
         permissionService.requirePermission(authentication, "view.dashboard");
 
-        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusWeeks(1);
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusDays(6);
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
 
         YearMonth now = YearMonth.now();
