@@ -35,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/admin/productos", label: "Productos", icon: CubeIcon, permission: "manage.products" },
   { to: "/admin/pedidos", label: "Pedidos", icon: TruckIcon, permission: "manage.orders" },
   { to: "/admin/usuarios", label: "Usuarios", icon: UsersIcon, permission: "manage.users" },
+   
   { to: "/admin/categorias", label: "Categorías", icon: TagIcon, permission: "manage.categories" },
   { to: "/admin/descuentos", label: "Descuentos", icon: PercentBadgeIcon, permission: "manage.discounts" },
   { to: "/admin/reportes", label: "Reportes", icon: ChartBarSquareIcon, permission: "view.reports" },
@@ -92,7 +93,7 @@ const AdminSidebar = ({ collapsed, mobileOpen, onMobileClose, isMobile }: AdminS
         lg:translate-x-0`}
     >
       <div className={`flex flex-col h-full ${effCollapsed ? "p-0" : "p-5"}`}>
-        <nav className={`flex flex-col flex-1 ${effCollapsed ? "gap-4" : "gap-8"}`}>
+        <nav className={`flex flex-col flex-1 min-h-0 overflow-y-auto ${effCollapsed ? "gap-4" : "gap-8"} [&::-webkit-scrollbar]:hidden [scrollbar-width:none]`}>
           {NAV_ITEMS.filter((item) => hasPermission(item.permission)).map(renderNavLink)}
         </nav>
 

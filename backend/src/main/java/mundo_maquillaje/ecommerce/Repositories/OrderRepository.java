@@ -80,6 +80,15 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
     List<Object[]> findOrdersGroupedByCurrency(@Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
 
     @Query("""
+        SELECT o.status, COUNT(o)
+        FROM Order o
+        WHERE o.createdAt BETWEEN :start AND :end
+        GROUP BY o.status
+        ORDER BY COUNT(o) DESC
+        """)
+    List<Object[]> countOrdersByStatus(@Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
+
+    @Query("""
         SELECT cat.name, COALESCE(SUM(op.subtotal), 0)
         FROM OrderProduct op
         JOIN op.order o

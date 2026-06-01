@@ -101,9 +101,8 @@ const OrdersPage = () => {
     },
     {
       key: "itemCount",
-      header: "Cantidad de productos",
+      header: "Cant. productos",
       render: (order) => {
-        // Sumar la cantidad de todos los productos en la orden
         const totalItems = order.products?.reduce((acc, curr) => acc + (curr.quantity || 0), 0) || 0;
         return String(totalItems).padStart(2, '0');
       }
@@ -172,7 +171,8 @@ const OrdersPage = () => {
     },
     {
       key: "details",
-      header: "Detalles de pedido",
+      header: "Detalles",
+      className: "text-center",
       render: (order) => (
         <button 
           className="text-neutral-800 hover:text-[#E6426E] transition-colors"
@@ -181,7 +181,6 @@ const OrdersPage = () => {
           <InformationCircleIcon className="w-6 h-6 stroke-2" />
         </button>
       ),
-      className: "text-center"
     }
   ];
 

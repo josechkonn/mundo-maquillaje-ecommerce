@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { dashboardService } from "../../../services/dashboardService";
+import { useDashboardDateStore } from "../../../store/dashboardDateStore";
 import Modal from "../../ui/Modal";
 
 interface Props {
@@ -17,15 +18,18 @@ interface CurrencyOrder {
 const OrdersByCurrencyModal = ({ isOpen, onClose }: Props) => {
   const [data, setData] = useState<CurrencyOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const { startDate, endDate } = useDashboardDateStore();
 
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
-    dashboardService.getOrdersByCurrency()
+    const sDate = startDate || undefined;
+    const eDate = endDate || undefined;
+    dashboardService.getOrdersByCurrency(sDate, eDate)
       .then(setData)
       .catch(() => setData([]))
       .finally(() => setLoading(false));
-  }, [isOpen]);
+  }, [isOpen, startDate, endDate]);
 
   const maxCount = Math.max(...data.map((d) => d.count), 1);
 

@@ -72,4 +72,11 @@ export const dashboardService = {
     if (endDate) params.append("endDate", endDate);
     return api.get(`/admin/dashboard/orders-by-currency?${params}`);
   },
+
+  getOrdersByStatus: async (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+    return api.get(`/admin/dashboard/orders-by-status?${params}`);
+  },
 };

@@ -81,20 +81,56 @@ public class DashboardService {
     // ── Top Categories ──────────────────────────────────────────────────────
 
     public Map<String, Object> getTopCategories(String currencyCode, LocalDate startDate, LocalDate endDate) {
-        List<Object[]> results = orderRepository.findTopCategoriesByCurrency(
+        List<Object[]> rows = transactionRepository.findTransactionLinesForCategories(
                 currencyCode, startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
 
-        List<Map<String, Object>> categories = new ArrayList<>();
-        double total = 0;
-        for (Object[] row : results) {
-            total += ((Number) row[1]).doubleValue();
+        // group by order ID → list of [catName, lineTotal]
+        Map<UUID, List<Object[]>> byOrder = new LinkedHashMap<>();
+        // order ID → total transaction amount (sum of all transactions for this order)
+        Map<UUID, Double> orderAmounts = new HashMap<>();
+
+        for (Object[] row : rows) {
+            UUID orderId = (UUID) row[4];
+            byOrder.putIfAbsent(orderId, new ArrayList<>());
+            byOrder.get(orderId).add(new Object[]{row[0], ((Number) row[2]).doubleValue() - ((Number) row[3]).doubleValue()});
+            orderAmounts.put(orderId, ((Number) row[1]).doubleValue());
         }
 
-        for (Object[] row : results) {
+        Map<String, Double> categoryTotals = new LinkedHashMap<>();
+
+        for (Map.Entry<UUID, List<Object[]>> entry : byOrder.entrySet()) {
+            UUID orderId = entry.getKey();
+            List<Object[]> lines = entry.getValue();
+            double orderAmount = orderAmounts.get(orderId);
+
+            double orderSubtotal = 0;
+            Map<String, Double> catSubtotals = new LinkedHashMap<>();
+            for (Object[] line : lines) {
+                String catName = (String) line[0];
+                double lineTotal = (Double) line[1];
+                catSubtotals.merge(catName, lineTotal, Double::sum);
+                orderSubtotal += lineTotal;
+            }
+
+            if (orderSubtotal > 0 && orderAmount > 0) {
+                for (Map.Entry<String, Double> catEntry : catSubtotals.entrySet()) {
+                    double attribution = orderAmount * (catEntry.getValue() / orderSubtotal);
+                    categoryTotals.merge(catEntry.getKey(), attribution, Double::sum);
+                }
+            }
+        }
+
+        double total = categoryTotals.values().stream().mapToDouble(Double::doubleValue).sum();
+
+        List<Map.Entry<String, Double>> sorted = new ArrayList<>(categoryTotals.entrySet());
+        sorted.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+
+        List<Map<String, Object>> categories = new ArrayList<>();
+        for (Map.Entry<String, Double> entry : sorted) {
             categories.add(Map.of(
-                    "name", row[0],
-                    "total", ((Number) row[1]).doubleValue(),
-                    "percentage", total > 0 ? Math.round(((Number) row[1]).doubleValue() / total * 10000) / 100.0 : 0
+                    "name", entry.getKey(),
+                    "total", entry.getValue(),
+                    "percentage", total > 0 ? Math.round(entry.getValue() / total * 10000) / 100.0 : 0
             ));
         }
 
@@ -280,7 +316,7 @@ public class DashboardService {
         YearMonth ym = YearMonth.of(year, month);
         LocalDate start = ym.atDay(1);
         LocalDate end = ym.atEndOfMonth();
-        return orderRepository.sumOrderProductsByCurrencyAndDate(currencyCode, start.atStartOfDay(), end.atTime(23, 59, 59));
+        return transactionRepository.sumRevenueByCurrencyAndDate(currencyCode, start.atStartOfDay(), end.atTime(23, 59, 59));
     }
 
     // ─── Breakdown by Currency ───────────────────────────────────────────────
@@ -321,5 +357,23 @@ public class DashboardService {
             ));
         }
         return list;
+    }
+
+    // ─── Orders by Status ─────────────────────────────────────────────────────
+
+    public Map<String, Object> getOrdersByStatus(LocalDate startDate, LocalDate endDate) {
+        List<Object[]> results = orderRepository.countOrdersByStatus(
+                startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
+
+        Map<String, Long> byStatus = new LinkedHashMap<>();
+        long total = 0;
+        for (Object[] row : results) {
+            String status = row[0].toString();
+            long count = ((Number) row[1]).longValue();
+            byStatus.put(status, count);
+            total += count;
+        }
+
+        return Map.of("total", total, "byStatus", byStatus);
     }
 }

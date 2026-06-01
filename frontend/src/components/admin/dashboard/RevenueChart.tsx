@@ -1,93 +1,22 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useState } from "react";
 import { useCurrencyStore } from "../../../store/currencyStore";
 import { useDashboardData } from "../../../pages/admin/DashboardPage";
-import { dashboardService } from "../../../services/dashboardService";
 import { formatPrice } from "../../../lib/formatters";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { CalendarIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
-import DateRangePicker from "../../ui/DateRangePicker";
-
-const getDateRange = (days: number) => {
-  const now = new Date();
-  const end = new Date(now);
-  const start = new Date(now);
-  start.setDate(now.getDate() - (days - 1));
-  return {
-    start: start.toISOString().split("T")[0],
-    end: end.toISOString().split("T")[0],
-  };
-};
 
 const RevenueChart = () => {
   const { selectedCurrency } = useCurrencyStore();
   const overview = useDashboardData();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [data, setData] = useState<{ labels: string[]; revenues: number[]; orders: number[] } | null>(null);
   const [showRevenue, setShowRevenue] = useState(true);
   const [showOrders, setShowOrders] = useState(true);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const weekRange = getDateRange(7);
-  const monthRange = getDateRange(30);
-  const yearRange = getDateRange(365);
+  const revenueData = overview?.revenue;
 
-  const quickRanges = [
-    { label: "7d", start: weekRange.start, end: weekRange.end },
-    { label: "30d", start: monthRange.start, end: monthRange.end },
-    { label: "1a", start: yearRange.start, end: yearRange.end },
-  ];
-
-  const getGroupBy = () => {
-    if (startDate && endDate) {
-      const diff = (new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24);
-      return diff > 90 ? "month" : "day";
-    }
-    return "day";
-  };
-
-  const fetchData = useCallback(() => {
-    if (!selectedCurrency) return;
-    dashboardService.getRevenue(selectedCurrency.code, startDate || undefined, endDate || undefined, getGroupBy())
-      .then(setData)
-      .catch(() => setData({ labels: [], revenues: [], orders: [] }));
-  }, [selectedCurrency?.code, startDate, endDate]);
-
-  useEffect(() => {
-    if (startDate || endDate) {
-      fetchData();
-    }
-  }, [fetchData]);
-
-  useEffect(() => {
-    if (!startDate && !endDate && overview?.revenue) {
-      setData(overview.revenue);
-    }
-  }, [overview?.revenue, startDate, endDate]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-    if (dropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [dropdownOpen]);
-
-  const chartData = data ? data.labels.map((label, i) => ({
+  const chartData = revenueData ? revenueData.labels.map((label, i) => ({
     date: label,
-    revenue: data.revenues[i],
-    orders: data.orders[i],
+    revenue: revenueData.revenues[i],
+    orders: revenueData.orders[i],
   })) : [];
-
-  const handleDateChange = (start: string, end: string) => {
-    setStartDate(start);
-    setEndDate(end);
-  };
 
   const toggleRevenue = () => {
     if (!showOrders) return;
@@ -108,18 +37,13 @@ const RevenueChart = () => {
   const formatOrdersYAxis = (value: number) => value.toString();
 
   const formatXAxis = (value: string) => {
-    if (getGroupBy() === "month") {
-      const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-      const month = parseInt(value.split("-")[1]) - 1;
-      return months[month];
-    }
     const parts = value.split("-");
+    if (parts.length === 2) {
+      const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+      return months[parseInt(parts[1]) - 1];
+    }
     return `${parts[1]}/${parts[2]}`;
   };
-
-  const displayLabel = startDate && endDate
-    ? `${startDate.slice(5)} - ${endDate.slice(5)}`
-    : "Esta semana";
 
   const xAxisInterval = Math.max(0, Math.ceil(chartData.length / 7) - 1);
 
@@ -154,12 +78,11 @@ const RevenueChart = () => {
     if (!active || !payload || !payload.length) return null;
 
     const formatX = (value: string) => {
-      if (getGroupBy() === "month") {
-        const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-        const month = parseInt(value.split("-")[1]) - 1;
-        return months[month];
-      }
       const parts = value.split("-");
+      if (parts.length === 2) {
+        const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+        return months[parseInt(parts[1]) - 1];
+      }
       return `${parts[1]}/${parts[2]}`;
     };
 
@@ -194,33 +117,6 @@ const RevenueChart = () => {
     <div className="bg-white rounded-[20px] p-5 shadow-sm border border-neutral-100">
       <div className="flex items-center justify-between mb-4">
         <h5 className="font-bold text-text-base">Análisis de Ingresos</h5>
-
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-brand-300 rounded-lg text-white hover:opacity-80 transition-opacity"
-            style={{ boxShadow: "0 0 6px rgba(34,34,34,0.35)" }}
-          >
-            <CalendarIcon className="w-4 h-4" />
-            <span className="text-xs font-medium">{displayLabel}</span>
-            <ChevronDownIcon className="w-4 h-4" />
-          </button>
-
-          {dropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 z-50 animate-fade-in">
-              <DateRangePicker
-                startDate={startDate}
-                endDate={endDate}
-                onChange={handleDateChange}
-                isOpen={true}
-                onToggle={() => setDropdownOpen(false)}
-                label="Seleccionar fechas"
-                hideToggle
-                quickRanges={quickRanges}
-              />
-            </div>
-          )}
-        </div>
       </div>
 
       <div className="flex items-center gap-4 mb-3">

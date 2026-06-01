@@ -52,6 +52,12 @@ export interface DataTableProps<T> {
   itemsPerPage?: number;
   onPageChange?: (page: number) => void;
   
+  // Selection
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
+  getId?: (item: T) => string;
+  
   // Styling
   tableClassName?: string;
   headerClassName?: string;
@@ -76,6 +82,10 @@ function DataTable<T>({
   totalPages = 1,
   totalItems = 0,
   onPageChange,
+  selectable = false,
+  selectedIds = new Set(),
+  onSelectionChange,
+  getId,
   tableClassName = "",
   headerClassName = "bg-brand-50",
 }: DataTableProps<T>) {
@@ -169,12 +179,43 @@ function DataTable<T>({
 
   const hasActiveFilters = (startDate && endDate) || filters.some((f) => f.value !== "");
 
+  const getItemId = (item: T): string => {
+    if (getId) return getId(item);
+    return (item as any).id?.toString() ?? "";
+  };
+
+  const allSelected = data.length > 0 && data.every((item) => selectedIds.has(getItemId(item)));
+  const someSelected = data.some((item) => selectedIds.has(getItemId(item)));
+
+  const handleSelectAll = () => {
+    if (!onSelectionChange) return;
+    if (allSelected) {
+      onSelectionChange(new Set());
+    } else {
+      const newIds = new Set(selectedIds);
+      data.forEach((item) => newIds.add(getItemId(item)));
+      onSelectionChange(newIds);
+    }
+  };
+
+  const handleSelectOne = (item: T) => {
+    if (!onSelectionChange) return;
+    const id = getItemId(item);
+    const newIds = new Set(selectedIds);
+    if (newIds.has(id)) {
+      newIds.delete(id);
+    } else {
+      newIds.add(id);
+    }
+    onSelectionChange(newIds);
+  };
+
   return (
     <div className="w-full flex flex-col space-y-6 animate-fade-in">
       {/* Mobile Filter Drawer */}
       {createPortal(
         <div className={`fixed inset-0 z-[200] transition-all duration-400 sm:hidden ${isMobileFilterOpen && isFilterAnimating ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
-          <div className="absolute inset-0 bg-neutral-800/10 backdrop-blur-[2px]" onClick={toggleMobileFilter} />
+          <div className="absolute inset-0 bg-neutral-400/10 backdrop-blur-[2px]" onClick={toggleMobileFilter} />
           <div className={`absolute left-0 top-0 h-full w-[85vw] max-w-[360px] bg-[flt-drawer] shadow-[10px_0_30px_rgba(0,0,0,0.05)] transition-transform duration-400 ease-in-out transform ${isMobileFilterOpen && isFilterAnimating ? "translate-x-0" : "-translate-x-full"} flex flex-col`}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-pink-100">
               <h3 className="text-lg font-bold text-neutral-800">Filtros</h3>
@@ -188,7 +229,7 @@ function DataTable<T>({
               {onDateRangeChange && (
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-neutral-700">Rango de fechas</label>
-                  <div className="bg-[#eeeeef] rounded-[10px] border border-[#d5d5d5] h-[58px] overflow-visible">
+                  <div className="bg-neutral-50 rounded-[10px] border border-neutral-400 h-[58px] overflow-visible">
                     <DateRangePicker
                       startDate={startDate}
                       endDate={endDate}
@@ -208,7 +249,7 @@ function DataTable<T>({
                 return (
                   <div key={filter.key} className="space-y-2">
                     <label className="text-sm font-semibold text-neutral-700">{filter.label}</label>
-                    <div className="bg-[#eeeeef] rounded-[10px] border border-[#d5d5d5] h-[58px] overflow-visible relative datatable-filter-dropdown">
+                    <div className="bg-neutral-50 rounded-[10px] border border-neutral-400 h-[58px] overflow-visible relative datatable-filter-dropdown">
                       <button
                         onClick={() => setActiveDropdown(activeDropdown === filter.key ? null : filter.key)}
                         className={`w-full flex items-center justify-between px-4 h-full text-sm transition-colors ${
@@ -262,38 +303,41 @@ function DataTable<T>({
         document.body
       )}
 
-      {/* Título de la tabla */}
-      <div className="flex items-center gap-3">
+      <div className="bg-white rounded-3xl p-6 space-y-6">
+
+      {/* Título + Buscador + Filtros (Desktop) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Título */}
         {title && (
           <h2 className="text-h4-s sm:text-h4-b font-extrabold text-neutral-800 tracking-tight">
             {title}
           </h2>
         )}
-        {onTrashClick && (
-          <button
-            onClick={onTrashClick}
-            title="Limpiar selección"
-            className="w-[40px] h-[40px] bg-flt-trash-bg hover:bg-flt-trash-hover/60 text-flt-selected rounded-[10px] flex items-center justify-center transition-colors flex-shrink-0 border border-[#d5d5d5] shadow-sm active:scale-95 duration-150"
-          >
-            <svg className="w-4 h-4 text-[#e6426e]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
-        )}
-      </div>
 
-      {/* Buscador + Filtros */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+        {/* Buscador + Filtros alineados a la derecha */}
+        <div className="flex items-center gap-3 sm:ml-auto">
+          {/* Trash Button — Desktop */}
+          {onTrashClick && (
+            <button
+              onClick={onTrashClick}
+              title="Cancelar pedidos"
+              className="hidden sm:flex w-[43px] h-[43px] bg-danger-500 hover:bg-red-600 text-white rounded-[10px] items-center justify-center transition-colors flex-shrink-0 active:scale-95 duration-150 self-center"
+            >
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
+
           {onSearch && (
             <div className="relative flex-1 sm:flex-none sm:w-72 h-[58px]">
-              <MagnifyingGlassIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" />
+              <MagnifyingGlassIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
               <input
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
-                className="pl-11 pr-4 h-full w-full bg-[#eeeeef] rounded-[10px] text-sm font-normal text-neutral-800 placeholder-neutral-400 outline-none focus:ring-2 focus:ring-brand-200 transition-all"
+                className="pl-11 pr-4 h-full w-full bg-neutral-50 rounded-[10px] text-sm font-normal text-neutral-800 placeholder-neutral-500 outline-none focus:ring-2 focus:ring-brand-200 transition-all border border-neutral-400"
               />
             </div>
           )}
@@ -301,7 +345,7 @@ function DataTable<T>({
           {/* Mobile Filter Button */}
           <button
             onClick={toggleMobileFilter}
-            className="sm:hidden relative w-[48px] h-[58px] bg-[#eeeeef] border border-[#d5d5d5] rounded-[10px] flex items-center justify-center text-neutral-700 transition-colors active:scale-95 duration-150 flex-shrink-0"
+            className="sm:hidden relative w-[48px] h-[58px] bg-neutral-50 border border-neutral-400 rounded-[10px] flex items-center justify-center text-neutral-700 transition-colors active:scale-95 duration-150 flex-shrink-0"
           >
             <FunnelIcon className="w-5 h-5 stroke-[2.5px]" />
             {hasActiveFilters && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-flt-selected rounded-full animate-pulse" />}
@@ -317,107 +361,107 @@ function DataTable<T>({
               <ArrowPathIcon className="w-4 h-4" />
             </button>
           )}
-        </div>
 
-        {/* Barra de Filtros (Desktop only) */}
-        <div className="hidden sm:flex items-center justify-end">
-          <div className="flex items-center gap-0 bg-[#eeeeef] rounded-[10px] border border-[#d5d5d5] h-[58px] overflow-visible select-none w-fit">
-          {/* 1. Icono de Embudo */}
-          <div className="px-4 flex items-center justify-center text-neutral-500 h-full">
-            <FunnelIcon className="w-4 h-4 stroke-[2.5px]" />
-          </div>
-          
-          <div className="w-[1px] h-full bg-[#d5d5d5]" />
+          {/* Barra de Filtros (Desktop only) */}
+          <div className="hidden sm:flex items-center">
+            <div className="flex items-center gap-0 bg-neutral-50 rounded-[10px] border border-neutral-400 h-[58px] overflow-visible select-none w-fit">
+            {/* 1. Icono de Embudo */}
+            <div className="px-4 flex items-center justify-center text-neutral-800 h-full">
+              <FunnelIcon className="w-4 h-4 stroke-[2.5px]" />
+            </div>
+            
+            <div className="w-[1px] h-full bg-neutral-400" />
 
-          {/* 2. Etiqueta Filtrar Por */}
-          <div className="px-4 flex items-center text-neutral-500 text-[13px] font-normal h-full uppercase tracking-wider whitespace-nowrap">
-            Filtrar Por
-          </div>
+            {/* 2. Etiqueta Filtrar Por */}
+            <div className="px-4 flex items-center text-neutral-800 text-[13px] font-normal h-full uppercase tracking-wider whitespace-nowrap">
+              Filtrar Por
+            </div>
 
-          {/* 3. Dropdown de Fecha (Opcional) */}
-          {onDateRangeChange && (
-            <>
-              <div className="w-[1px] h-full bg-[#d5d5d5]" />
-              <DateRangePicker
-                startDate={startDate}
-                endDate={endDate}
-                onChange={onDateRangeChange}
-                isOpen={activeDropdown === "date"}
-                onToggle={() => setActiveDropdown(activeDropdown === "date" ? null : "date")}
-              />
-            </>
-          )}
+            {/* 3. Dropdown de Fecha (Opcional) */}
+            {onDateRangeChange && (
+              <>
+                <div className="w-[1px] h-full bg-neutral-400" />
+                <DateRangePicker
+                  startDate={startDate}
+                  endDate={endDate}
+                  onChange={onDateRangeChange}
+                  isOpen={activeDropdown === "date"}
+                  onToggle={() => setActiveDropdown(activeDropdown === "date" ? null : "date")}
+                />
+              </>
+            )}
 
-          {/* 4. Dropdowns de Filtros Custom (ej: Estado de la orden) */}
-          {filters.map((filter) => {
-            const activeOpt = filter.options.find((o) => o.value === filter.value);
-            const isSelected = filter.value !== "";
+            {/* 4. Dropdowns de Filtros Custom (ej: Estado de la orden) */}
+            {filters.map((filter) => {
+              const activeOpt = filter.options.find((o) => o.value === filter.value);
+              const isSelected = filter.value !== "";
 
-            return (
-              <React.Fragment key={filter.key}>
-                <div className="w-[1px] h-full bg-[#d5d5d5]" />
-                <div className="relative h-full datatable-filter-dropdown">
-                  <button
-                    onClick={() => setActiveDropdown(activeDropdown === filter.key ? null : filter.key)}
-                    className={`px-5 flex items-center gap-2 hover:bg-neutral-200/60 text-neutral-700 h-full font-normal text-sm transition-colors whitespace-nowrap ${
-                      activeDropdown === filter.key ? "bg-neutral-200/60" : ""
-                    } ${isSelected ? "text-brand-500" : ""}`}
-                  >
-                    <span>{activeOpt ? activeOpt.label : filter.label}</span>
-                    <ChevronDownIcon className={`w-3.5 h-3.5 text-neutral-500 transition-transform duration-200 ${activeDropdown === filter.key ? "rotate-180" : ""}`} />
-                  </button>
+              return (
+                <React.Fragment key={filter.key}>
+                  <div className="w-[1px] h-full bg-neutral-400" />
+                  <div className="relative h-full datatable-filter-dropdown">
+                    <button
+                      onClick={() => setActiveDropdown(activeDropdown === filter.key ? null : filter.key)}
+                      className={`px-5 flex items-center gap-2 hover:bg-neutral-200/60 text-neutral-800 h-full font-normal text-sm transition-colors whitespace-nowrap ${
+                        activeDropdown === filter.key ? "bg-neutral-200/60" : ""
+                      } ${isSelected ? "text-brand-500" : ""}`}
+                    >
+                      <span>{activeOpt ? activeOpt.label : filter.label}</span>
+                      <ChevronDownIcon className={`w-3.5 h-3.5 text-neutral-800 transition-transform duration-200 ${activeDropdown === filter.key ? "rotate-180" : ""}`} />
+                    </button>
 
-                  {activeDropdown === filter.key && (
-                    <div className="absolute left-0 mt-2 w-64 bg-white rounded-[10px] border border-neutral-100 shadow-xl z-50 p-2 py-3 text-left animate-fade-in max-h-64 overflow-y-auto custom-scrollbar">
-                      <button
-                        onClick={() => {
-                          filter.onChange("");
-                          setActiveDropdown(null);
-                        }}
-                        className={`w-full text-left px-4 py-2 text-sm font-normal rounded-[10px] transition-colors ${
-                          filter.value === ""
-                            ? "bg-brand-50 text-flt-selected"
-                            : "text-neutral-700 hover:bg-neutral-50"
-                        }`}
-                      >
-                        Todos
-                      </button>
-                      {filter.options.map((opt) => (
+                    {activeDropdown === filter.key && (
+                      <div className="absolute left-0 mt-2 w-64 bg-white rounded-[10px] border border-neutral-100 shadow-xl z-50 p-2 py-3 text-left animate-fade-in max-h-64 overflow-y-auto custom-scrollbar">
                         <button
-                          key={opt.value}
                           onClick={() => {
-                            filter.onChange(opt.value);
+                            filter.onChange("");
                             setActiveDropdown(null);
                           }}
                           className={`w-full text-left px-4 py-2 text-sm font-normal rounded-[10px] transition-colors ${
-                            filter.value === opt.value
+                            filter.value === ""
                               ? "bg-brand-50 text-flt-selected"
                               : "text-neutral-700 hover:bg-neutral-50"
                           }`}
                         >
-                          {opt.label}
+                          Todos
                         </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </React.Fragment>
-            );
-          })}
+                        {filter.options.map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => {
+                              filter.onChange(opt.value);
+                              setActiveDropdown(null);
+                            }}
+                            className={`w-full text-left px-4 py-2 text-sm font-normal rounded-[10px] transition-colors ${
+                              filter.value === opt.value
+                                ? "bg-brand-50 text-flt-selected"
+                                : "text-neutral-700 hover:bg-neutral-50"
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </React.Fragment>
+              );
+            })}
 
-          {/* 5. Botón Limpiar Filtros */}
-          {hasActiveFilters && (
-            <>
-              <div className="w-[1px] h-full bg-[#d5d5d5]" />
-              <button
-                onClick={handleClearAll}
-                title="Limpiar filtros"
-                className="px-5 flex items-center justify-center hover:bg-flt-trash-bg text-flt-selected h-full transition-colors active:scale-95"
-              >
-                <ArrowPathIcon className="w-4 h-4" />
-              </button>
-            </>
-          )}
+            {/* 5. Botón Limpiar Filtros */}
+            {hasActiveFilters && (
+              <>
+                <div className="w-[1px] h-full bg-neutral-400" />
+                <button
+                  onClick={handleClearAll}
+                  title="Limpiar filtros"
+                  className="px-5 flex items-center justify-center hover:bg-flt-trash-bg text-flt-selected h-full transition-colors active:scale-95"
+                >
+                  <ArrowPathIcon className="w-4 h-4" />
+                </button>
+              </>
+            )}
+            </div>
           </div>
         </div>
       </div>
@@ -467,10 +511,21 @@ function DataTable<T>({
       </div>
 
       {/* Table Container (Desktop only) */}
-      <div className={`hidden sm:block w-full overflow-x-auto rounded-3xl border border-neutral-100 shadow-sm bg-white ${tableClassName}`}>
-        <table className="w-full text-left border-collapse min-w-[800px]">
+      <div className={`hidden sm:block w-full rounded-3xl border border-neutral-100 shadow-sm bg-white overflow-hidden ${tableClassName}`}>
+        <table className="w-full text-left border-collapse">
           <thead>
             <tr className={headerClassName}>
+              {selectable && (
+                <th className="py-5 pl-6 pr-2 w-12 rounded-tl-3xl">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded border-neutral-300 text-brand-500 focus:ring-brand-400 cursor-pointer"
+                  />
+                </th>
+              )}
               {columns.map((col, index) => (
                 <th
                   key={col.key || index}
@@ -481,7 +536,7 @@ function DataTable<T>({
                       onSort(col.key, nextDesc);
                     }
                   }}
-                  className={`py-5 px-6 font-bold text-neutral-800 text-sm whitespace-nowrap ${index === 0 ? "rounded-tl-3xl" : ""} ${index === columns.length - 1 ? "rounded-tr-3xl" : ""} ${col.sortable && onSort ? "cursor-pointer select-none hover:bg-neutral-100/50 transition-colors" : ""} ${col.className || ""}`}
+                  className={`py-5 px-6 font-bold text-neutral-800 text-sm ${!selectable && index === 0 ? "rounded-tl-3xl" : ""} ${index === columns.length - 1 ? "rounded-tr-3xl" : ""} ${col.sortable && onSort ? "cursor-pointer select-none hover:bg-neutral-100/50 transition-colors" : ""} ${col.className || ""}`}
                 >
                   <div className="flex items-center gap-1.5">
                     <span>{col.header}</span>
@@ -528,6 +583,16 @@ function DataTable<T>({
             ) : (
               data.map((item, rowIndex) => (
                 <tr key={rowIndex} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50 transition-colors">
+                  {selectable && (
+                    <td className="py-5 pl-6 pr-2 w-12">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(getItemId(item))}
+                        onChange={() => handleSelectOne(item)}
+                        className="w-4 h-4 rounded border-neutral-300 text-brand-500 focus:ring-brand-400 cursor-pointer"
+                      />
+                    </td>
+                  )}
                   {columns.map((col, colIndex) => (
                     <td key={col.key || colIndex} className={`py-5 px-6 text-sm text-neutral-700 font-medium ${col.className || ""}`}>
                       {col.render ? col.render(item) : (item as any)[col.key]}
@@ -581,6 +646,7 @@ function DataTable<T>({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

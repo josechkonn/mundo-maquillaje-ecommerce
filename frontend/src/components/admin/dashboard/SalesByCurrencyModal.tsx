@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { dashboardService } from "../../../services/dashboardService";
+import { useDashboardDateStore } from "../../../store/dashboardDateStore";
 import Modal from "../../ui/Modal";
 
 interface Props {
@@ -17,15 +18,18 @@ interface CurrencySale {
 const SalesByCurrencyModal = ({ isOpen, onClose }: Props) => {
   const [data, setData] = useState<CurrencySale[]>([]);
   const [loading, setLoading] = useState(true);
+  const { startDate, endDate } = useDashboardDateStore();
 
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
-    dashboardService.getSalesByCurrency()
+    const sDate = startDate || undefined;
+    const eDate = endDate || undefined;
+    dashboardService.getSalesByCurrency(sDate, eDate)
       .then(setData)
       .catch(() => setData([]))
       .finally(() => setLoading(false));
-  }, [isOpen]);
+  }, [isOpen, startDate, endDate]);
 
   const formatAmount = (amount: number, symbol: string) => {
     const formatted = new Intl.NumberFormat("es-CO", {

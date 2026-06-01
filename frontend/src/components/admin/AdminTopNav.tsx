@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Bars3Icon, XMarkIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon, ChevronDownIcon, CalendarIcon } from "@heroicons/react/24/outline";
 import { useAuthStore } from "../../store/authStore";
 import { useCurrencyStore } from "../../store/currencyStore";
+import { useDashboardDateStore } from "../../store/dashboardDateStore";
+import DateRangePicker from "../ui/DateRangePicker";
 import logo from "../../assets/imgs/logo.webp";
 
 interface AdminTopNavProps {
@@ -21,6 +23,9 @@ const SECTION_TITLES: Record<string, string> = {
   "/admin/ajustes": "Ajustes",
 };
 
+const SECTION_DATE_FILTER: string[] = ["/admin"];
+const SECTION_CURRENCY: string[] = ["/admin"];
+
 const FLAG_MAP: Record<string, string> = {
   VEF: "ve",
   BS: "ve",
@@ -35,12 +40,46 @@ const getFlagCode = (currencyCode: string): string => {
   return FLAG_MAP[code] || "un";
 };
 
+const formatShort = (d: string) => {
+  if (!d) return "";
+  const parts = d.split("-");
+  return `${parts[2]}/${parts[1]}`;
+};
+
+const getDateRange = (days: number) => {
+  const now = new Date();
+  const end = new Date(now);
+  const start = new Date(now);
+  start.setDate(now.getDate() - (days - 1));
+  return {
+    start: start.toISOString().split("T")[0],
+    end: end.toISOString().split("T")[0],
+  };
+};
+
+const weekRange = getDateRange(7);
+const monthRange = getDateRange(30);
+const yearRange = getDateRange(365);
+
+const quickRanges = [
+  { label: "7d", start: weekRange.start, end: weekRange.end },
+  { label: "30d", start: monthRange.start, end: monthRange.end },
+  { label: "1a", start: yearRange.start, end: yearRange.end },
+];
+
 const AdminTopNav = ({ collapsed, onToggle }: AdminTopNavProps) => {
   const location = useLocation();
   const profile = useAuthStore((state) => state.profile);
   const { currencies, selectedCurrency, setSelectedCurrency } = useCurrencyStore();
   const [dropOpen, setDropOpen] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
+
+  const { startDate, endDate, setDateRange } = useDashboardDateStore();
+  const showDateFilter = SECTION_DATE_FILTER.includes(location.pathname);
+  const showCurrency = SECTION_CURRENCY.includes(location.pathname);
+  const hasDates = !!(startDate && endDate);
+  const [dateDropOpen, setDateDropOpen] = useState(false);
+  const dateDropRef = useRef<HTMLDivElement>(null);
 
   const currentTitle =
     Object.entries(SECTION_TITLES).find(([path]) =>
@@ -58,6 +97,18 @@ const AdminTopNav = ({ collapsed, onToggle }: AdminTopNavProps) => {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dateDropRef.current && !dateDropRef.current.contains(e.target as Node)) {
+        setDateDropOpen(false);
+      }
+    };
+    if (dateDropOpen) {
+      document.addEventListener("mousedown", handler);
+    }
+    return () => document.removeEventListener("mousedown", handler);
+  }, [dateDropOpen]);
 
   return (
     <header className="fixed top-0 left-0 right-0 h-20 bg-brand-200 z-50">
@@ -91,7 +142,7 @@ const AdminTopNav = ({ collapsed, onToggle }: AdminTopNavProps) => {
           </button>
 
           {!collapsed && (
-            <Link to="/admin" className="flex-shrink-0 hover:opacity-90 transition-opacity">
+            <Link to="/" className="flex-shrink-0 hover:opacity-90 transition-opacity" title="Ir al sitio">
               <img
                 src={logo}
                 alt="Mundo Maquillaje"
@@ -104,7 +155,7 @@ const AdminTopNav = ({ collapsed, onToggle }: AdminTopNavProps) => {
         {/* Content area - after sidebar */}
         <div className="flex items-center justify-between flex-1 h-full py-4 px-4 lg:pr-10">
           <div className="flex items-center gap-4">
-            <Link to="/admin" className={`flex-shrink-0 hover:opacity-90 transition-opacity ${collapsed ? "lg:flex" : "lg:hidden"}`}>
+            <Link to="/" className={`flex-shrink-0 hover:opacity-90 transition-opacity ${collapsed ? "lg:flex" : "lg:hidden"}`} title="Ir al sitio">
               <img
                 src={logo}
                 alt="Mundo Maquillaje"
@@ -118,7 +169,59 @@ const AdminTopNav = ({ collapsed, onToggle }: AdminTopNavProps) => {
           </div>
 
           <div className="flex items-center gap-3">
-            <div ref={dropRef} className="relative max-lg:hidden">
+            {/* Date filter */}
+            {showDateFilter && (
+              <div ref={dateDropRef} className="relative">
+                <button
+                  onClick={() => setDateDropOpen(!dateDropOpen)}
+                  className={`flex items-center gap-1.5 h-[46px] rounded-lg border text-xs font-medium transition-all px-2.5
+                    ${hasDates
+                      ? "border-brand-400 bg-brand-400/15 text-brand-500"
+                      : "border-neutral-800 bg-transparent text-neutral-800 hover:border-brand-500"
+                    }`}
+                >
+                  <CalendarIcon className="w-4 h-4 flex-shrink-0" />
+                  {hasDates ? (
+                    <>
+                      <span className="hidden sm:inline whitespace-nowrap">{formatShort(startDate)} - {formatShort(endDate)}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDateRange("", "");
+                        }}
+                        className="p-0.5 hover:bg-brand-200/40 rounded transition-colors"
+                        title="Quitar filtro de fecha"
+                      >
+                        <XMarkIcon className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <span className="hidden sm:inline whitespace-nowrap">Filtrar</span>
+                  )}
+                </button>
+
+                {dateDropOpen && (
+                  <div className="absolute right-0 top-full mt-2 z-50 animate-fade-in">
+                    <DateRangePicker
+                      startDate={startDate}
+                      endDate={endDate}
+                      onChange={(s, e) => {
+                        setDateRange(s, e);
+                        setDateDropOpen(false);
+                      }}
+                      isOpen={true}
+                      onToggle={() => setDateDropOpen(false)}
+                      label="Seleccionar fechas"
+                      hideToggle
+                      quickRanges={quickRanges}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {showCurrency && (
+            <div ref={dropRef} className="relative">
               <button
                 onClick={() => setDropOpen((prev) => !prev)}
                 className="flex items-center justify-center gap-1 w-16 lg:w-auto lg:px-3 rounded-lg border border-neutral-800 bg-transparent text-xs lg:text-sm font-medium text-neutral-800 hover:border-brand-500 transition-all duration-200 h-[46px]"
@@ -166,8 +269,10 @@ const AdminTopNav = ({ collapsed, onToggle }: AdminTopNavProps) => {
                 </div>
               )}
             </div>
+            )}
 
-            <div className="flex items-center gap-2 rounded-lg border border-neutral-800 px-3 py-1.5 shrink-0">
+            {/* User avatar */}
+            <div className="flex items-center gap-2 rounded-lg border border-neutral-800 px-3 py-1.5 shrink-0 max-lg:hidden">
               <div className="w-[34px] h-[34px] rounded-[5px] overflow-hidden bg-brand-300 flex items-center justify-center shrink-0">
                 {profile?.avatarUrl ? (
                   <img

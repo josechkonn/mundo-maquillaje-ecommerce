@@ -72,6 +72,8 @@ export interface TransactionResponse {
 export interface BackendOrder {
   id: string;
   orderNumber?: string;
+  userName?: string;
+  userEmail?: string;
   subtotal: number;
   taxAmount: number;
   discountAmount: number;
@@ -89,9 +91,6 @@ export interface BackendOrder {
 }
 
 export const orderService = {
-  /**
-   * Obtiene los pedidos del usuario autenticado actual, paginados y filtrados
-   */
   getUserOrders: async (
     page = 0,
     size = 10,
@@ -118,17 +117,33 @@ export const orderService = {
     return api.get(url);
   },
 
-  /**
-   * Obtiene un pedido específico del usuario por ID
-   */
   getUserOrderById: async (orderId: string): Promise<BackendOrder> => {
     return api.get(`/orders/${orderId}`);
   },
 
-  /**
-   * Obtiene un pedido específico del usuario por orderNumber
-   */
   getUserOrderByNumber: async (orderNumber: string): Promise<BackendOrder> => {
     return api.get(`/orders?search=${encodeURIComponent(orderNumber)}&size=1`);
-  }
+  },
+
+  cancelAdminOrders: async (orderIds: string[]): Promise<void> => {
+    return api.patch("/orders/admin/cancel", orderIds);
+  },
+
+  getAdminOrders: async (
+    page = 0,
+    size = 10,
+    search?: string,
+    status?: string,
+    sortBy = "createdAt",
+    sortDesc = true,
+    startDate?: string,
+    endDate?: string
+  ): Promise<PageResponse<BackendOrder>> => {
+    let url = `/orders/admin/all?page=${page}&size=${size}&sortBy=${sortBy}&sortDesc=${sortDesc}`;
+    if (search && search.trim() !== "") url += `&search=${encodeURIComponent(search.trim())}`;
+    if (status && status.trim() !== "") url += `&status=${encodeURIComponent(status.trim())}`;
+    if (startDate && startDate.trim() !== "") url += `&startDate=${encodeURIComponent(startDate.trim())}`;
+    if (endDate && endDate.trim() !== "") url += `&endDate=${encodeURIComponent(endDate.trim())}`;
+    return api.get(url);
+  },
 };

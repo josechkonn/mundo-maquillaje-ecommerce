@@ -104,6 +104,45 @@ public class OrderService {
         return toDTO(order, productsByOrder, transactionsByOrder);
     }
 
+    @Transactional(readOnly = true)
+    public Page<OrderListResponseDTO> getAdminOrders(
+            int page,
+            int size,
+            String search,
+            String status,
+            String sortBy,
+            boolean sortDesc,
+            String startDate,
+            String endDate) {
+
+        Sort sort = sortDesc ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Specification<Order> spec = buildAdminSpecification(status, startDate, endDate, search);
+
+        Page<Order> orderPage = orderRepository.findAll(spec, pageable);
+
+        if (orderPage.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<UUID> orderIds = orderPage.getContent().stream()
+                .map(Order::getId)
+                .toList();
+
+        Map<UUID, List<OrderProduct>> productsByOrder = orderProductRepository.findByOrderIdIn(orderIds).stream()
+                .collect(Collectors.groupingBy(op -> op.getOrder().getId()));
+
+        Map<UUID, List<Transaction>> transactionsByOrder = transactionRepository.findByOrderIdIn(orderIds).stream()
+                .collect(Collectors.groupingBy(t -> t.getOrder().getId()));
+
+        List<OrderListResponseDTO> dtoList = orderPage.getContent().stream()
+                .map(order -> toDTO(order, productsByOrder, transactionsByOrder))
+                .toList();
+
+        return new PageImpl<>(dtoList, pageable, orderPage.getTotalElements());
+    }
+
     private Specification<Order> buildSpecification(
             Profile profile,
             String status,
@@ -151,6 +190,47 @@ public class OrderService {
         };
     }
 
+    private Specification<Order> buildAdminSpecification(
+            String status,
+            String startDate,
+            String endDate,
+            String search) {
+
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (status != null && !status.trim().isEmpty()) {
+                try {
+                    OrderStatus orderStatus = OrderStatus.valueOf(status.trim().toUpperCase());
+                    predicates.add(cb.equal(root.get("status"), orderStatus));
+                } catch (IllegalArgumentException ignored) {}
+            }
+
+            LocalDateTime start = parseStartDate(startDate);
+            if (start != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), start));
+            }
+
+            LocalDateTime end = parseEndDate(endDate);
+            if (end != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), end));
+            }
+
+            if (search != null && !search.trim().isEmpty()) {
+                String searchStr = search.trim();
+                Join<Order, Profile> profileJoin = root.join("profile", JoinType.LEFT);
+                Join<Order, PaymentMethod> paymentJoin = root.join("paymentMethod", JoinType.LEFT);
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("orderNumber")), "%" + searchStr.toLowerCase() + "%"),
+                        cb.like(cb.lower(profileJoin.get("name")), "%" + searchStr.toLowerCase() + "%"),
+                        cb.like(cb.lower(profileJoin.get("email")), "%" + searchStr.toLowerCase() + "%")
+                ));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
     private OrderListResponseDTO toDTO(
             Order order,
             Map<UUID, List<OrderProduct>> productsByOrder,
@@ -159,6 +239,8 @@ public class OrderService {
         return OrderListResponseDTO.builder()
                 .id(order.getId().toString())
                 .orderNumber(order.getOrderNumber())
+                .userName(order.getProfile() != null ? order.getProfile().getName() : null)
+                .userEmail(order.getProfile() != null ? order.getProfile().getEmail() : null)
                 .subtotal(order.getSubtotal())
                 .taxAmount(order.getTaxAmount())
                 .discountAmount(order.getDiscountAmount())
@@ -250,6 +332,15 @@ public class OrderService {
                 .paymentMethod(toPaymentMethodDTO(transaction.getPaymentMethod()))
                 .createdAt(transaction.getCreatedAt())
                 .build();
+    }
+
+    @Transactional
+    public void cancelOrders(List<UUID> orderIds) {
+        List<Order> orders = orderRepository.findAllById(orderIds);
+        for (Order order : orders) {
+            order.setStatus(OrderStatus.CANCELLED);
+        }
+        orderRepository.saveAll(orders);
     }
 
     private LocalDateTime parseStartDate(String startDate) {

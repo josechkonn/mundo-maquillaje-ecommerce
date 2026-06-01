@@ -60,4 +60,26 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
         ORDER BY SUM(t.amount) DESC
         """)
     List<Object[]> findRevenueGroupedByCurrency(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("""
+        SELECT COALESCE(cat.name, 'Sin categoría'),
+               t.amount,
+               op.subtotal,
+               COALESCE(op.discount, 0),
+               o.id
+        FROM Transaction t
+        JOIN t.order o
+        JOIN t.currency cur
+        JOIN o.products op
+        LEFT JOIN op.variation pv
+        LEFT JOIN pv.product p
+        LEFT JOIN p.category cat
+        WHERE cur.code = :currencyCode
+          AND t.status = 'VERIFIED'
+          AND t.createdAt BETWEEN :start AND :end
+        """)
+    List<Object[]> findTransactionLinesForCategories(
+            @Param("currencyCode") String currencyCode,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 }

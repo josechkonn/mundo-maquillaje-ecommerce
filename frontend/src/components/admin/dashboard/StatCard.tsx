@@ -15,7 +15,7 @@ const StatCard = ({ title, value, icon, change, onClick }: StatCardProps) => {
 
   return (
     <div
-      className={`flex flex-col justify-between bg-white rounded-[20px] p-6 shadow-sm border border-neutral-100 min-h-[190px] ${isClickable ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`}
+      className={`flex flex-col justify-between bg-white rounded-[20px] p-6 shadow-sm border border-neutral-100 min-h-[190px] hover:bg-neutral-300 transition-colors ${isClickable ? "cursor-pointer hover:shadow-md" : ""}`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between">

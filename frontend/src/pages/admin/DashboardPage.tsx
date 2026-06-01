@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useCurrencyStore } from "../../store/currencyStore";
+import { useDashboardDateStore } from "../../store/dashboardDateStore";
 import { dashboardService } from "../../services/dashboardService";
 import SalesCard from "../../components/admin/dashboard/SalesCard";
 import OrdersCard from "../../components/admin/dashboard/OrdersCard";
@@ -16,7 +17,7 @@ interface DashboardOverview {
   visitors: { current: number; previous: number; change: number };
   categories: { categories: { name: string; total: number; percentage: number }[]; total: number };
   revenue: { labels: string[]; revenues: number[]; orders: number[] };
-  conversion: Record<string, number>;
+  conversion: { current: Record<string, number>; previous: Record<string, number> };
   activeUsers: { total: number; change: number; states: { state: string; count: number; percentage: number; change: number }[] };
   monthlyGoal: { goal: number; current: number; month: number; year: number; currencyCode: string };
 }
@@ -31,27 +32,38 @@ const defaultOverview: DashboardOverview = {
   visitors: { current: 0, previous: 0, change: 0 },
   categories: { categories: [], total: 0 },
   revenue: { labels: [], revenues: [], orders: [] },
-  conversion: { productViews: 0, addToCart: 0, checkoutStart: 0, purchase: 0 },
+  conversion: { current: {}, previous: {} },
   activeUsers: { total: 0, change: 0, states: [] },
   monthlyGoal: { goal: 0, current: 0, month: 0, year: 0, currencyCode: "" },
 };
 
+const getGroupBy = (start: string | undefined, end: string | undefined) => {
+  if (start && end) {
+    const diff = (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24);
+    return diff > 90 ? "month" : "day";
+  }
+  return "day";
+};
+
 const DashboardPage = () => {
   const { selectedCurrency } = useCurrencyStore();
+  const { startDate, endDate } = useDashboardDateStore();
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
 
   useEffect(() => {
     if (!selectedCurrency) return;
     setOverview(null);
     const code = selectedCurrency.code;
+    const sDate = startDate || undefined;
+    const eDate = endDate || undefined;
 
     Promise.allSettled([
-      dashboardService.getSales(code).catch(() => defaultOverview.sales),
-      dashboardService.getOrders().catch(() => defaultOverview.orders),
-      dashboardService.getVisitors().catch(() => defaultOverview.visitors),
-      dashboardService.getTopCategories(code).catch(() => defaultOverview.categories),
-      dashboardService.getRevenue(code).catch(() => defaultOverview.revenue),
-      dashboardService.getConversion().catch(() => defaultOverview.conversion),
+      dashboardService.getSales(code, sDate, eDate).catch(() => defaultOverview.sales),
+      dashboardService.getOrders(sDate, eDate).catch(() => defaultOverview.orders),
+      dashboardService.getVisitors(sDate, eDate).catch(() => defaultOverview.visitors),
+      dashboardService.getTopCategories(code, sDate, eDate).catch(() => defaultOverview.categories),
+      dashboardService.getRevenue(code, sDate, eDate, getGroupBy(sDate, eDate)).catch(() => defaultOverview.revenue),
+      dashboardService.getConversion(sDate, eDate).catch(() => defaultOverview.conversion),
       dashboardService.getActiveUsers().catch(() => defaultOverview.activeUsers),
       dashboardService.getMonthlyGoal(code).catch(() => defaultOverview.monthlyGoal),
     ]).then(([sales, orders, visitors, categories, revenue, conversion, activeUsers, monthlyGoal]) => {
@@ -66,7 +78,7 @@ const DashboardPage = () => {
         monthlyGoal: monthlyGoal.status === "fulfilled" ? monthlyGoal.value : defaultOverview.monthlyGoal,
       });
     });
-  }, [selectedCurrency?.code]);
+  }, [selectedCurrency?.code, startDate, endDate]);
 
   return (
     <DashboardContext.Provider value={overview}>

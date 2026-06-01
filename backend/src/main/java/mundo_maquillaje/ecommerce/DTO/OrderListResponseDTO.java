@@ -15,6 +15,8 @@ import java.util.List;
 public class OrderListResponseDTO {
     private String id;
     private String orderNumber;
+    private String userName;
+    private String userEmail;
     private Double subtotal;
     private Double taxAmount;
     private Double discountAmount;

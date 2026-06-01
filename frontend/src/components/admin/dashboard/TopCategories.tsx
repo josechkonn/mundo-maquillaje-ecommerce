@@ -14,7 +14,7 @@ const TopCategories = () => {
   const [modalOpen, setModalOpen] = useState(false);
 
   const categories = overview?.categories?.categories || [];
-  const total = overview?.categories?.total ?? 0;
+  const total = categories.reduce((sum, cat) => sum + cat.total, 0);
 
   const chartData = useMemo(() =>
     categories.map((cat) => ({ name: cat.name, value: cat.total })),

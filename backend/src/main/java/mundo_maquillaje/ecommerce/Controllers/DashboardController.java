@@ -240,4 +240,18 @@ public class DashboardController {
 
         return ResponseEntity.ok(dashboardService.getOrdersByCurrency(start, end));
     }
+
+    @GetMapping("/orders-by-status")
+    public ResponseEntity<?> getOrdersByStatus(
+            Authentication authentication,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+
+        permissionService.requirePermission(authentication, "view.dashboard");
+
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusDays(6);
+        LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
+
+        return ResponseEntity.ok(dashboardService.getOrdersByStatus(start, end));
+    }
 }
