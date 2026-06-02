@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Squares2X2Icon,
@@ -8,8 +9,19 @@ import {
   PercentBadgeIcon,
   ChartBarSquareIcon,
   MapPinIcon,
-  Cog6ToothIcon,
   ArrowLeftEndOnRectangleIcon,
+  BanknotesIcon,
+  CreditCardIcon,
+  BookmarkIcon,
+  RectangleStackIcon,
+  ArrowPathIcon,
+  PhotoIcon,
+  GlobeAltIcon,
+  ArchiveBoxIcon,
+  CalendarDaysIcon,
+  ChevronDownIcon,
+  WrenchIcon,
+  Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
 import { supabase } from "../../lib/supabase";
 import { usePermissions } from "../../hooks/usePermissions";
@@ -30,22 +42,100 @@ interface NavItem {
   end?: boolean;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { to: "/admin", label: "Dashboard", icon: Squares2X2Icon, permission: "view.dashboard", end: true },
-  { to: "/admin/productos", label: "Productos", icon: CubeIcon, permission: "manage.products" },
-  { to: "/admin/pedidos", label: "Pedidos", icon: TruckIcon, permission: "manage.orders" },
-  { to: "/admin/usuarios", label: "Usuarios", icon: UsersIcon, permission: "manage.users" },
-   
-  { to: "/admin/categorias", label: "Categorías", icon: TagIcon, permission: "manage.categories" },
-  { to: "/admin/descuentos", label: "Descuentos", icon: PercentBadgeIcon, permission: "manage.discounts" },
-  { to: "/admin/reportes", label: "Reportes", icon: ChartBarSquareIcon, permission: "view.reports" },
-  { to: "/admin/ubicaciones", label: "Ubicaciones", icon: MapPinIcon, permission: "manage.settings" },
+interface NavGroup {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: NavItem[];
+}
+
+const GROUPS: NavGroup[] = [
+  {
+    label: "Productos",
+    icon: CubeIcon,
+    children: [
+      { to: "/admin/productos", label: "Productos", icon: CubeIcon, permission: "manage.products" },
+      { to: "/admin/categorias", label: "Categorías", icon: TagIcon, permission: "manage.categories" },
+      { to: "/admin/marcas", label: "Marcas", icon: BookmarkIcon, permission: "manage.settings" },
+      { to: "/admin/colecciones", label: "Colecciones", icon: RectangleStackIcon, permission: "manage.settings" },
+    ],
+  },
+  {
+    label: "Ventas",
+    icon: TruckIcon,
+    children: [
+      { to: "/admin/pedidos", label: "Pedidos", icon: TruckIcon, permission: "manage.orders" },
+      { to: "/admin/descuentos", label: "Descuentos", icon: PercentBadgeIcon, permission: "manage.discounts" },
+      { to: "/admin/metodos-pago", label: "Métodos de Pago", icon: CreditCardIcon, permission: "manage.settings" },
+    ],
+  },
+  {
+    label: "Contabilidad",
+    icon: ArrowPathIcon,
+    children: [
+      { to: "/admin/transacciones", label: "Transacciones", icon: ArrowPathIcon, permission: "manage.settings" },
+      { to: "/admin/cajas", label: "Cajas", icon: ArchiveBoxIcon, permission: "manage.settings" },
+      { to: "/admin/metas-mensuales", label: "Metas Mensuales", icon: CalendarDaysIcon, permission: "manage.settings" },
+    ],
+  },
+  {
+    label: "Clientes",
+    icon: UsersIcon,
+    children: [
+      { to: "/admin/usuarios", label: "Clientes", icon: UsersIcon, permission: "manage.users" },
+    ],
+  },
+  {
+    label: "Marketing",
+    icon: PhotoIcon,
+    children: [
+      { to: "/admin/banners", label: "Banners", icon: PhotoIcon, permission: "manage.settings" },
+    ],
+  },
+  {
+    label: "General",
+    icon: WrenchIcon,
+    children: [
+      { to: "/admin/monedas", label: "Monedas", icon: BanknotesIcon, permission: "manage.settings" },
+      { to: "/admin/metodos-envio", label: "Métodos de Envío", icon: GlobeAltIcon, permission: "manage.settings" },
+      { to: "/admin/ubicaciones", label: "Ubicaciones", icon: MapPinIcon, permission: "manage.settings" },
+    ],
+  },
 ];
+
+const DASHBOARD_ITEM: NavItem = {
+  to: "/admin",
+  label: "Dashboard",
+  icon: Squares2X2Icon,
+  permission: "view.dashboard",
+  end: true,
+};
+
+const REPORTES_ITEM: NavItem = {
+  to: "/admin/reportes",
+  label: "Reportes",
+  icon: ChartBarSquareIcon,
+  permission: "view.reports",
+};
+
+const ALL_ITEMS = [DASHBOARD_ITEM, REPORTES_ITEM, ...GROUPS.flatMap((g) => g.children)];
 
 const AdminSidebar = ({ collapsed, mobileOpen, onMobileClose, isMobile }: AdminSidebarProps) => {
   const location = useLocation();
   const { hasPermission } = usePermissions();
   const effCollapsed = isMobile ? false : collapsed;
+
+  const isChildActive = (item: NavItem) =>
+    item.end ? location.pathname === item.to : location.pathname.startsWith(item.to);
+
+  const childIsActive = (children: NavItem[]) => children.some(isChildActive);
+
+  const [openGroup, setOpenGroup] = useState<string | null>(() =>
+    GROUPS.find((g) => childIsActive(g.children))?.label ?? null
+  );
+
+  const toggleGroup = (label: string) => {
+    setOpenGroup((prev) => (prev === label ? null : label));
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -55,34 +145,9 @@ const AdminSidebar = ({ collapsed, mobileOpen, onMobileClose, isMobile }: AdminS
     if (mobileOpen) onMobileClose();
   };
 
-  const renderNavLink = (item: NavItem) => {
-    const isActive = item.end
-      ? location.pathname === item.to
-      : location.pathname.startsWith(item.to);
-
-    return (
-      <NavLink
-        key={item.to}
-        to={item.to}
-        end={item.end}
-        title={effCollapsed ? item.label : undefined}
-        onClick={handleNavClick}
-        className={`flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-200
-          ${isActive
-            ? "bg-brand-300 text-white shadow-sm"
-            : "text-white hover:text-brand-400"
-          }
-          ${effCollapsed ? "justify-center w-fit mx-auto px-0" : "justify-start"}`}
-      >
-        <item.icon className="w-6 h-6 shrink-0" />
-        {!effCollapsed && (
-          <span className="text-p-s md:text-p-b font-medium tracking-wide whitespace-nowrap">
-            {item.label}
-          </span>
-        )}
-      </NavLink>
-    );
-  };
+  const linkClass = (isActive: boolean) =>
+    `flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-200
+     ${isActive ? "bg-brand-300 text-white shadow-sm" : "text-white hover:text-brand-400"}`;
 
   return (
     <aside
@@ -93,18 +158,125 @@ const AdminSidebar = ({ collapsed, mobileOpen, onMobileClose, isMobile }: AdminS
         lg:translate-x-0`}
     >
       <div className={`flex flex-col h-full ${effCollapsed ? "p-0" : "p-5"}`}>
-        <nav className={`flex flex-col flex-1 min-h-0 overflow-y-auto ${effCollapsed ? "gap-4" : "gap-8"} [&::-webkit-scrollbar]:hidden [scrollbar-width:none]`}>
-          {NAV_ITEMS.filter((item) => hasPermission(item.permission)).map(renderNavLink)}
+        <nav className={`flex flex-col flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] ${effCollapsed ? "gap-4 items-center" : "gap-6"}`}>
+          {effCollapsed ? (
+            ALL_ITEMS.filter((item) => hasPermission(item.permission)).map((item) => {
+              const active = isChildActive(item);
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  title={item.label}
+                  onClick={handleNavClick}
+                  className={`flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-200 justify-center w-fit mx-auto px-0
+                    ${active ? "bg-brand-300 text-white shadow-sm" : "text-white hover:text-brand-400"}`}
+                >
+                  <item.icon className="w-6 h-6 shrink-0" />
+                </NavLink>
+              );
+            })
+          ) : (
+            <>
+              {/* Dashboard - standalone */}
+              <NavLink
+                to="/admin"
+                end
+                onClick={handleNavClick}
+                className={linkClass(location.pathname === "/admin")}
+              >
+                <Squares2X2Icon className="w-6 h-6 shrink-0" />
+                <span className="text-p-s md:text-p-b font-medium tracking-wide whitespace-nowrap">
+                  Dashboard
+                </span>
+              </NavLink>
+
+              {/* Reportes - standalone */}
+              <NavLink
+                to="/admin/reportes"
+                onClick={handleNavClick}
+                className={`flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-200
+                  ${location.pathname.startsWith("/admin/reportes")
+                    ? "bg-brand-300 text-white shadow-sm"
+                    : "text-white hover:text-brand-400"
+                  }`}
+              >
+                <ChartBarSquareIcon className="w-6 h-6 shrink-0" />
+                <span className="text-p-s md:text-p-b font-medium tracking-wide whitespace-nowrap">
+                  Reportes
+                </span>
+              </NavLink>
+
+              {/* Groups */}
+              {GROUPS.map((group) => {
+                const visibleChildren = group.children.filter((c) => hasPermission(c.permission));
+                if (visibleChildren.length === 0) return null;
+
+                const groupActive = childIsActive(group.children);
+                const isOpen = openGroup === group.label;
+
+                return (
+                  <div key={group.label} className="flex flex-col">
+                    <button
+                      onClick={() => toggleGroup(group.label)}
+                      className={`flex items-center justify-between px-5 py-3.5 rounded-2xl transition-all duration-200 w-full
+                        ${groupActive
+                          ? "bg-brand-300 text-white shadow-sm"
+                          : "text-white hover:text-brand-400"
+                        }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <group.icon className="w-5 h-5 shrink-0" />
+                        <span className="text-p-s md:text-p-b font-medium tracking-wide whitespace-nowrap">
+                          {group.label}
+                        </span>
+                      </div>
+                      <ChevronDownIcon
+                        className={`w-5 h-5 shrink-0 transition-transform duration-200 font-bold ${isOpen ? "rotate-180" : ""}`}
+                        style={{ strokeWidth: 2.5 }}
+                      />
+                    </button>
+
+                    {isOpen && (
+                      <div className="flex flex-col ml-1 mt-0.5">
+                        {visibleChildren.map((child) => {
+                          const active = isChildActive(child);
+                          return (
+                            <NavLink
+                              key={child.to}
+                              to={child.to}
+                              end={child.end}
+                              onClick={handleNavClick}
+                              className={`flex items-center gap-4 px-5 py-3 rounded-xl transition-all duration-200
+                                ${active
+                                  ? "bg-brand-300/60 text-white shadow-sm"
+                                  : "text-white/70 hover:text-white hover:bg-white/5"
+                                }`}
+                            >
+                              <child.icon className="w-5 h-5 shrink-0 ml-2" />
+                              <span className="text-p-s md:text-p-b font-medium tracking-wide whitespace-nowrap">
+                                {child.label}
+                              </span>
+                            </NavLink>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          )}
         </nav>
 
-        <hr className={`border-white ${effCollapsed ? "my-4" : "my-8"}`} />
+        <hr className={`border-white ${effCollapsed ? "my-4" : "my-6"}`} />
 
         {hasPermission("manage.settings") && (
           <NavLink
             to="/admin/ajustes"
             title={effCollapsed ? "Ajustes" : undefined}
             onClick={handleNavClick}
-            className={`flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-200 ${effCollapsed ? "mb-4" : "mb-8"}
+            className={`flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-200 mb-4
               ${location.pathname === "/admin/ajustes"
                 ? "bg-brand-300 text-white shadow-sm"
                 : "text-white hover:text-brand-400"

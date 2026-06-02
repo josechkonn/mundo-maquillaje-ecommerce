@@ -20,6 +20,16 @@ const SECTION_TITLES: Record<string, string> = {
   "/admin/categorias": "Categorías",
   "/admin/descuentos": "Descuentos",
   "/admin/reportes": "Reportes",
+  "/admin/monedas": "Monedas",
+  "/admin/metodos-pago": "Métodos de Pago",
+  "/admin/marcas": "Marcas",
+  "/admin/colecciones": "Colecciones",
+  "/admin/banners": "Banners",
+  "/admin/metodos-envio": "Métodos de Envío",
+  "/admin/cajas": "Cajas",
+  "/admin/transacciones": "Transacciones",
+  "/admin/ubicaciones": "Ubicaciones",
+  "/admin/metas-mensuales": "Metas Mensuales",
   "/admin/ajustes": "Ajustes",
 };
 

@@ -8,6 +8,16 @@ import CategoriesPage from "../pages/admin/CategoriesPage";
 import DiscountsPage from "../pages/admin/DiscountsPage";
 import ReportsPage from "../pages/admin/ReportsPage";
 import SettingsPage from "../pages/admin/SettingsPage";
+import MonedasPage from "../pages/admin/MonedasPage";
+import MetodosPagoPage from "../pages/admin/MetodosPagoPage";
+import MarcasPage from "../pages/admin/MarcasPage";
+import ColeccionesPage from "../pages/admin/ColeccionesPage";
+import BannersPage from "../pages/admin/BannersPage";
+import MetodosEnvioPage from "../pages/admin/MetodosEnvioPage";
+import CajasPage from "../pages/admin/CajasPage";
+import TransaccionesPage from "../pages/admin/TransaccionesPage";
+import UbicacionesPage from "../pages/admin/UbicacionesPage";
+import MetasMensualesPage from "../pages/admin/MetasMensualesPage";
 
 const AdminRoutes = () => {
   return (
@@ -65,6 +75,86 @@ const AdminRoutes = () => {
         element={
           <RequirePermission permission="view.reports">
             <ReportsPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="monedas"
+        element={
+          <RequirePermission permission="manage.settings">
+            <MonedasPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="metodos-pago"
+        element={
+          <RequirePermission permission="manage.settings">
+            <MetodosPagoPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="marcas"
+        element={
+          <RequirePermission permission="manage.settings">
+            <MarcasPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="colecciones"
+        element={
+          <RequirePermission permission="manage.settings">
+            <ColeccionesPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="banners"
+        element={
+          <RequirePermission permission="manage.settings">
+            <BannersPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="metodos-envio"
+        element={
+          <RequirePermission permission="manage.settings">
+            <MetodosEnvioPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="cajas"
+        element={
+          <RequirePermission permission="manage.settings">
+            <CajasPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="transacciones"
+        element={
+          <RequirePermission permission="manage.settings">
+            <TransaccionesPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="ubicaciones"
+        element={
+          <RequirePermission permission="manage.settings">
+            <UbicacionesPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="metas-mensuales"
+        element={
+          <RequirePermission permission="manage.settings">
+            <MetasMensualesPage />
           </RequirePermission>
         }
       />
