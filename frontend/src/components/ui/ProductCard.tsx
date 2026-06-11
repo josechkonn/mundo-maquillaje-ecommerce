@@ -22,7 +22,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const user = useAuthStore(state => state.user);
   const { addItem } = useCartStore();
   const [addedToCart, setAddedToCart] = useState(false);
-  const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(product.variations?.[0] || null);
+
+  const activeVariations = (product.variations || []).filter(v => v.isActive !== false);
+  const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(activeVariations[0] || null);
   
   const favorited = isFavorite(product.id);
 
@@ -47,7 +49,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
     currencies
   );
 
-  const firstVariationImages = selectedVariation?.images ?? product.variations?.[0]?.images ?? [];
+  const firstVariationImages = selectedVariation?.images ?? activeVariations[0]?.images ?? [];
   const mainImage = firstVariationImages.find((img) => img.isMain)?.urlImage
     || firstVariationImages[0]?.urlImage
     || "/placeholder-product.png";
@@ -64,7 +66,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
     addItem({
       variationId: selectedVariation.id,
       productId: product.id,
-      productName: product.name,
+      productName: selectedVariation.name || product.name,
       productSlug: product.slug,
       variationName: selectedVariation.attributeValue || selectedVariation.name,
       price: selectedVariation.price,
@@ -87,8 +89,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
     setTimeout(() => setAddedToCart(false), 1500);
   };
 
-  const groups = product.variations?.length && product.variations.length > 1
-    ? product.variations.reduce<Record<string, ProductVariation[]>>((acc, v) => {
+  const groups = activeVariations.length > 1
+    ? activeVariations.reduce<Record<string, ProductVariation[]>>((acc, v) => {
         const key = v.attributeName || "Variantes";
         if (!acc[key]) acc[key] = [];
         acc[key].push(v);

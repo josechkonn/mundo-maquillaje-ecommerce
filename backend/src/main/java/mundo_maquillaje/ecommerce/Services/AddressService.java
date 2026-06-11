@@ -111,6 +111,7 @@ public class AddressService {
                 .phone(address.getPhone())
                 .direction(address.getDirection())
                 .city(address.getCity())
+                .cityId(address.getMunicipality() != null && address.getMunicipality().getCity() != null ? address.getMunicipality().getCity().getId().toString() : null)
                 .stateId(address.getState() != null ? address.getState().getId().toString() : null)
                 .stateName(address.getState() != null ? address.getState().getName() : null)
                 .municipalityId(address.getMunicipality() != null ? address.getMunicipality().getId().toString() : null)

@@ -92,6 +92,7 @@ public class CashRegisterController {
                 cr.getName(),
                 cr.getDescription(),
                 cr.getCurrency(),
+                cr.getBalance(),
                 cr.getIsActive(),
                 cr.getCreatedAt(),
                 cr.getUpdatedAt()

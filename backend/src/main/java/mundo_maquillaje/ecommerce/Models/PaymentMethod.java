@@ -40,6 +40,9 @@ public class PaymentMethod {
     @JoinColumn(name = "id_cash_register")
     private CashRegister cashRegister;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @OneToMany(mappedBy = "paymentMethod", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PaymentMethodField> fields;
 

@@ -49,8 +49,9 @@ const DescriptionViewer = ({ description, name, maxLength = 250 }: DescriptionVi
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)}
         title={`Descripción - ${name}`}
+        maxWidth="3xl"
       >
-        <div className="space-y-6 text-text-base leading-relaxed whitespace-pre-line text-justify">
+        <div className="p-8 text-text-base leading-relaxed whitespace-pre-line text-justify text-p-b">
           {description}
         </div>
       </Modal>

@@ -103,7 +103,7 @@ const RevenueChart = () => {
               </span>
               <p className="text-sm font-bold text-brand-400 mt-0.5">
                 {entry.dataKey === "revenue"
-                  ? formatPrice(entry.value, selectedCurrency)
+                  ? formatPrice(entry.value, selectedCurrency || undefined)
                   : entry.value}
               </p>
             </div>

@@ -66,6 +66,17 @@ public class PaymentMethodController {
     @PostMapping
     public ResponseEntity<?> createPaymentMethod(Authentication authentication, @RequestBody PaymentMethod paymentMethod) {
         permissionService.requirePermission(authentication, "manage.settings");
+
+        // Set back-reference on fields
+        if (paymentMethod.getFields() != null) {
+            for (int i = 0; i < paymentMethod.getFields().size(); i++) {
+                var field = paymentMethod.getFields().get(i);
+                field.setId(null); // Force new ID generation
+                field.setPaymentMethod(paymentMethod);
+                field.setDisplayOrder(i + 1);
+            }
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentMethodRepository.save(paymentMethod));
     }
 
@@ -80,7 +91,19 @@ public class PaymentMethodController {
         existing.setDisplayOrder(paymentMethod.getDisplayOrder());
         existing.setIsActive(paymentMethod.getIsActive());
         existing.setCurrency(paymentMethod.getCurrency());
-        existing.setFields(paymentMethod.getFields());
+        existing.setImageUrl(paymentMethod.getImageUrl());
+
+        // Handle fields: clear old ones and set new ones with proper back-reference
+        existing.getFields().clear();
+        if (paymentMethod.getFields() != null) {
+            for (int i = 0; i < paymentMethod.getFields().size(); i++) {
+                var field = paymentMethod.getFields().get(i);
+                field.setId(null);
+                field.setPaymentMethod(existing);
+                field.setDisplayOrder(i + 1);
+                existing.getFields().add(field);
+            }
+        }
 
         return ResponseEntity.ok(paymentMethodRepository.save(existing));
     }

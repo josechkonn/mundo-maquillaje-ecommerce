@@ -50,7 +50,7 @@ public class ProductVariation {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "alert_quantity")
+    @Column(name = "alert_quantity", nullable = false, columnDefinition = "INTEGER DEFAULT 5")
     @Builder.Default
     private Integer alertQuantity = 5;
 

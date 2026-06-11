@@ -44,7 +44,10 @@ const ProductDetailsPage = () => {
   // Pre-seleccionar la primera variación tan pronto como el producto cargue
   useEffect(() => {
     if (product && product.variations?.length > 0 && !selectedVariation) {
-      setSelectedVariation(product.variations[0]);
+      const active = product.variations.filter(v => v.isActive !== false);
+      if (active.length > 0) {
+        setSelectedVariation(active[0]);
+      }
     }
   }, [product]);
 

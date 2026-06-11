@@ -13,60 +13,50 @@ const OrdersPage = () => {
   
   const [orders, setOrders] = useState<BackendOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  
-  // Sorting states
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortDesc, setSortDesc] = useState(true);
   
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const pageSize = 10;
 
   const fetchOrders = useCallback(async () => {
     if (!user) return;
     
     setIsLoading(true);
     try {
-      // El backend en Spring Boot maneja páginas basadas en índice 0
-      const response = await orderService.getUserOrders(
-        currentPage - 1, 
-        itemsPerPage, 
-        searchQuery, 
-        selectedStatus,
+      const response = await orderService.getUserOrders({
+        search: searchQuery || undefined,
+        status: selectedStatus || undefined,
+        page: currentPage - 1,
+        size: pageSize,
         sortBy,
         sortDesc,
-        startDate,
-        endDate
-      );
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      });
       
-      setOrders(response.content || []);
-      setTotalItems(response.totalElements || 0);
+      setOrders(response.content);
+      setTotalPages(response.totalPages);
+      setTotalItems(response.totalElements);
     } catch (error: any) {
       console.error("Error fetching orders:", error);
       toast.error(error.message || "Hubo un error al cargar los pedidos.");
     } finally {
       setIsLoading(false);
     }
-  }, [user, currentPage, searchQuery, selectedStatus, sortBy, sortDesc, itemsPerPage, startDate, endDate]);
+  }, [user, currentPage, searchQuery, selectedStatus, sortBy, sortDesc, startDate, endDate]);
 
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
 
-  // Manejadores
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(1); // Reset a primera página al buscar
-  };
-
-  // Configuración de Filtros
   const filterConfig = [
     {
       key: "status",
@@ -87,7 +77,6 @@ const OrdersPage = () => {
     }
   ];
 
-  // Definición de columnas
   const columns: ColumnDef<BackendOrder>[] = [
     {
       key: "id",
@@ -148,12 +137,18 @@ const OrdersPage = () => {
         if (status === "PENDING") {
           badgeClass = "bg-mm-status-pending text-mm-status-pending-text border border-mm-status-pending-border";
           label = "Pendiente";
-        } else if (status === "PAID" || status === "DELIVERED") {
+        } else if (status === "PAID") {
           badgeClass = "bg-mm-status-completed text-mm-status-completed-text border border-mm-status-completed-border";
-          label = "Completado";
-        } else if (status === "PROCESSING" || status === "SHIPPED") {
+          label = "Pagado";
+        } else if (status === "PROCESSING") {
           badgeClass = "bg-mm-status-processing text-mm-status-processing-text border border-mm-status-processing-border";
-          label = "En proceso";
+          label = "Procesando";
+        } else if (status === "SHIPPED") {
+          badgeClass = "bg-mm-status-processing text-mm-status-processing-text border border-mm-status-processing-border";
+          label = "Enviado";
+        } else if (status === "DELIVERED") {
+          badgeClass = "bg-mm-status-completed text-mm-status-completed-text border border-mm-status-completed-border";
+          label = "Entregado";
         } else if (status === "CANCELLED") {
           badgeClass = "bg-mm-status-cancelled text-mm-status-cancelled-text border border-mm-status-cancelled-border";
           label = "Cancelado";
@@ -188,10 +183,20 @@ const OrdersPage = () => {
     <div className="w-full">
       <DataTable
         title="Pedidos Realizados"
+        titleInfo={`${totalItems || 0} pedidos registrados`}
         columns={columns}
         data={orders}
         isLoading={isLoading}
-        onSearch={handleSearch}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={pageSize}
+        onPageChange={setCurrentPage}
+        onSearch={setSearchQuery}
+        searchPlaceholder="Buscar por pedido..."
+        sortBy={sortBy}
+        sortDesc={sortDesc}
+        onSort={(key, desc) => { setSortBy(key); setSortDesc(desc); }}
         startDate={startDate}
         endDate={endDate}
         onDateRangeChange={(start, end) => {
@@ -200,18 +205,7 @@ const OrdersPage = () => {
           setCurrentPage(1);
         }}
         filters={filterConfig}
-        sortBy={sortBy}
-        sortDesc={sortDesc}
-        onSort={(key, desc) => {
-          setSortBy(key);
-          setSortDesc(desc);
-          setCurrentPage(1);
-        }}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
-        onPageChange={setCurrentPage}
+        titleAboveFilters={true}
       />
     </div>
   );

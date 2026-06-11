@@ -2,7 +2,9 @@ package mundo_maquillaje.ecommerce.Services;
 
 import lombok.RequiredArgsConstructor;
 import mundo_maquillaje.ecommerce.Models.CashRegister;
+import mundo_maquillaje.ecommerce.Models.Transaction;
 import mundo_maquillaje.ecommerce.Repositories.CashRegisterRepository;
+import mundo_maquillaje.ecommerce.Repositories.TransactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +16,7 @@ import java.util.UUID;
 public class CashRegisterService {
 
     private final CashRegisterRepository cashRegisterRepository;
+    private final TransactionRepository transactionRepository;
 
     public List<CashRegister> getAllCashRegisters() {
         return cashRegisterRepository.findAll();
@@ -49,5 +52,9 @@ public class CashRegisterService {
     public void deleteCashRegister(UUID id) {
         CashRegister existing = getCashRegisterById(id);
         cashRegisterRepository.delete(existing);
+    }
+
+    public List<Transaction> getTransactionsByCashRegister(UUID cashRegisterId) {
+        return transactionRepository.findByCashRegisterIdOrderByCreatedAtDesc(cashRegisterId);
     }
 }

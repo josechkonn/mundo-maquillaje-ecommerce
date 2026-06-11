@@ -3,6 +3,7 @@ package mundo_maquillaje.ecommerce.Repositories;
 import mundo_maquillaje.ecommerce.Models.Order;
 import mundo_maquillaje.ecommerce.Models.Profile;
 import mundo_maquillaje.ecommerce.Models.OrderStatus;
+import mundo_maquillaje.ecommerce.Models.Currency;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -27,6 +28,10 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
     @EntityGraph(attributePaths = {"paymentMethod", "paymentMethod.currency", "currency", "shippingAddress"})
     @Query("SELECT o FROM Order o WHERE o.id = :id AND o.profile = :profile")
     Optional<Order> findByIdAndProfileWithDetails(@Param("id") UUID id, @Param("profile") Profile profile);
+
+    @EntityGraph(attributePaths = {"paymentMethod", "paymentMethod.currency", "currency", "shippingAddress", "profile"})
+    @Query("SELECT o FROM Order o WHERE o.id = :id")
+    Optional<Order> findByIdWithDetails(@Param("id") UUID id);
 
     @Query("SELECT o FROM Order o WHERE o.profile = :profile AND " +
            "(LOWER(o.status) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
@@ -55,7 +60,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
     @Query("""
         SELECT COUNT(o)
         FROM Order o
-        WHERE o.status IN ('PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
+        WHERE o.status IN ('PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
           AND o.createdAt BETWEEN :start AND :end
         """)
     long countOrdersByStatusAndDate(@Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
@@ -72,7 +77,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
     @Query("""
         SELECT c.code, c.symbol, COUNT(o)
         FROM Order o JOIN o.currency c
-        WHERE o.status IN ('PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
+        WHERE o.status IN ('PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
           AND o.createdAt BETWEEN :start AND :end
         GROUP BY c.code, c.symbol
         ORDER BY COUNT(o) DESC
@@ -119,7 +124,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
         SELECT DATE(o.createdAt) as date, COUNT(o) as orders
         FROM Order o JOIN o.currency c
         WHERE c.code = :currencyCode
-          AND o.status IN ('PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
+          AND o.status IN ('PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
           AND o.createdAt BETWEEN :start AND :end
         GROUP BY DATE(o.createdAt)
         ORDER BY date
@@ -130,10 +135,57 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
         SELECT FUNCTION('TO_CHAR', o.createdAt, 'YYYY-MM') as month, COUNT(o) as orders
         FROM Order o JOIN o.currency c
         WHERE c.code = :currencyCode
-          AND o.status IN ('PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
+          AND o.status IN ('PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
           AND o.createdAt BETWEEN :start AND :end
         GROUP BY FUNCTION('TO_CHAR', o.createdAt, 'YYYY-MM')
         ORDER BY month
         """)
     List<Object[]> findOrdersOverTimeByMonth(@Param("currencyCode") String currencyCode, @Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
+
+    @Query("""
+        SELECT o.orderNumber, o.createdAt, pr.name, o.totalAmount, c.code, c.symbol, o.status
+        FROM Order o
+        JOIN o.currency c
+        JOIN o.profile pr
+        WHERE o.status IN ('PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
+          AND o.createdAt BETWEEN :start AND :end
+        ORDER BY o.createdAt DESC
+        """)
+    List<Object[]> findSalesReport(@Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
+
+    @Query("""
+        SELECT o.orderNumber, o.createdAt, pr.name, o.totalAmount, c.code, c.symbol, o.status
+        FROM Order o
+        JOIN o.currency c
+        JOIN o.profile pr
+        WHERE c.code = :currencyCode
+          AND o.status IN ('PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
+          AND o.createdAt BETWEEN :start AND :end
+        ORDER BY o.createdAt DESC
+        """)
+    List<Object[]> findSalesReportByCurrency(@Param("currencyCode") String currencyCode, @Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
+
+    @Query("""
+        SELECT o.orderNumber, o.createdAt, pr.name, o.totalAmount, c.code, c.symbol, o.status
+        FROM Order o
+        JOIN o.currency c
+        JOIN o.profile pr
+        WHERE (:status IS NULL OR o.status = :status)
+          AND o.createdAt BETWEEN :start AND :end
+        ORDER BY o.createdAt DESC
+        """)
+    List<Object[]> findOrdersReport(@Param("status") OrderStatus status, @Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
+
+    @Query("""
+        SELECT op.productName, COALESCE(op.variationName, ''), SUM(op.quantity), SUM(op.subtotal)
+        FROM OrderProduct op
+        JOIN op.order o
+        JOIN o.currency c
+        WHERE c.code = :currencyCode
+          AND o.status IN ('PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED')
+          AND o.createdAt BETWEEN :start AND :end
+        GROUP BY op.productName, COALESCE(op.variationName, '')
+        ORDER BY SUM(op.quantity) DESC
+        """)
+    List<Object[]> findBestSellers(@Param("currencyCode") String currencyCode, @Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
 }

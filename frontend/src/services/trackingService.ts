@@ -30,4 +30,5 @@ export const trackingService = {
   trackProductView: async (productId: string) => trackingService.trackEvent("PRODUCT_VIEW", productId),
   trackAddToCart: async (productId: string) => trackingService.trackEvent("ADD_TO_CART", productId),
   trackCheckoutStart: async () => trackingService.trackEvent("CHECKOUT_START"),
+  trackPurchase: async () => trackingService.trackEvent("PURCHASE"),
 };

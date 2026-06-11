@@ -23,6 +23,7 @@ export interface ShippingMethod {
   price: number;
   freeShippingThreshold?: number;
   isActive: boolean;
+  isCod: boolean;
 }
 
 export interface PaymentMethodField {
@@ -38,6 +39,7 @@ export interface PaymentMethod {
   slug: string;
   currency: Currency;
   isActive: boolean;
+  imageUrl?: string;
   fields: PaymentMethodField[];
 }
 

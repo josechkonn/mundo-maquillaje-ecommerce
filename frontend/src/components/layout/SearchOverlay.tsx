@@ -36,7 +36,7 @@ const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose }) => {
 
   const loadSuggestedCategories = async () => {
     try {
-      const cats = await categoryService.getAllCategories();
+      const cats = await categoryService.getAllCategories(undefined, true);
       setSuggestedCategories(cats.filter(c => !c.parent).slice(0, 8));
     } catch (err) {
       console.error(err);

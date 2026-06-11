@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import mundo_maquillaje.ecommerce.Models.Currency;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -15,6 +16,7 @@ public class CashRegisterResponseDTO {
     private String name;
     private String description;
     private Currency currency;
+    private BigDecimal balance;
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

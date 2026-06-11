@@ -16,8 +16,8 @@ const NewProducts = () => {
     const fetchNewProducts = async () => {
       setLoading(true);
       try {
-        const response = await productService.getAllProducts(0, 10);
-        const newProductsData = Array.isArray(response) ? response : response.content;
+        const response = await productService.getNewProducts(0, 10);
+        const newProductsData = response.content;
         if (newProductsData && newProductsData.length > 0) {
           setProducts(newProductsData);
         }

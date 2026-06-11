@@ -9,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface MunicipalityRepository extends JpaRepository<Municipality, UUID> {
-    List<Municipality> findByStateIdOrderByName(UUID stateId);
+    List<Municipality> findByCityIdOrderByName(UUID cityId);
 }

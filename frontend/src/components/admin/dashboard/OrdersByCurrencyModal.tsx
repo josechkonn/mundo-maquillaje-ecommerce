@@ -36,9 +36,9 @@ const OrdersByCurrencyModal = ({ isOpen, onClose }: Props) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Pedidos por Moneda" maxWidth="lg">
       {loading ? (
-        <div className="py-8 text-center text-text-muted text-p-sm">Cargando...</div>
+        <div className="text-center text-text-muted text-p-sm">Cargando...</div>
       ) : data.length === 0 ? (
-        <div className="py-8 text-center text-text-muted text-p-sm">No hay pedidos en este período</div>
+        <div className="text-center text-text-muted text-p-sm">No hay pedidos en este período</div>
       ) : (
         <div className="space-y-3">
           {data.map((item) => (

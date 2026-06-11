@@ -39,10 +39,12 @@ const ProductInfo = ({ product, onVariationChange, onHoverVariation }: ProductIn
     }
   };
 
+  const activeVariations = (product.variations || []).filter(v => v.isActive !== false);
+
   // Seleccionar la primera variación por defecto al cargar
   useEffect(() => {
-    if (product.variations?.length > 0) {
-      handleVariationSelect(product.variations[0]);
+    if (activeVariations.length > 0) {
+      handleVariationSelect(activeVariations[0]);
     }
   }, [product]);
 
@@ -52,7 +54,7 @@ const ProductInfo = ({ product, onVariationChange, onHoverVariation }: ProductIn
     onVariationChange(v);
   };
 
-  const currentPrice = selectedVariation?.price || product.variations?.[0]?.price || 0;
+  const currentPrice = selectedVariation?.price || activeVariations[0]?.price || 0;
   const currentStock = selectedVariation?.stock ?? 0;
 
   // Si no hay moneda seleccionada aún, no renderizamos el precio formateado
@@ -84,9 +86,8 @@ const ProductInfo = ({ product, onVariationChange, onHoverVariation }: ProductIn
           <span className="text-brand-500 font-bold text-p-s uppercase tracking-widest mb-2">
             {product.brand?.name}
           </span>
-          {/* H3 Normal según corrección del usuario */}
           <h3 className="text-h3-s md:text-h3-b font-normal text-text-base leading-tight">
-            {product.name}
+            {selectedVariation?.name || product.name}
           </h3>
         </div>
         <button
@@ -113,7 +114,7 @@ const ProductInfo = ({ product, onVariationChange, onHoverVariation }: ProductIn
 
       {/* Variation Selector */}
       <VariationSelector
-        variations={product.variations}
+        variations={activeVariations}
         selectedVariation={selectedVariation}
         onSelect={handleVariationSelect}
         onHoverVariation={onHoverVariation}
@@ -138,7 +139,7 @@ const ProductInfo = ({ product, onVariationChange, onHoverVariation }: ProductIn
             addItem({
               variationId: selectedVariation.id,
               productId: product.id,
-              productName: product.name,
+              productName: selectedVariation.name || product.name,
               productSlug: product.slug,
               variationName: selectedVariation.attributeValue || selectedVariation.name,
               price: selectedVariation.price,
@@ -173,7 +174,7 @@ const ProductInfo = ({ product, onVariationChange, onHoverVariation }: ProductIn
       </div>
 
       {/* Description Viewer */}
-      <DescriptionViewer description={selectedVariation?.description || ""} name={product.name} />
+      <DescriptionViewer description={selectedVariation?.description || ""} name={selectedVariation?.name || product.name} />
     </div>
   );
 };

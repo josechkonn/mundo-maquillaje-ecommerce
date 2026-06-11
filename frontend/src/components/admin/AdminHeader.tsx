@@ -144,9 +144,7 @@ const AdminHeader = ({ collapsed, onToggle }: AdminHeaderProps) => {
           <div className="flex items-center gap-3 pl-3 border-l border-neutral-300">
             <div className="hidden sm:block text-right">
               <p className="text-p-s md:text-p-b font-medium text-text-base leading-tight">
-                {profile.firstName || profile.lastName
-                  ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
-                  : user?.email || "Admin"}
+                {profile.name || user?.email || "Admin"}
               </p>
               <span className="text-xs text-text-muted">Administrador</span>
             </div>
@@ -159,7 +157,7 @@ const AdminHeader = ({ collapsed, onToggle }: AdminHeaderProps) => {
                 />
               ) : (
                 <span className="text-p-b font-bold text-brand-600">
-                  {((profile?.firstName || "A")[0] + (profile?.lastName || "d")[0]).toUpperCase()}
+                  {(profile?.name || "A")[0].toUpperCase()}
                 </span>
               )}
             </div>

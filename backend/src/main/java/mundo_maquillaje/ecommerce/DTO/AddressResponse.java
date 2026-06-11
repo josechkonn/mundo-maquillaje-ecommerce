@@ -16,6 +16,7 @@ public class AddressResponse {
     private String phone;
     private String direction;
     private String city;
+    private String cityId;
     private String stateId;
     private String stateName;
     private String municipalityId;

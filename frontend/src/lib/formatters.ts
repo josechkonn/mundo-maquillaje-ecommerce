@@ -92,3 +92,68 @@ export const convertAndFormatPrice = (
 
   return formatPrice(convertedValue, targetCurrency);
 };
+
+/**
+ * Convierte un precio de una moneda origen a una destino devolviendo el número crudo
+ * (sin formatear), ideal para inputs editables.
+ */
+export const convertPriceNumber = (
+  amount: number,
+  sourceCurrency?: Currency,
+  targetCurrency?: Currency | null,
+  allCurrencies: Currency[] = []
+): number => {
+  if (!sourceCurrency || !targetCurrency) return amount;
+
+  const srcCode = sourceCurrency.code.toUpperCase().trim();
+  const tgtCode = targetCurrency.code.toUpperCase().trim();
+
+  if (srcCode === tgtCode) return amount;
+
+  if (!allCurrencies || allCurrencies.length === 0) return amount;
+
+  const getRate = (code: string) => {
+    const c = allCurrencies.find(curr => {
+      const dbCode = curr.code.toUpperCase().trim();
+      const searchCode = code.toUpperCase().trim();
+      return dbCode === searchCode ||
+        (searchCode === "VES" && (dbCode === "VEF" || dbCode === "BS" || dbCode === "VES"));
+    });
+    return c?.exchangeRate || 1;
+  };
+
+  const rateVES = getRate("VES");
+  const rateCOP = getRate("COP");
+
+  let convertedValue = amount;
+
+  const isVES = (c: string) => ["VES", "VEF", "BS"].includes(c);
+
+  if (srcCode === "USD") {
+    if (isVES(tgtCode)) {
+      convertedValue = amount * rateVES;
+    } else if (tgtCode === "COP") {
+      convertedValue = amount * (rateVES * rateCOP);
+    }
+  }
+  else if (isVES(srcCode)) {
+    if (tgtCode === "USD") {
+      convertedValue = amount / rateVES;
+    } else if (tgtCode === "COP") {
+      convertedValue = amount * rateCOP;
+    }
+  }
+  else if (srcCode === "COP") {
+    if (tgtCode === "USD") {
+      convertedValue = amount / (rateVES * rateCOP);
+    } else if (isVES(tgtCode)) {
+      convertedValue = amount / rateCOP;
+    }
+  }
+  else {
+    const baseValue = amount / (sourceCurrency.exchangeRate || 1);
+    convertedValue = baseValue * (targetCurrency.exchangeRate || 1);
+  }
+
+  return convertedValue;
+};

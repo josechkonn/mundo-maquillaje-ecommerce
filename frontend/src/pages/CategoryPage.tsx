@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import NotFoundPage from "./NotFoundPage";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
@@ -128,12 +129,7 @@ const CategoryPage = () => {
   }
 
   if (!category) {
-    return (
-      <div className="py-40 text-center flex flex-col items-center">
-        <h2 className="text-2xl font-bold text-neutral-800 mb-4">Categoría no encontrada</h2>
-        <p className="text-neutral-500">La categoría que buscas no está disponible.</p>
-      </div>
-    );
+    return <NotFoundPage />;
   }
 
   return (

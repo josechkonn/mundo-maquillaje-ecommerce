@@ -24,8 +24,8 @@ public class ProductSpecifications {
         return (Root<Product> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            Double rVES = rateVES != null ? rateVES : 1.0;
-            Double rCOP = rateCOP != null ? rateCOP : 1.0;
+            double rVES = rateVES != null ? rateVES : 1.0;
+            double rCOP = rateCOP != null ? rateCOP : 1.0;
 
             // 1. Búsqueda por texto (name en product, description/sku en variations)
             if (search != null && !search.trim().isEmpty()) {
@@ -92,12 +92,12 @@ public class ProductSpecifications {
             // Solo productos activos
             predicates.add(cb.isTrue(root.get("isActive")));
 
-            // Solo productos con al menos una variación con stock > 0
+            // Solo productos con al menos una variación activa
             Subquery<UUID> stockSub = query.subquery(UUID.class);
             Root<ProductVariation> stockRoot = stockSub.from(ProductVariation.class);
             stockSub.select(stockRoot.get("product").get("id")).where(
                 cb.equal(stockRoot.get("product").get("id"), root.get("id")),
-                cb.greaterThan(stockRoot.get("stock"), 0)
+                cb.isTrue(stockRoot.get("isActive"))
             );
             predicates.add(cb.exists(stockSub));
 

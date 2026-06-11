@@ -29,4 +29,7 @@ public class ShippingMethod {
 
     @Column(nullable = false)
     private Boolean isActive = true;
+
+    @Column(name = "is_cod", nullable = false)
+    private Boolean isCod = false;
 }

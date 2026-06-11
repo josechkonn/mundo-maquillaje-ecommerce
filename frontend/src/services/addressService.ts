@@ -7,6 +7,7 @@ export interface AddressData {
   phone: string;
   direction: string;
   city: string;
+  cityId?: string;
   stateId: string;
   municipalityId: string;
   parishId: string;
@@ -18,6 +19,10 @@ export interface AddressData {
 export const addressService = {
   getAll: async (): Promise<AddressData[]> => {
     return api.get("/addresses");
+  },
+
+  getUserAddresses: async (profileId: string): Promise<AddressData[]> => {
+    return api.get(`/addresses/admin/${profileId}`);
   },
 
   create: async (data: AddressData): Promise<AddressData> => {

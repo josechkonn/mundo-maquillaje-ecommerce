@@ -186,7 +186,7 @@ const OrderDetailPage = () => {
           {(order.shippingCost ?? 0) > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-neutral-600">Envío</span>
-              <span className="text-neutral-700 font-medium">{formatPrice(order.shippingCost, currency)}</span>
+              <span className="text-neutral-700 font-medium">{formatPrice(order.shippingCost ?? 0, currency)}</span>
             </div>
           )}
           <div className="border-t border-neutral-400 pt-3 flex justify-between">

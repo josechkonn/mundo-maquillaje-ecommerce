@@ -10,11 +10,20 @@ import mundo_maquillaje.ecommerce.Models.OrderProduct;
 import mundo_maquillaje.ecommerce.Models.OrderStatus;
 import mundo_maquillaje.ecommerce.Models.PaymentMethod;
 import mundo_maquillaje.ecommerce.Models.Profile;
+import mundo_maquillaje.ecommerce.Models.ShippingMethod;
 import mundo_maquillaje.ecommerce.Models.Transaction;
+import mundo_maquillaje.ecommerce.Models.TransactionStatus;
+import mundo_maquillaje.ecommerce.Models.TransactionType;
 import mundo_maquillaje.ecommerce.Models.Currency;
 import mundo_maquillaje.ecommerce.Models.OrderDirection;
+import mundo_maquillaje.ecommerce.Models.ProductVariation;
+import mundo_maquillaje.ecommerce.Repositories.CurrencyRepository;
 import mundo_maquillaje.ecommerce.Repositories.OrderProductRepository;
 import mundo_maquillaje.ecommerce.Repositories.OrderRepository;
+import mundo_maquillaje.ecommerce.Repositories.PaymentMethodRepository;
+import mundo_maquillaje.ecommerce.Repositories.ProfileRepository;
+import mundo_maquillaje.ecommerce.Repositories.ShippingMethodRepository;
+import mundo_maquillaje.ecommerce.Repositories.ProductVariationRepository;
 import mundo_maquillaje.ecommerce.Repositories.TransactionRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -40,6 +49,11 @@ public class OrderService {
     private final OrderProductRepository orderProductRepository;
     private final TransactionRepository transactionRepository;
     private final ProfileService profileService;
+    private final ProfileRepository profileRepository;
+    private final CurrencyRepository currencyRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
+    private final ShippingMethodRepository shippingMethodRepository;
+    private final ProductVariationRepository productVariationRepository;
 
     @Transactional(readOnly = true)
     public Page<OrderListResponseDTO> getUserOrders(
@@ -64,7 +78,7 @@ public class OrderService {
         Page<Order> orderPage = orderRepository.findAll(spec, pageable);
 
         if (orderPage.isEmpty()) {
-            return Page.empty(pageable);
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
 
         List<UUID> orderIds = orderPage.getContent().stream()
@@ -105,6 +119,23 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    public OrderListResponseDTO getAdminOrderById(UUID orderId) {
+        Order order = orderRepository.findByIdWithDetails(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido no encontrado"));
+
+        List<OrderProduct> products = orderProductRepository.findByOrderIdIn(List.of(orderId));
+        List<Transaction> transactions = transactionRepository.findByOrderIdIn(List.of(orderId));
+
+        Map<UUID, List<OrderProduct>> productsByOrder = new HashMap<>();
+        productsByOrder.put(orderId, products);
+
+        Map<UUID, List<Transaction>> transactionsByOrder = new HashMap<>();
+        transactionsByOrder.put(orderId, transactions);
+
+        return toDTO(order, productsByOrder, transactionsByOrder);
+    }
+
+    @Transactional(readOnly = true)
     public Page<OrderListResponseDTO> getAdminOrders(
             int page,
             int size,
@@ -123,7 +154,7 @@ public class OrderService {
         Page<Order> orderPage = orderRepository.findAll(spec, pageable);
 
         if (orderPage.isEmpty()) {
-            return Page.empty(pageable);
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
 
         List<UUID> orderIds = orderPage.getContent().stream()
@@ -341,6 +372,353 @@ public class OrderService {
             order.setStatus(OrderStatus.CANCELLED);
         }
         orderRepository.saveAll(orders);
+    }
+
+    @Transactional
+    public void deleteOrder(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido no encontrado"));
+
+        // Restore stock for each product variation
+        List<OrderProduct> orderProducts = orderProductRepository.findByOrderIdIn(List.of(orderId));
+        for (OrderProduct op : orderProducts) {
+            if (op.getVariation() != null) {
+                ProductVariation variation = op.getVariation();
+                variation.setStock(variation.getStock() + op.getQuantity());
+                productVariationRepository.save(variation);
+            }
+        }
+
+        // Delete transactions (no cascade from Order to Transaction)
+        List<Transaction> transactions = transactionRepository.findByOrderIdIn(List.of(orderId));
+        transactionRepository.deleteAll(transactions);
+
+        // Delete the order — CascadeType.ALL handles OrderProduct and OrderDirection
+        orderRepository.delete(order);
+    }
+
+    @Transactional
+    public Transaction verifyOrder(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new RuntimeException("Solo se pueden verificar pedidos pendientes");
+        }
+
+        Transaction transaction = new Transaction();
+        transaction.setOrder(order);
+        transaction.setPaymentMethod(order.getPaymentMethod());
+        transaction.setCurrency(order.getCurrency());
+        transaction.setAmount(order.getTotalAmount());
+        transaction.setReference(order.getPaymentReference());
+        transaction.setReceiptUrl(order.getReceiptUrl());
+        transaction.setStatus(TransactionStatus.VERIFIED);
+        transaction.setType(TransactionType.ORDER_PAYMENT);
+        transactionRepository.save(transaction);
+
+        order.setStatus(OrderStatus.PAID);
+        orderRepository.save(order);
+
+        return transaction;
+    }
+
+    @Transactional
+    public Transaction rejectOrder(UUID orderId, String reason) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new RuntimeException("Solo se pueden rechazar pedidos pendientes");
+        }
+
+        Transaction transaction = new Transaction();
+        transaction.setOrder(order);
+        transaction.setPaymentMethod(order.getPaymentMethod());
+        transaction.setCurrency(order.getCurrency());
+        transaction.setAmount(order.getTotalAmount());
+        transaction.setReference(order.getPaymentReference());
+        transaction.setReceiptUrl(order.getReceiptUrl());
+        transaction.setStatus(TransactionStatus.REJECTED);
+        transaction.setType(TransactionType.ORDER_PAYMENT);
+        transaction.setDescription(reason);
+        transactionRepository.save(transaction);
+
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
+
+        return transaction;
+    }
+
+    @Transactional
+    public OrderListResponseDTO updateOrder(UUID orderId, Map<String, Object> body) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido no encontrado"));
+
+        if (body.containsKey("status")) {
+            order.setStatus(OrderStatus.valueOf(body.get("status").toString().toUpperCase()));
+        }
+
+        // If the order is (or was just set to) PAID, ensure a VERIFIED transaction exists
+        if (order.getStatus() == OrderStatus.PAID) {
+            List<Transaction> existingTx = transactionRepository.findByOrderIdIn(List.of(orderId));
+            boolean hasVerified = existingTx.stream().anyMatch(t -> t.getStatus() == TransactionStatus.VERIFIED);
+            boolean hasPending = existingTx.stream().anyMatch(t -> t.getStatus() == TransactionStatus.PENDING);
+            if (!hasVerified) {
+                if (hasPending) {
+                    Transaction tx = existingTx.stream().filter(t -> t.getStatus() == TransactionStatus.PENDING).findFirst().get();
+                    tx.setStatus(TransactionStatus.VERIFIED);
+                    transactionRepository.save(tx);
+                } else {
+                    Transaction tx = new Transaction();
+                    tx.setOrder(order);
+                    tx.setPaymentMethod(order.getPaymentMethod());
+                    tx.setCurrency(order.getCurrency());
+                    tx.setAmount(order.getTotalAmount());
+                    tx.setReference(order.getPaymentReference());
+                    tx.setReceiptUrl(order.getReceiptUrl());
+                    tx.setStatus(TransactionStatus.VERIFIED);
+                    tx.setType(TransactionType.ORDER_PAYMENT);
+                    transactionRepository.save(tx);
+                }
+            }
+        }
+
+        if (body.containsKey("currencyId") && body.get("currencyId") != null && !body.get("currencyId").toString().trim().isEmpty()) {
+            UUID currencyId = UUID.fromString(body.get("currencyId").toString());
+            Currency newCurrency = currencyRepository.findById(currencyId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Moneda no encontrada"));
+            order.setCurrency(newCurrency);
+        }
+        if (body.containsKey("shippingCost")) {
+            order.setShippingCost(Double.parseDouble(body.get("shippingCost").toString()));
+        }
+        if (body.containsKey("discountAmount")) {
+            order.setDiscountAmount(Double.parseDouble(body.get("discountAmount").toString()));
+        }
+        if (body.containsKey("taxAmount")) {
+            order.setTaxAmount(Double.parseDouble(body.get("taxAmount").toString()));
+        }
+
+        recalculateTotal(order);
+        orderRepository.save(order);
+
+        List<OrderProduct> products = orderProductRepository.findByOrderIdIn(List.of(orderId));
+        List<Transaction> transactions = transactionRepository.findByOrderIdIn(List.of(orderId));
+        Map<UUID, List<OrderProduct>> productsByOrder = new HashMap<>();
+        productsByOrder.put(orderId, products);
+        Map<UUID, List<Transaction>> transactionsByOrder = new HashMap<>();
+        transactionsByOrder.put(orderId, transactions);
+        return toDTO(order, productsByOrder, transactionsByOrder);
+    }
+
+    @Transactional
+    public OrderListResponseDTO addProductToOrder(UUID orderId, Map<String, Object> body) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido no encontrado"));
+
+        OrderProduct product = new OrderProduct();
+        product.setOrder(order);
+        product.setProductName(body.get("productName").toString());
+        product.setVariationName(body.getOrDefault("variationName", "").toString());
+        product.setPrice(Double.parseDouble(body.get("price").toString()));
+        product.setQuantity(Integer.parseInt(body.get("quantity").toString()));
+        product.setDiscount(body.containsKey("discount") ? Double.parseDouble(body.get("discount").toString()) : 0.0);
+        product.setTaxAmount(body.containsKey("taxAmount") ? Double.parseDouble(body.get("taxAmount").toString()) : 0.0);
+
+        double qty = product.getQuantity();
+        double price = product.getPrice();
+        double discount = product.getDiscount();
+        double tax = product.getTaxAmount();
+        product.setSubtotal(qty * price * (1 - discount / 100) * (1 + tax / 100));
+
+        orderProductRepository.save(product);
+
+        recalculateTotalsForOrder(order);
+        orderRepository.save(order);
+
+        List<OrderProduct> products = orderProductRepository.findByOrderIdIn(List.of(orderId));
+        List<Transaction> transactions = transactionRepository.findByOrderIdIn(List.of(orderId));
+        Map<UUID, List<OrderProduct>> productsByOrder = new HashMap<>();
+        productsByOrder.put(orderId, products);
+        Map<UUID, List<Transaction>> transactionsByOrder = new HashMap<>();
+        transactionsByOrder.put(orderId, transactions);
+        return toDTO(order, productsByOrder, transactionsByOrder);
+    }
+
+    @Transactional
+    public OrderListResponseDTO updateOrderProduct(UUID orderId, UUID productId, Map<String, Object> body) {
+        OrderProduct product = orderProductRepository.findById(productId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Producto no encontrado"));
+
+        if (!product.getOrder().getId().equals(orderId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El producto no pertenece a este pedido");
+        }
+
+        if (body.containsKey("productName")) product.setProductName(body.get("productName").toString());
+        if (body.containsKey("variationName")) product.setVariationName(body.get("variationName").toString());
+        if (body.containsKey("price")) product.setPrice(Double.parseDouble(body.get("price").toString()));
+        if (body.containsKey("quantity")) product.setQuantity(Integer.parseInt(body.get("quantity").toString()));
+        if (body.containsKey("discount")) product.setDiscount(Double.parseDouble(body.get("discount").toString()));
+        if (body.containsKey("taxAmount")) product.setTaxAmount(Double.parseDouble(body.get("taxAmount").toString()));
+
+        double qty = product.getQuantity();
+        double price = product.getPrice();
+        double discount = product.getDiscount();
+        double tax = product.getTaxAmount();
+        product.setSubtotal(qty * price * (1 - discount / 100) * (1 + tax / 100));
+
+        orderProductRepository.save(product);
+
+        recalculateTotalsForOrder(product.getOrder());
+        orderRepository.save(product.getOrder());
+
+        List<OrderProduct> products = orderProductRepository.findByOrderIdIn(List.of(orderId));
+        List<Transaction> transactions = transactionRepository.findByOrderIdIn(List.of(orderId));
+        Map<UUID, List<OrderProduct>> productsByOrder = new HashMap<>();
+        productsByOrder.put(orderId, products);
+        Map<UUID, List<Transaction>> transactionsByOrder = new HashMap<>();
+        transactionsByOrder.put(orderId, transactions);
+        return toDTO(product.getOrder(), productsByOrder, transactionsByOrder);
+    }
+
+    @Transactional
+    public OrderListResponseDTO removeProductFromOrder(UUID orderId, UUID productId) {
+        OrderProduct product = orderProductRepository.findById(productId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Producto no encontrado"));
+
+        if (!product.getOrder().getId().equals(orderId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El producto no pertenece a este pedido");
+        }
+
+        orderProductRepository.delete(product);
+
+        Order order = product.getOrder();
+        recalculateTotalsForOrder(order);
+        orderRepository.save(order);
+
+        List<OrderProduct> products = orderProductRepository.findByOrderIdIn(List.of(orderId));
+        List<Transaction> transactions = transactionRepository.findByOrderIdIn(List.of(orderId));
+        Map<UUID, List<OrderProduct>> productsByOrder = new HashMap<>();
+        productsByOrder.put(orderId, products);
+        Map<UUID, List<Transaction>> transactionsByOrder = new HashMap<>();
+        transactionsByOrder.put(orderId, transactions);
+        return toDTO(order, productsByOrder, transactionsByOrder);
+    }
+
+    @Transactional
+    public OrderListResponseDTO createAdminOrder(UUID profileId, Map<String, Object> body) {
+        Profile profile = profileRepository.findById(profileId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente no encontrado"));
+
+        Currency currency = currencyRepository.findById(
+                UUID.fromString(body.get("currencyId").toString()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Moneda no encontrada"));
+
+        PaymentMethod paymentMethod = paymentMethodRepository.findById(
+                UUID.fromString(body.get("paymentMethodId").toString()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Método de pago no encontrado"));
+
+        ShippingMethod shippingMethod = shippingMethodRepository.findById(
+                UUID.fromString(body.get("shippingMethodId").toString()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Método de envío no encontrado"));
+
+        Order order = new Order();
+        order.setProfile(profile);
+        order.setCurrency(currency);
+        order.setPaymentMethod(paymentMethod);
+        order.setShippingMethod(shippingMethod);
+        order.setShippingCost(body.containsKey("shippingCost") ? Double.parseDouble(body.get("shippingCost").toString()) : 0.0);
+        order.setDiscountAmount(body.containsKey("discountAmount") ? Double.parseDouble(body.get("discountAmount").toString()) : 0.0);
+        order.setTaxAmount(0.0);
+        order.setSubtotal(0.0);
+        order.setTotalAmount(0.0);
+        order.setPaymentReference(body.containsKey("paymentReference") ? body.get("paymentReference").toString() : null);
+        order.setReceiptUrl(body.containsKey("receiptUrl") ? body.get("receiptUrl").toString() : null);
+        order.setStatus(body.containsKey("status") ? OrderStatus.valueOf(body.get("status").toString().toUpperCase()) : OrderStatus.PENDING);
+
+        order = orderRepository.save(order);
+
+        // --- Shipping address ---
+        if (body.containsKey("shippingAddress")) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> addr = (Map<String, Object>) body.get("shippingAddress");
+            OrderDirection direction = new OrderDirection();
+            direction.setOrder(order);
+            direction.setName(addr.getOrDefault("name", "").toString());
+            direction.setFullname(addr.getOrDefault("fullname", "").toString());
+            direction.setPhone(addr.getOrDefault("phone", "").toString());
+            direction.setDirection(addr.getOrDefault("direction", "").toString());
+            direction.setCity(addr.getOrDefault("city", "").toString());
+            direction.setState(addr.getOrDefault("state", "").toString());
+            direction.setMunicipality(addr.getOrDefault("municipality", "").toString());
+            direction.setParish(addr.getOrDefault("parish", "").toString());
+            order.setShippingAddress(direction);
+        }
+
+        // --- Products ---
+        if (body.containsKey("products")) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> productsData = (List<Map<String, Object>>) body.get("products");
+            double subtotalSum = 0.0;
+
+            for (Map<String, Object> p : productsData) {
+                OrderProduct op = new OrderProduct();
+                op.setOrder(order);
+                op.setProductName(p.getOrDefault("productName", "").toString());
+                op.setVariationName(p.getOrDefault("variationName", "").toString());
+                op.setPrice(Double.parseDouble(p.get("price").toString()));
+                op.setQuantity(Integer.parseInt(p.get("quantity").toString()));
+                op.setDiscount(p.containsKey("discount") ? Double.parseDouble(p.get("discount").toString()) : 0.0);
+                op.setTaxAmount(p.containsKey("taxAmount") ? Double.parseDouble(p.get("taxAmount").toString()) : 0.0);
+                double qty = op.getQuantity();
+                double price = op.getPrice();
+                double discount = op.getDiscount();
+                double tax = op.getTaxAmount();
+                op.setSubtotal(qty * price * (1 - discount / 100) * (1 + tax / 100));
+                subtotalSum += op.getSubtotal();
+                orderProductRepository.save(op);
+            }
+
+            order.setSubtotal(subtotalSum);
+            order.setTotalAmount(subtotalSum + order.getShippingCost() - order.getDiscountAmount());
+            order = orderRepository.save(order);
+        }
+
+        // --- Transaction (if receipt or reference exists) ---
+        if ((order.getReceiptUrl() != null && !order.getReceiptUrl().isBlank()) ||
+            (order.getPaymentReference() != null && !order.getPaymentReference().isBlank())) {
+            Transaction transaction = new Transaction();
+            transaction.setOrder(order);
+            transaction.setPaymentMethod(paymentMethod);
+            transaction.setCurrency(currency);
+            transaction.setAmount(order.getTotalAmount());
+            transaction.setReference(order.getPaymentReference());
+            transaction.setReceiptUrl(order.getReceiptUrl());
+            transaction.setStatus(TransactionStatus.PENDING);
+            transaction.setType(TransactionType.ORDER_PAYMENT);
+            transactionRepository.save(transaction);
+        }
+
+        List<OrderProduct> savedProducts = orderProductRepository.findByOrderIdIn(List.of(order.getId()));
+        List<Transaction> savedTransactions = transactionRepository.findByOrderIdIn(List.of(order.getId()));
+        Map<UUID, List<OrderProduct>> productsByOrder = new HashMap<>();
+        productsByOrder.put(order.getId(), savedProducts);
+        Map<UUID, List<Transaction>> transactionsByOrder = new HashMap<>();
+        transactionsByOrder.put(order.getId(), savedTransactions);
+
+        return toDTO(order, productsByOrder, transactionsByOrder);
+    }
+
+    private void recalculateTotal(Order order) {
+        List<OrderProduct> products = orderProductRepository.findByOrderIdIn(List.of(order.getId()));
+        double subtotal = products.stream().mapToDouble(OrderProduct::getSubtotal).sum();
+        order.setSubtotal(subtotal);
+        order.setTotalAmount(subtotal + order.getShippingCost() - order.getDiscountAmount());
+    }
+
+    private void recalculateTotalsForOrder(Order order) {
+        recalculateTotal(order);
     }
 
     private LocalDateTime parseStartDate(String startDate) {

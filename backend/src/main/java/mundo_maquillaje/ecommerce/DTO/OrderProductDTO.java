@@ -18,4 +18,5 @@ public class OrderProductDTO {
     private Double subtotal;
     private Double discount;
     private Double taxAmount;
+    private String imageUrl;
 }

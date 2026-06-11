@@ -38,6 +38,7 @@ public class BannerService {
         Banner banner = getBannerById(id);
 
         banner.setImageUrl(details.getImageUrl());
+        banner.setMobileImageUrl(details.getMobileImageUrl());
         banner.setTitle(details.getTitle());
         banner.setLinkUrl(details.getLinkUrl());
         banner.setDisplayOrder(details.getDisplayOrder());

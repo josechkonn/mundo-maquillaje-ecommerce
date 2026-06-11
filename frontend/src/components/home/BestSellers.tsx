@@ -8,19 +8,27 @@ const BestSellers = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [title, setTitle] = useState("Nuestros Productos Más Vendidos");
   const [sectionRef, isVisible] = useIntersectionObserver({ threshold: 0.1 });
 
   useEffect(() => {
-    // Cargamos 10 productos cuando la sección entra en el viewport
     if (!isVisible || products.length > 0) return;
 
     const fetchBestSellers = async () => {
       setLoading(true);
       try {
-        const response = await productService.getAllProducts(0, 10);
-        const bestSellerProducts = Array.isArray(response) ? response : response.content;
+        const response = await productService.getBestSellers(0, 10);
+        const bestSellerProducts = response.content;
         if (bestSellerProducts && bestSellerProducts.length > 0) {
           setProducts(bestSellerProducts);
+        } else {
+          const allResponse = await productService.getAllProducts(0, 20);
+          const allProducts = Array.isArray(allResponse) ? allResponse : allResponse.content;
+          if (allProducts && allProducts.length > 0) {
+            const shuffled = [...allProducts].sort(() => Math.random() - 0.5).slice(0, 10);
+            setProducts(shuffled);
+            setTitle("Explora Nuestros Productos");
+          }
         }
       } catch (err) {
         console.error("Error al cargar más vendidos:", err);
@@ -56,7 +64,7 @@ const BestSellers = () => {
         <section className="w-full py-4 md:py-16 bg-neutral-100 overflow-hidden animate-fade-in">
           <div className="max-w-[95%] mx-auto relative px-4">
             <h2 className="text-center text-h2-s md:text-h2-b font-bold mb-4 md:mb-16 text-text-base">
-              Nuestros Productos Más Vendidos
+              {title}
             </h2>
             <ProductCarousel
               products={products}

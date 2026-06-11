@@ -6,6 +6,7 @@ import SubmitButton from "../../components/ui/SubmitButton";
 import { useAuthStore } from "../../store/authStore";
 import { supabase } from "../../lib/supabase";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 
 interface ProfileFormData {
     name: string;
@@ -14,6 +15,18 @@ interface ProfileFormData {
     phone: string;
 }
 
+const ROLE_LABEL: Record<string, string> = {
+    ADMIN: "Administrador",
+    EMPLOYEE: "Empleado",
+    USER: "Cliente",
+};
+
+const ROLE_BADGE: Record<string, string> = {
+    ADMIN: "bg-purple-100 text-purple-700",
+    EMPLOYEE: "bg-blue-100 text-blue-700",
+    USER: "bg-neutral-100 text-neutral-600",
+};
+
 /**
  * Página de perfil del usuario.
  * Muestra la información de la cuenta en modo lectura por defecto,
@@ -21,10 +34,11 @@ interface ProfileFormData {
  */
 const ProfilePage = () => {
     const user = useAuthStore(state => state.user);
+    const profile = useAuthStore(state => state.profile);
     const [isEditing, setIsEditing] = useState(false);
 
     // Extraer nombre y apellido de los metadatos
-    const fullName = user?.user_metadata?.full_name || "";
+    const fullName = user?.user_metadata?.full_name || profile?.name || "";
     const [firstName, ...lastNameParts] = fullName.split(" ");
     const lastName = lastNameParts.join(" ");
 
@@ -32,8 +46,8 @@ const ProfilePage = () => {
         defaultValues: {
             name: firstName || "",
             surname: lastName || "",
-            email: user?.email || "",
-            phone: user?.phone || "",
+            email: user?.email || profile?.email || "",
+            phone: user?.phone || profile?.phone || "",
         }
     });
 
@@ -96,6 +110,20 @@ const ProfilePage = () => {
 
             {/* Barra divisora */}
             <div className="h-[2px] bg-neutral-700 w-full mb-8" />
+
+            {/* Admin badge + link */}
+            {profile?.role && (
+                <div className="flex items-center gap-4 mb-6">
+                    <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold ${ROLE_BADGE[profile.role] || ROLE_BADGE.USER}`}>
+                        {ROLE_LABEL[profile.role] || profile.role}
+                    </span>
+                    {profile.role === "ADMIN" && (
+                        <Link to="/admin" className="text-sm font-medium text-brand-400 hover:text-brand-500 transition-colors">
+                            Ir al panel de administración →
+                        </Link>
+                    )}
+                </div>
+            )}
 
             {/* Formulario */}
             <form onSubmit={handleSubmit(onSubmit)} className="max-w-5xl space-y-4">

@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -32,6 +33,10 @@ public class CashRegister {
     @ManyToOne
     @JoinColumn(name = "id_currency", nullable = false)
     private Currency currency;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    @Builder.Default
+    private BigDecimal balance = BigDecimal.ZERO;
 
     @Column(nullable = false)
     @Builder.Default

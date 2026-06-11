@@ -11,9 +11,11 @@ interface Address {
   direction: string;
   city: string;
   stateId: string;
+  cityId: string;
   municipalityId: string;
   parishId: string;
   stateName?: string;
+  cityName?: string;
   municipalityName?: string;
   parishName?: string;
 }
@@ -117,13 +119,16 @@ const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = 
     direction: "",
     city: "",
     stateId: "",
+    cityId: "",
     municipalityId: "",
     parishId: "",
   });
 
   const [states, setStates] = useState<LocationItem[]>([]);
+  const [cities, setCities] = useState<LocationItem[]>([]);
   const [municipalities, setMunicipalities] = useState<LocationItem[]>([]);
   const [parishes, setParishes] = useState<LocationItem[]>([]);
+  const [loadingCities, setLoadingCities] = useState(false);
   const [loadingMun, setLoadingMun] = useState(false);
   const [loadingPar, setLoadingPar] = useState(false);
   const [statesLoaded, setStatesLoaded] = useState(false);
@@ -136,24 +141,45 @@ const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = 
     if (initialData) {
       setFormData(initialData);
       if (initialData.stateId) {
-        setLoadingMun(true);
-        locationService.getMunicipalities(initialData.stateId)
-          .then(muns => {
-            setMunicipalities(muns);
-            if (initialData.municipalityId) {
-              setLoadingPar(true);
-              locationService.getParishes(initialData.municipalityId)
-                .then(pars => setParishes(pars))
-                .finally(() => setLoadingPar(false));
+        setLoadingCities(true);
+        locationService.getCities(initialData.stateId)
+          .then(cs => {
+            setCities(cs);
+            if (initialData.cityId) {
+              setLoadingMun(true);
+              locationService.getMunicipalities(initialData.cityId)
+                .then(muns => {
+                  setMunicipalities(muns);
+                  if (initialData.municipalityId) {
+                    setLoadingPar(true);
+                    locationService.getParishes(initialData.municipalityId)
+                      .then(pars => setParishes(pars))
+                      .finally(() => setLoadingPar(false));
+                  }
+                })
+                .finally(() => setLoadingMun(false));
             }
           })
-          .finally(() => setLoadingMun(false));
+          .finally(() => setLoadingCities(false));
       }
     }
   }, [initialData]);
 
-  const handleStateChange = useCallback((id: string) => {
-    setFormData(prev => ({ ...prev, stateId: id, municipalityId: "", parishId: "" }));
+  const handleStateChange = useCallback((id: string, name: string) => {
+    setFormData(prev => ({ ...prev, stateId: id, cityId: "", municipalityId: "", parishId: "" }));
+    setCities([]);
+    setMunicipalities([]);
+    setParishes([]);
+    if (id) {
+      setLoadingCities(true);
+      locationService.getCities(id)
+        .then(setCities)
+        .finally(() => setLoadingCities(false));
+    }
+  }, []);
+
+  const handleCityChange = useCallback((id: string, name: string) => {
+    setFormData(prev => ({ ...prev, city: name, cityId: id, municipalityId: "", parishId: "" }));
     setMunicipalities([]);
     setParishes([]);
     if (id) {
@@ -241,14 +267,14 @@ const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = 
             disabled={!statesLoaded}
             loading={!statesLoaded}
           />
-          <FormField
+          <SearchableSelect
             label="Ciudad:"
-            name="city"
-            value={formData.city}
-            onChange={handleChange}
-            placeholder="San Juan de Colón"
-            required
-            roundedClass="rounded-full"
+            placeholder="Selecciona una ciudad"
+            options={cities}
+            value={formData.cityId}
+            onChange={handleCityChange}
+            disabled={!formData.stateId}
+            loading={loadingCities}
           />
 
           <SearchableSelect
@@ -257,7 +283,7 @@ const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = 
             options={municipalities}
             value={formData.municipalityId}
             onChange={handleMunicipalityChange}
-            disabled={!formData.stateId}
+            disabled={!formData.cityId}
             loading={loadingMun}
           />
           <SearchableSelect

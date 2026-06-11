@@ -30,6 +30,9 @@ public class ProductCollection {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "extra_description", columnDefinition = "TEXT")
+    private String extraDescription;
+
     @Column(name = "image_url")
     private String imageUrl;
 

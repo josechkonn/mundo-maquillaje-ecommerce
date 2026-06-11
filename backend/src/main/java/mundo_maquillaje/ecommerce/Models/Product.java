@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+
 @Entity
 @Table(name = "products")
 @Data
@@ -36,6 +37,9 @@ public class Product {
 
     @Column(name = "slug", nullable = false, unique = true, length = 150)
     private String slug;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
 
     @Column(name = "is_active")
     @Builder.Default

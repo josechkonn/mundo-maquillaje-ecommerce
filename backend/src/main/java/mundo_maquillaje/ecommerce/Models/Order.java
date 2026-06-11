@@ -71,4 +71,8 @@ public class Order {
     private LocalDateTime updatedAt;
 
     private LocalDateTime shippedAt;
+
+    private String paymentReference;
+
+    private String receiptUrl;
 }

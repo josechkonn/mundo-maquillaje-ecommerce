@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import {
   CheckCircleIcon,
@@ -78,8 +79,8 @@ const AlertModal = ({
   const config = typeConfig[type];
   const IconComponent = config.icon;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-fade-in">
       <div
         className="absolute inset-0 bg-neutral-900/40 backdrop-blur-md"
         onClick={onClose}
@@ -150,7 +151,8 @@ const AlertModal = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

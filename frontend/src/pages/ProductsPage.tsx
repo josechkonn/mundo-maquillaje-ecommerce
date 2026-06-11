@@ -182,7 +182,7 @@ const ProductsPage = () => {
     const loadFilterData = async () => {
       try {
         const [cats, brs] = await Promise.all([
-          categoryService.getAllCategories(),
+          categoryService.getAllCategories(undefined, true),
           brandService.getAllBrands()
         ]);
         setCategories(cats);

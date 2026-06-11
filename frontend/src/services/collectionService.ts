@@ -5,10 +5,13 @@ export interface ProductCollection {
   id: string;
   title: string;
   description: string;
+  extraDescription?: string;
   imageUrl?: string;
   product?: Product;
   displayOrder: number;
   isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export const collectionService = {

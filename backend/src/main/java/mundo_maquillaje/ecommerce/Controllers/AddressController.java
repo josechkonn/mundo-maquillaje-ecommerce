@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import mundo_maquillaje.ecommerce.DTO.AddressRequest;
 import mundo_maquillaje.ecommerce.DTO.AddressResponse;
 import mundo_maquillaje.ecommerce.Services.AddressService;
+import mundo_maquillaje.ecommerce.Services.PermissionService;
 import mundo_maquillaje.ecommerce.Services.ProfileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,11 +20,20 @@ public class AddressController {
 
     private final AddressService addressService;
     private final ProfileService profileService;
+    private final PermissionService permissionService;
 
     @GetMapping
     public List<AddressResponse> getAddresses(Authentication authentication) {
         UUID userId = profileService.getUserIdFromAuthentication(authentication);
         return addressService.getAddressesByProfileId(userId);
+    }
+
+    @GetMapping("/admin/{profileId}")
+    public List<AddressResponse> getAddressesByProfileId(
+            Authentication authentication,
+            @PathVariable UUID profileId) {
+        permissionService.requirePermission(authentication, "manage.orders");
+        return addressService.getAddressesByProfileId(profileId);
     }
 
     @PostMapping

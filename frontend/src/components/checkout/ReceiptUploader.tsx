@@ -14,7 +14,7 @@ const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isImageLoading, setIsImageLoading] = useState(false);
+  const [, setIsImageLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentUrl || null);
   const [hasImage, setHasImage] = useState(!!currentUrl);
 

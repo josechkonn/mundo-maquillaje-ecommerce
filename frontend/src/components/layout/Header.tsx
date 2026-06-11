@@ -68,7 +68,7 @@ const Header = () => {
     const fetchData = async () => {
       try {
         const [catData, collData] = await Promise.all([
-          categoryService.getAllCategories(),
+          categoryService.getAllCategories(undefined, true),
           collectionService.getActiveCollections()
         ]);
 
@@ -118,10 +118,10 @@ const Header = () => {
     if (!coll.product || !activeMainCat) return false;
 
     // El producto pertenece directamente a la categoría principal
-    if (coll.product.category.id === activeMainCat.id) return true;
+    if (coll.product.category?.id === activeMainCat.id) return true;
 
     // O pertenece a una subcategoría (o sub-subcategoría) de la categoría principal
-    let currentCat = categories.find(c => c.id === coll.product?.category.id);
+    let currentCat = categories.find(c => c.id === coll.product?.category?.id);
     while (currentCat?.parent) {
       if (currentCat.parent.id === activeMainCat.id) return true;
       currentCat = categories.find(c => c.id === currentCat?.parent?.id);

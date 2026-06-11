@@ -10,6 +10,7 @@ import RevenueChart from "../../components/admin/dashboard/RevenueChart";
 import ConversionFunnel from "../../components/admin/dashboard/ConversionFunnel";
 import ActiveUsers from "../../components/admin/dashboard/ActiveUsers";
 import MonthlyGoal from "../../components/admin/dashboard/MonthlyGoal";
+import DashboardSkeleton from "../../components/admin/skeletons/DashboardSkeleton";
 
 interface DashboardOverview {
   sales: { current: number; previous: number; change: number };
@@ -19,7 +20,7 @@ interface DashboardOverview {
   revenue: { labels: string[]; revenues: number[]; orders: number[] };
   conversion: { current: Record<string, number>; previous: Record<string, number> };
   activeUsers: { total: number; change: number; states: { state: string; count: number; percentage: number; change: number }[] };
-  monthlyGoal: { goal: number; current: number; month: number; year: number; currencyCode: string };
+  monthlyGoal: { goal: number; current: number; previous?: number; month: number; year: number; currencyCode: string };
 }
 
 const DashboardContext = createContext<DashboardOverview | null>(null);
@@ -34,7 +35,7 @@ const defaultOverview: DashboardOverview = {
   revenue: { labels: [], revenues: [], orders: [] },
   conversion: { current: {}, previous: {} },
   activeUsers: { total: 0, change: 0, states: [] },
-  monthlyGoal: { goal: 0, current: 0, month: 0, year: 0, currencyCode: "" },
+  monthlyGoal: { goal: 0, current: 0, previous: 0, month: 0, year: 0, currencyCode: "" },
 };
 
 const getGroupBy = (start: string | undefined, end: string | undefined) => {
@@ -79,6 +80,10 @@ const DashboardPage = () => {
       });
     });
   }, [selectedCurrency?.code, startDate, endDate]);
+
+  if (!overview) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <DashboardContext.Provider value={overview}>

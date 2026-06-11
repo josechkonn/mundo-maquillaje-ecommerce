@@ -26,6 +26,24 @@ export const brandService = {
     return api.get(`/brands/${id}`);
   },
 
-  // Los métodos de admin (create, update, delete) se omiten por ahora 
-  // ya que esta tarea se enfoca en la visualización del home.
+  /**
+   * Crea una nueva marca (Admin)
+   */
+  createBrand: async (brand: Partial<Brand>): Promise<Brand> => {
+    return api.post("/brands", brand);
+  },
+
+  /**
+   * Actualiza una marca (Admin)
+   */
+  updateBrand: async (id: string, brand: Partial<Brand>): Promise<Brand> => {
+    return api.put(`/brands/${id}`, brand);
+  },
+
+  /**
+   * Elimina una marca (Admin)
+   */
+  deleteBrand: async (id: string): Promise<void> => {
+    return api.delete(`/brands/${id}`);
+  },
 };

@@ -80,12 +80,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         syncTokensWithBackend(session.access_token, session.refresh_token);
         get().fetchProfile();
         useFavoritesStore.getState().syncFavorites();
-        useCartStore.getState().syncCart();
+      } else {
+        useCartStore.getState().loadCart(false);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, freshSession) => {
+      (event, freshSession) => {
         const user = freshSession?.user ?? null;
         set({ session: freshSession, user });
 
@@ -93,11 +94,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           syncTokensWithBackend(freshSession.access_token, freshSession.refresh_token);
           get().fetchProfile();
           useFavoritesStore.getState().syncFavorites();
-          useCartStore.getState().syncCart();
+          if (event === 'SIGNED_IN') {
+            useCartStore.getState().migrateToBackend();
+          } else if (event === 'INITIAL_SESSION') {
+            useCartStore.getState().loadCart(true);
+          }
         } else {
           syncTokensWithBackend(null, null);
           set({ profile: null });
           useFavoritesStore.getState().clearFavorites();
+          const cart = useCartStore.getState();
+          cart.saveForGuest();
+          cart.loadCart(false);
         }
       }
     );

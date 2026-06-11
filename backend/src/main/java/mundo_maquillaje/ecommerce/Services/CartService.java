@@ -6,7 +6,6 @@ import mundo_maquillaje.ecommerce.Models.Cart;
 import mundo_maquillaje.ecommerce.Models.CartProduct;
 import mundo_maquillaje.ecommerce.Models.Currency;
 import mundo_maquillaje.ecommerce.Models.Product;
-import mundo_maquillaje.ecommerce.Models.ProductImage;
 import mundo_maquillaje.ecommerce.Models.ProductVariation;
 import mundo_maquillaje.ecommerce.Repositories.CartProductRepository;
 import mundo_maquillaje.ecommerce.Repositories.CartRepository;
@@ -14,10 +13,8 @@ import mundo_maquillaje.ecommerce.Repositories.ProductVariationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+
 import java.util.stream.Collectors;
 
 @Service
@@ -29,19 +26,26 @@ public class CartService {
     private final ProductVariationRepository productVariationRepository;
 
     private Cart getOrCreateActiveCart(UUID userId) {
-        Cart cart = cartRepository.findTopByUserIdAndStatusOrderByCreatedAtDesc(userId, "ACTIVE").orElse(null);
-        if (cart != null) {
-            // Limpiar carritos duplicados
-            List<Cart> allActive = cartRepository.findAllByUserIdAndStatus(userId, "ACTIVE");
-            if (allActive.size() > 1) {
-                for (Cart duplicate : allActive) {
-                    if (!duplicate.getId().equals(cart.getId())) {
-                        duplicate.setStatus("COMPLETED");
-                        cartRepository.save(duplicate);
-                    }
+        List<Cart> activeCarts = cartRepository.findAllByUserIdAndStatus(userId, "ACTIVE");
+        if (!activeCarts.isEmpty()) {
+            activeCarts.sort((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()));
+            Cart cart = activeCarts.get(0);
+            if (activeCarts.size() > 1) {
+                for (int i = 1; i < activeCarts.size(); i++) {
+                    Cart dup = activeCarts.get(i);
+                    dup.getProducts().clear();
+                    dup.setStatus("COMPLETED");
+                    cartRepository.save(dup);
                 }
             }
             return cart;
+        }
+        // Intentar reutilizar un carrito COMPLETED
+        Cart completed = cartRepository.findTopByUserIdAndStatusOrderByCreatedAtDesc(userId, "COMPLETED").orElse(null);
+        if (completed != null) {
+            completed.getProducts().clear();
+            completed.setStatus("ACTIVE");
+            return cartRepository.save(completed);
         }
         return cartRepository.save(Cart.builder()
                 .userId(userId)
@@ -49,16 +53,24 @@ public class CartService {
                 .build());
     }
 
+    @Transactional
     public List<CartProduct> getCartItems(UUID userId) {
         Cart cart = getOrCreateActiveCart(userId);
-        return cart.getProducts();
+        return new ArrayList<>(cart.getProducts());
     }
 
     @Transactional
     public CartProduct addToCart(UUID userId, UUID variationId, int quantity) {
         Cart cart = getOrCreateActiveCart(userId);
+        cart = cartRepository.findByIdWithLock(cart.getId())
+                .orElseThrow(() -> new RuntimeException("Carrito no encontrado"));
         ProductVariation variation = productVariationRepository.findById(variationId)
                 .orElseThrow(() -> new RuntimeException("Variación no encontrada"));
+
+        if (!Boolean.TRUE.equals(variation.getIsActive())
+                || !Boolean.TRUE.equals(variation.getProduct().getIsActive())) {
+            throw new RuntimeException("Este producto no está disponible actualmente");
+        }
 
         if (quantity > variation.getStock()) {
             if (variation.getStock() == 0) {
@@ -67,32 +79,41 @@ public class CartService {
             throw new RuntimeException("Stock insuficiente. Disponible: " + variation.getStock());
         }
 
-        // Limpiar duplicados de CartProduct para esta variación
-        List<CartProduct> existingProducts = cartProductRepository.findAllByCartIdAndVariationId(cart.getId(), variationId);
+        // Buscar items existentes para esta variación y consolidar duplicados
+        List<CartProduct> existingProducts = cartProductRepository.findAllByCartIdAndVariationId(cart.getId(),
+                variationId);
+
         if (!existingProducts.isEmpty()) {
+            // Consolidar todos los duplicados en uno solo
+            CartProduct keeper = existingProducts.get(0);
+            int existingTotalQty = existingProducts.stream().mapToInt(CartProduct::getQuantity).sum();
+
+            // Eliminar duplicados si hay más de uno
             if (existingProducts.size() > 1) {
-                CartProduct latest = existingProducts.get(0);
-                int totalQty = existingProducts.stream().mapToInt(CartProduct::getQuantity).sum();
-                latest.setQuantity(Math.min(totalQty, variation.getStock()));
-                cartProductRepository.save(latest);
                 for (int i = 1; i < existingProducts.size(); i++) {
-                    cartProductRepository.delete(existingProducts.get(i));
+                    CartProduct dup = existingProducts.get(i);
+                    cart.getProducts().remove(dup);
+                    cartProductRepository.delete(dup);
                 }
-                return latest;
+                cartProductRepository.flush();
             }
-            CartProduct product = existingProducts.get(0);
-            int newQty = product.getQuantity() + quantity;
-            product.setQuantity(Math.min(newQty, variation.getStock()));
-            return cartProductRepository.save(product);
+
+            // Sumar la cantidad nueva a la existente
+            int newQty = Math.min(existingTotalQty + quantity, variation.getStock());
+            keeper.setQuantity(newQty);
+            return cartProductRepository.save(keeper);
         }
 
+        // No existe: crear nuevo CartProduct
         CartProduct newProduct = CartProduct.builder()
                 .cart(cart)
                 .variation(variation)
-                .quantity(quantity)
+                .quantity(Math.min(quantity, variation.getStock()))
                 .build();
 
-        return cartProductRepository.save(newProduct);
+        CartProduct saved = cartProductRepository.save(newProduct);
+        cart.getProducts().add(saved);
+        return saved;
     }
 
     @Transactional
@@ -105,6 +126,7 @@ public class CartService {
         }
 
         if (quantity <= 0) {
+            product.getCart().getProducts().remove(product);
             cartProductRepository.delete(product);
             return null;
         }
@@ -126,6 +148,7 @@ public class CartService {
             throw new RuntimeException("No autorizado");
         }
 
+        product.getCart().getProducts().remove(product);
         cartProductRepository.delete(product);
     }
 
@@ -140,11 +163,16 @@ public class CartService {
     @Transactional
     public List<CartProduct> syncCart(UUID userId, List<Map<String, Object>> localItems) {
         Cart cart = getOrCreateActiveCart(userId);
-        
+        cart = cartRepository.findByIdWithLock(cart.getId())
+                .orElseThrow(() -> new RuntimeException("Carrito no encontrado"));
+        if (localItems.isEmpty())
+            return getCartItems(userId);
+
         List<UUID> localVariationIds = localItems.stream()
                 .map(item -> UUID.fromString((String) item.get("variationId")))
                 .collect(Collectors.toList());
 
+        // Eliminar items del carrito que no están en la lista local
         List<CartProduct> toRemove = cart.getProducts().stream()
                 .filter(cp -> !localVariationIds.contains(cp.getVariation().getId()))
                 .collect(Collectors.toList());
@@ -156,19 +184,41 @@ public class CartService {
             UUID variationId = UUID.fromString((String) localItem.get("variationId"));
             int quantity = ((Number) localItem.get("quantity")).intValue();
 
-            List<CartProduct> existingProducts = cartProductRepository.findAllByCartIdAndVariationId(cart.getId(), variationId);
+            List<CartProduct> existingProducts = cartProductRepository.findAllByCartIdAndVariationId(cart.getId(),
+                    variationId);
             if (!existingProducts.isEmpty()) {
-                CartProduct p = existingProducts.get(0);
-                int clampedQty = Math.min(quantity, p.getVariation().getStock());
+                // Consolidar todos los duplicados en un solo item
+                CartProduct keeper = existingProducts.get(0);
+                if (existingProducts.size() > 1) {
+                    for (int i = 1; i < existingProducts.size(); i++) {
+                        CartProduct dup = existingProducts.get(i);
+                        cart.getProducts().remove(dup);
+                        cartProductRepository.delete(dup);
+                    }
+                }
+                int clampedQty = Math.min(quantity, keeper.getVariation().getStock());
                 if (clampedQty <= 0) {
-                    cart.getProducts().remove(p);
-                    cartProductRepository.delete(p);
+                    cart.getProducts().remove(keeper);
+                    cartProductRepository.delete(keeper);
                 } else {
-                    p.setQuantity(clampedQty);
-                    cartProductRepository.save(p);
+                    keeper.setQuantity(clampedQty);
+                    cartProductRepository.save(keeper);
                 }
             } else {
-                addToCart(userId, variationId, quantity);
+                // No existe: crear nuevo
+                ProductVariation variation = productVariationRepository.findById(variationId).orElse(null);
+                if (variation != null && Boolean.TRUE.equals(variation.getIsActive())) {
+                    int clampedQty = Math.min(quantity, variation.getStock());
+                    if (clampedQty > 0) {
+                        CartProduct newProduct = CartProduct.builder()
+                                .cart(cart)
+                                .variation(variation)
+                                .quantity(clampedQty)
+                                .build();
+                        CartProduct saved = cartProductRepository.save(newProduct);
+                        cart.getProducts().add(saved);
+                    }
+                }
             }
         }
         return getCartItems(userId);
@@ -176,21 +226,25 @@ public class CartService {
 
     // ─── DTO Methods ──────────────────────────────────────────────────────────
 
+    @Transactional
     public List<CartItemDTO> getCartAsDTOs(UUID userId) {
         return getCartItems(userId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public CartItemDTO addToCartAsDTO(UUID userId, UUID variationId, int quantity) {
         return toDTO(addToCart(userId, variationId, quantity));
     }
 
+    @Transactional
     public CartItemDTO updateQuantityAsDTO(UUID userId, UUID productId, int quantity) {
         CartProduct cp = updateQuantity(userId, productId, quantity);
         return cp != null ? toDTO(cp) : null;
     }
 
+    @Transactional
     public List<CartItemDTO> syncCartAsDTO(UUID userId, List<Map<String, Object>> localItems) {
         return syncCart(userId, localItems).stream()
                 .map(this::toDTO)

@@ -10,7 +10,6 @@ interface StatsCardProps {
 
 const StatsCard = ({ title, value, change, icon, children }: StatsCardProps) => {
   const isPositive = change !== undefined && change >= 0;
-  const isNegative = change !== undefined && change < 0;
 
   return (
     <div className="bg-white rounded-[20px] p-5 shadow-sm border border-neutral-100">

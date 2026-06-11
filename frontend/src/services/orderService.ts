@@ -1,12 +1,13 @@
 import { api } from "../lib/api";
 
-export interface PageResponse<T> {
-  content: T[];
-  totalPages: number;
-  totalElements: number;
-  size: number;
-  number: number;
-  last: boolean;
+export interface CurrencyResponse {
+  id: string;
+  name: string;
+  code: string;
+  symbol: string;
+  exchangeRate: number;
+  decimalPlaces: number;
+  symbolPosition: "LEFT" | "RIGHT";
 }
 
 export interface OrderProductResponse {
@@ -18,6 +19,7 @@ export interface OrderProductResponse {
   subtotal: number;
   discount: number;
   taxAmount: number;
+  imageUrl?: string;
 }
 
 export interface OrderDirectionResponse {
@@ -30,16 +32,6 @@ export interface OrderDirectionResponse {
   parish: string;
   city: string;
   state: string;
-}
-
-export interface CurrencyResponse {
-  id: string;
-  name: string;
-  code: string;
-  symbol: string;
-  exchangeRate: number;
-  decimalPlaces: number;
-  symbolPosition: "LEFT" | "RIGHT";
 }
 
 export interface CashRegisterResponse {
@@ -58,15 +50,34 @@ export interface PaymentMethodResponse {
   cashRegister?: CashRegisterResponse;
 }
 
-export interface TransactionResponse {
-  id: string;
-  amount: number;
-  reference?: string;
-  receiptUrl?: string;
-  status: string;
-  currency: CurrencyResponse;
-  paymentMethod: PaymentMethodResponse;
-  createdAt: string;
+export interface OrdersResponse {
+  content: BackendOrder[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
+export interface AdminOrdersParams {
+  search?: string;
+  status?: string;
+  page: number;
+  size: number;
+  sortBy?: string;
+  sortDesc?: boolean;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface UserOrdersParams {
+  search?: string;
+  status?: string;
+  page: number;
+  size: number;
+  sortBy?: string;
+  sortDesc?: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface BackendOrder {
@@ -88,31 +99,56 @@ export interface BackendOrder {
   products?: OrderProductResponse[];
   paymentMethod?: PaymentMethodResponse;
   transactions?: TransactionResponse[];
+  shippingMethod?: { id: string; name: string };
+}
+
+export interface CreateOrderRequest {
+  profileId: string;
+  products: {
+    productName: string;
+    variationName?: string;
+    price: number;
+    quantity: number;
+    discount?: number;
+    taxAmount?: number;
+  }[];
+  currencyId: string;
+  paymentMethodId: string;
+  shippingMethodId: string;
+  shippingCost?: number;
+  discountAmount?: number;
+  shippingAddress?: {
+    name: string;
+    fullname: string;
+    phone: string;
+    direction: string;
+    city: string;
+    state: string;
+    municipality: string;
+    parish: string;
+  };
+  paymentReference?: string;
+  receiptUrl?: string;
+  status?: string;
 }
 
 export const orderService = {
-  getUserOrders: async (
-    page = 0,
-    size = 10,
-    search?: string,
-    status?: string,
-    sortBy = "createdAt",
-    sortDesc = true,
-    startDate?: string,
-    endDate?: string
-  ): Promise<PageResponse<BackendOrder>> => {
-    let url = `/orders?page=${page}&size=${size}&sortBy=${sortBy}&sortDesc=${sortDesc}`;
-    if (search && search.trim() !== "") {
-      url += `&search=${encodeURIComponent(search.trim())}`;
+  createAdminOrder: async (data: CreateOrderRequest): Promise<BackendOrder> => {
+    return api.post("/orders/admin/create", data);
+  },
+  getUserOrders: async (params: UserOrdersParams): Promise<OrdersResponse> => {
+    let url = `/orders?page=${params.page}&size=${params.size}&sortBy=${params.sortBy || "createdAt"}&sortDesc=${params.sortDesc !== false}`;
+    if (params.search && params.search.trim() !== "") {
+      url += `&search=${encodeURIComponent(params.search.trim())}`;
     }
-    if (status && status.trim() !== "") {
-      url += `&status=${encodeURIComponent(status.trim())}`;
+    if (params.status && params.status.trim() !== "") {
+      url += `&status=${encodeURIComponent(params.status.trim())}`;
     }
-    if (startDate && startDate.trim() !== "") {
-      url += `&startDate=${encodeURIComponent(startDate.trim())}`;
+    if (params.startDate && params.startDate.trim() !== "") {
+      url += `&startDate=${encodeURIComponent(params.startDate.trim())}`;
     }
-    if (endDate && endDate.trim() !== "") {
-      url += `&endDate=${encodeURIComponent(endDate.trim())}`;
+    if (params.endDate && params.endDate.trim() !== "") {
+      url += `&endDate=${encodeURIComponent(params.endDate.trim())}`;
     }
     return api.get(url);
   },
@@ -129,21 +165,76 @@ export const orderService = {
     return api.patch("/orders/admin/cancel", orderIds);
   },
 
-  getAdminOrders: async (
-    page = 0,
-    size = 10,
-    search?: string,
-    status?: string,
-    sortBy = "createdAt",
-    sortDesc = true,
+  deleteOrder: async (orderId: string): Promise<void> => {
+    return api.delete(`/orders/admin/${orderId}`);
+  },
+
+  verifyOrder: async (orderId: string): Promise<TransactionResponse> => {
+    return api.patch(`/orders/admin/${orderId}/verify`, {});
+  },
+
+  rejectOrder: async (orderId: string, reason: string): Promise<TransactionResponse> => {
+    return api.patch(`/orders/admin/${orderId}/reject`, { reason });
+  },
+
+  getAdminOrderById: async (orderId: string): Promise<BackendOrder> => {
+    return api.get(`/orders/admin/${orderId}`);
+  },
+
+  updateOrder: async (orderId: string, data: { status?: string; currencyId?: string; shippingCost?: number; discountAmount?: number; taxAmount?: number }): Promise<BackendOrder> => {
+    return api.put(`/orders/admin/${orderId}`, data);
+  },
+
+  addProductToOrder: async (orderId: string, data: { productName: string; variationName?: string; price: number; quantity: number; discount?: number; taxAmount?: number }): Promise<BackendOrder> => {
+    return api.post(`/orders/admin/${orderId}/products`, data);
+  },
+
+  updateOrderProduct: async (orderId: string, productId: string, data: { productName?: string; variationName?: string; price?: number; quantity?: number; discount?: number; taxAmount?: number }): Promise<BackendOrder> => {
+    return api.put(`/orders/admin/${orderId}/products/${productId}`, data);
+  },
+
+  removeProductFromOrder: async (orderId: string, productId: string): Promise<BackendOrder> => {
+    return api.delete(`/orders/admin/${orderId}/products/${productId}`);
+  },
+
+  getAdminOrders: async (params: AdminOrdersParams): Promise<OrdersResponse> => {
+    let url = `/orders/admin/all?page=${params.page}&size=${params.size}&sortBy=${params.sortBy || "createdAt"}&sortDesc=${params.sortDesc !== false}`;
+    if (params.search && params.search.trim() !== "") url += `&search=${encodeURIComponent(params.search.trim())}`;
+    if (params.status && params.status.trim() !== "") url += `&status=${encodeURIComponent(params.status.trim())}`;
+    if (params.startDate && params.startDate.trim() !== "") url += `&startDate=${encodeURIComponent(params.startDate.trim())}`;
+    if (params.endDate && params.endDate.trim() !== "") url += `&endDate=${encodeURIComponent(params.endDate.trim())}`;
+    return api.get(url);
+  },
+
+  getAllTransactions: async (
+    cursor?: string,
+    size = 20,
     startDate?: string,
     endDate?: string
-  ): Promise<PageResponse<BackendOrder>> => {
-    let url = `/orders/admin/all?page=${page}&size=${size}&sortBy=${sortBy}&sortDesc=${sortDesc}`;
-    if (search && search.trim() !== "") url += `&search=${encodeURIComponent(search.trim())}`;
-    if (status && status.trim() !== "") url += `&status=${encodeURIComponent(status.trim())}`;
-    if (startDate && startDate.trim() !== "") url += `&startDate=${encodeURIComponent(startDate.trim())}`;
-    if (endDate && endDate.trim() !== "") url += `&endDate=${encodeURIComponent(endDate.trim())}`;
+  ): Promise<{ content: TransactionResponse[]; nextCursor: string; hasMore: boolean }> => {
+    let url = `/transactions?size=${size}`;
+    if (cursor) url += `&cursor=${encodeURIComponent(cursor)}`;
+    if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
+    if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
     return api.get(url);
   },
 };
+
+export interface TransactionResponse {
+  id: string;
+  type: "ORDER_PAYMENT" | "DEPOSIT" | "WITHDRAW";
+  amount: number;
+  reference?: string;
+  receiptUrl?: string;
+  description?: string;
+  status: string;
+  currency: CurrencyResponse;
+  paymentMethod?: PaymentMethodResponse;
+  cashRegister?: CashRegisterResponse;
+  order?: {
+    id: string;
+    orderNumber?: string;
+  };
+  createdAt: string;
+  updatedAt?: string;
+}

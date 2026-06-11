@@ -4,6 +4,7 @@ import { Bars3Icon, XMarkIcon, ChevronDownIcon, CalendarIcon } from "@heroicons/
 import { useAuthStore } from "../../store/authStore";
 import { useCurrencyStore } from "../../store/currencyStore";
 import { useDashboardDateStore } from "../../store/dashboardDateStore";
+import { useReportsStore } from "../../store/reportsStore";
 import DateRangePicker from "../ui/DateRangePicker";
 import logo from "../../assets/imgs/logo.webp";
 
@@ -33,8 +34,8 @@ const SECTION_TITLES: Record<string, string> = {
   "/admin/ajustes": "Ajustes",
 };
 
-const SECTION_DATE_FILTER: string[] = ["/admin"];
-const SECTION_CURRENCY: string[] = ["/admin"];
+const SECTION_DATE_FILTER: string[] = ["/admin", "/admin/transacciones"];
+const SECTION_CURRENCY: string[] = ["/admin", "/admin/reportes"];
 
 const FLAG_MAP: Record<string, string> = {
   VEF: "ve",
@@ -85,8 +86,9 @@ const AdminTopNav = ({ collapsed, onToggle }: AdminTopNavProps) => {
   const dropRef = useRef<HTMLDivElement>(null);
 
   const { startDate, endDate, setDateRange } = useDashboardDateStore();
+  const { selectedReport } = useReportsStore();
   const showDateFilter = SECTION_DATE_FILTER.includes(location.pathname);
-  const showCurrency = SECTION_CURRENCY.includes(location.pathname);
+  const showCurrency = SECTION_CURRENCY.includes(location.pathname) && !(location.pathname === "/admin/reportes" && selectedReport === "stock");
   const hasDates = !!(startDate && endDate);
   const [dateDropOpen, setDateDropOpen] = useState(false);
   const dateDropRef = useRef<HTMLDivElement>(null);
@@ -234,7 +236,7 @@ const AdminTopNav = ({ collapsed, onToggle }: AdminTopNavProps) => {
             <div ref={dropRef} className="relative">
               <button
                 onClick={() => setDropOpen((prev) => !prev)}
-                className="flex items-center justify-center gap-1 w-16 lg:w-auto lg:px-3 rounded-lg border border-neutral-800 bg-transparent text-xs lg:text-sm font-medium text-neutral-800 hover:border-brand-500 transition-all duration-200 h-[46px]"
+                className="flex items-center justify-center gap-1.5 min-w-[60px] lg:w-auto px-2 lg:px-3 rounded-lg border border-neutral-800 bg-transparent text-xs lg:text-sm font-medium text-neutral-800 hover:border-brand-500 transition-all duration-200 h-[46px]"
               >
                 {selectedCurrency && (
                   <>

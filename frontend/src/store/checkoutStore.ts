@@ -42,7 +42,7 @@ export const useCheckoutStore = create<CheckoutState>((set) => ({
   paymentReference: "",
   receiptUrl: "",
 
-  fetchConfig: async () => {
+  fetchConfig: async (currencyId?: string) => {
     set({ isLoading: true });
     try {
       const config = await checkoutService.getConfig();
@@ -52,13 +52,19 @@ export const useCheckoutStore = create<CheckoutState>((set) => ({
         throw new Error("La configuración del checkout llegó vacía");
       }
 
+      let selectedPaymentId = config.paymentMethods?.length > 0 ? config.paymentMethods[0].id : null;
+      if (currencyId && config.paymentMethods?.length > 0) {
+        const matched = config.paymentMethods.find(pm => pm.currency?.id === currencyId);
+        if (matched) selectedPaymentId = matched.id;
+      }
+
       set({ 
         addresses: config.addresses || [],
         shippingMethods: config.shippingMethods || [],
         paymentMethods: config.paymentMethods || [],
         selectedAddressId: config.addresses?.length > 0 ? config.addresses[0].id : null,
         selectedShippingId: config.shippingMethods?.length > 0 ? config.shippingMethods[0].id : null,
-        selectedPaymentId: config.paymentMethods?.length > 0 ? config.paymentMethods[0].id : null,
+        selectedPaymentId,
       });
     } catch (error) {
       console.error("Error al cargar configuración de checkout", error);

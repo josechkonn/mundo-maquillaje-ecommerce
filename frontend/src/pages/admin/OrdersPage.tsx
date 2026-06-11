@@ -1,13 +1,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 import { useDashboardDateStore } from "../../store/dashboardDateStore";
 import { dashboardService } from "../../services/dashboardService";
 import { orderService, type BackendOrder } from "../../services/orderService";
 import { formatPrice } from "../../lib/formatters";
 import DataTable, { type ColumnDef } from "../../components/ui/DataTable";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import StatCard from "../../components/admin/dashboard/StatCard";
+import OrdersSkeleton from "../../components/admin/skeletons/OrdersSkeleton";
 import {
   ShoppingCartIcon,
   ClockIcon,
@@ -26,7 +27,7 @@ const STATUS_CARDS = [
   { key: "CANCELLED",  title: "Cancelados",      icon: <XCircleIcon className="w-5 h-5" /> },
 ];
 
-const SCROLL_CLASSES = "flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth -mx-4 px-4 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]";
+const SCROLL_CLASSES = "flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]";
 
 const OrdersPage = () => {
   const navigate = useNavigate();
@@ -40,8 +41,6 @@ const OrdersPage = () => {
   // Table
   const [orders, setOrders] = useState<BackendOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [tableStartDate, setTableStartDate] = useState("");
@@ -49,9 +48,17 @@ const OrdersPage = () => {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortDesc, setSortDesc] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmSingleDelete, setConfirmSingleDelete] = useState(false);
+  const [singleDeleteLoading, setSingleDeleteLoading] = useState(false);
+  const [singleToDelete, setSingleToDelete] = useState<BackendOrder | null>(null);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  const pageSize = 10;
 
   const fetchStats = useCallback(async () => {
     setStatsLoading(true);
@@ -70,55 +77,106 @@ const OrdersPage = () => {
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await orderService.getAdminOrders(
-        currentPage - 1, itemsPerPage, searchQuery, statusFilter,
-        sortBy, sortDesc, tableStartDate, tableEndDate
-      );
-      setOrders(res.content || []);
-      setTotalItems(res.totalElements || 0);
+      const res = await orderService.getAdminOrders({
+        search: searchQuery || undefined,
+        status: statusFilter || undefined,
+        page: currentPage - 1,
+        size: pageSize,
+        sortBy,
+        sortDesc,
+        startDate: tableStartDate || undefined,
+        endDate: tableEndDate || undefined,
+      });
+      setOrders(res.content);
+      setTotalPages(res.totalPages);
+      setTotalItems(res.totalElements);
       setSelectedIds(new Set());
     } catch {
-      setOrders([]);
-      setTotalItems(0);
+      toast.error("No se pudieron cargar los pedidos.");
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, searchQuery, statusFilter, sortBy, sortDesc, tableStartDate, tableEndDate]);
+  }, [searchQuery, statusFilter, currentPage, sortBy, sortDesc, tableStartDate, tableEndDate]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-  const handleCancelOrders = useCallback(async () => {
+  const handleDeleteSelected = useCallback(() => {
     if (selectedIds.size === 0) return;
-    const confirmed = window.confirm(`¿Estás seguro de cancelar ${selectedIds.size} pedido(s)?`);
-    if (!confirmed) return;
+    setConfirmBulkDelete(true);
+  }, [selectedIds]);
+
+  const doDeleteBulk = useCallback(async () => {
+    setBulkDeleteLoading(true);
     try {
-      await orderService.cancelAdminOrders(Array.from(selectedIds));
-      toast.success(`${selectedIds.size} pedido(s) cancelado(s)`);
+      await Promise.all(Array.from(selectedIds).map((id) => orderService.deleteOrder(id)));
+      toast.success(`${selectedIds.size} pedido(s) eliminado(s)`);
       setSelectedIds(new Set());
+      setConfirmBulkDelete(false);
       fetchOrders();
       fetchStats();
     } catch {
-      toast.error("Error al cancelar pedidos");
+      toast.error("Error al eliminar pedidos");
+    } finally {
+      setBulkDeleteLoading(false);
     }
   }, [selectedIds, fetchOrders, fetchStats]);
 
+  const doDeleteSingle = useCallback(async () => {
+    if (!singleToDelete) return;
+    setSingleDeleteLoading(true);
+    try {
+      await orderService.deleteOrder(singleToDelete.id);
+      toast.success(`Pedido ${singleToDelete.orderNumber || `#${singleToDelete.id.slice(0,8).toUpperCase()}`} eliminado`);
+      setSingleToDelete(null);
+      setSingleDeleteLoading(false);
+      setConfirmSingleDelete(false);
+      fetchOrders();
+      fetchStats();
+    } catch {
+      toast.error("Error al eliminar el pedido");
+    } finally {
+      setSingleDeleteLoading(false);
+    }
+  }, [singleToDelete, fetchOrders, fetchStats]);
+
   const getCount = (key: string) => key === "TOTAL" ? total : (byStatus[key] || 0);
 
-  const getStatusBadge = (status: string) => {
-    const map: Record<string, { label: string; className: string }> = {
-      PENDING:    { label: "Pendiente",  className: "bg-mm-status-pending text-mm-status-pending-text border border-mm-status-pending-border" },
-      PAID:       { label: "Pagado",     className: "bg-mm-status-completed text-mm-status-completed-text border border-mm-status-completed-border" },
-      PROCESSING: { label: "En proceso", className: "bg-mm-status-processing text-mm-status-processing-text border border-mm-status-processing-border" },
-      SHIPPED:    { label: "Enviado",    className: "bg-mm-status-processing text-mm-status-processing-text border border-mm-status-processing-border" },
-      DELIVERED:  { label: "Completado", className: "bg-mm-status-completed text-mm-status-completed-text border border-mm-status-completed-border" },
-      CANCELLED:  { label: "Cancelado",  className: "bg-mm-status-cancelled text-mm-status-cancelled-text border border-mm-status-cancelled-border" },
-    };
-    const s = map[status] || { label: status, className: "bg-neutral-100 text-neutral-800 border border-neutral-200" };
+  const STATUS_MAP: Record<string, { label: string; className: string }> = {
+    PENDING:    { label: "Pendiente",  className: "bg-mm-status-pending text-mm-status-pending-text border border-mm-status-pending-border" },
+    PAID:       { label: "Pagado",     className: "bg-mm-status-completed text-mm-status-completed-text border border-mm-status-completed-border" },
+    PROCESSING: { label: "En proceso", className: "bg-mm-status-processing text-mm-status-processing-text border border-mm-status-processing-border" },
+    SHIPPED:    { label: "Enviado",    className: "bg-mm-status-processing text-mm-status-processing-text border border-mm-status-processing-border" },
+    DELIVERED:  { label: "Completado", className: "bg-mm-status-completed text-mm-status-completed-text border border-mm-status-completed-border" },
+    CANCELLED:  { label: "Cancelado",  className: "bg-mm-status-cancelled text-mm-status-cancelled-text border border-mm-status-cancelled-border" },
+  };
+
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    const oldStatus = orders.find((o) => o.id === orderId)?.status;
+    setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status: newStatus } : o));
+    try {
+      await orderService.updateOrder(orderId, { status: newStatus });
+      fetchStats();
+      toast.success("Estado actualizado");
+    } catch {
+      if (oldStatus) setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status: oldStatus } : o));
+      toast.error("Error al actualizar estado");
+    }
+  };
+
+  const StatusSelect = ({ order }: { order: BackendOrder }) => {
+    const s = STATUS_MAP[order.status] || { label: order.status, className: "bg-neutral-100 text-neutral-800 border border-neutral-200" };
     return (
-      <span className={`px-3 py-1 rounded-xl text-xs font-bold inline-block text-center whitespace-nowrap ${s.className}`}>
-        {s.label}
-      </span>
+      <select
+        value={order.status}
+        onChange={(e) => handleStatusChange(order.id, e.target.value)}
+        className={`px-3 py-1 rounded-xl text-xs font-bold text-center whitespace-nowrap cursor-pointer outline-none ${s.className}`}
+        style={{ appearance: "auto" }}
+      >
+        {Object.entries(STATUS_MAP).map(([val, opt]) => (
+          <option key={val} value={val} className="bg-white text-neutral-800">{opt.label}</option>
+        ))}
+      </select>
     );
   };
 
@@ -144,7 +202,7 @@ const OrdersPage = () => {
       key: "status",
       header: "Estado",
       sortable: true,
-      render: (o) => getStatusBadge(o.status),
+      render: (o) => <StatusSelect order={o} />,
     },
     {
       key: "totalAmount",
@@ -156,27 +214,36 @@ const OrdersPage = () => {
         return (o.totalAmount || 0).toLocaleString("es-VE", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
       },
     },
-    {
-      key: "details",
-      header: "Detalles",
-      className: "text-center",
-      render: (o) => (
-        <button
-          className="text-neutral-800 hover:text-[#E6426E] transition-colors"
-          onClick={() => navigate(`/cuenta/pedidos/${o.id}`)}
-        >
-          <InformationCircleIcon className="w-6 h-6 stroke-2" />
-        </button>
-      ),
-    },
   ];
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        isOpen={confirmBulkDelete}
+        onClose={() => setConfirmBulkDelete(false)}
+        onConfirm={doDeleteBulk}
+        title="Eliminar pedidos"
+        message={`¿Estás seguro de eliminar ${selectedIds.size} pedido(s)? Se restaurará el stock y se eliminarán todas las transacciones asociadas.`}
+        confirmLabel="Eliminar permanentemente"
+        maxWidth="lg"
+        loading={bulkDeleteLoading}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmSingleDelete}
+        onClose={() => { setConfirmSingleDelete(false); setSingleToDelete(null); }}
+        onConfirm={doDeleteSingle}
+        title="Eliminar pedido"
+        message={`¿Estás seguro de eliminar permanentemente el pedido ${singleToDelete?.orderNumber || `#${singleToDelete?.id.slice(0,8).toUpperCase()}`}? Se restaurará el stock y se eliminarán todas las transacciones asociadas.`}
+        confirmLabel="Eliminar permanentemente"
+        maxWidth="lg"
+        loading={singleDeleteLoading}
+      />
+
       {/* Stats cards */}
       <div className={SCROLL_CLASSES} style={{ WebkitOverflowScrolling: "touch" }}>
         {STATUS_CARDS.map((card) => (
-          <div key={card.key} className="snap-start flex-shrink-0 w-[calc((100%-3rem)/4)]">
+            <div key={card.key} className="snap-start flex-shrink-0 w-[85%] sm:w-[calc((100%-3rem)/4)]">
             <StatCard
               title={card.title}
               value={statsLoading ? "..." : getCount(card.key).toLocaleString()}
@@ -188,43 +255,51 @@ const OrdersPage = () => {
       </div>
 
       {/* Table */}
+      {isLoading ? <OrdersSkeleton /> : (
       <DataTable
         title="Pedidos"
+        titleInfo={`${totalItems || 0} pedidos registrados`}
         columns={columns}
         data={orders}
-        isLoading={isLoading}
+        isLoading={false}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={pageSize}
+        onPageChange={setCurrentPage}
+        onSearch={setSearchQuery}
+        searchPlaceholder="Buscar por pedido, usuario o email..."
+        sortBy={sortBy}
+        sortDesc={sortDesc}
+        onSort={(key, desc) => { setSortBy(key); setSortDesc(desc); }}
         selectable
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         getId={(o) => o.id}
-        onSearch={(q) => { setSearchQuery(q); setCurrentPage(1); }}
+        onTrashClick={handleDeleteSelected}
+        trashButtonTitle="Eliminar pedidos"
+        onEdit={(o) => navigate(`/admin/pedidos/${o.id}/editar`)}
+        onDelete={(o) => { setSingleToDelete(o); setConfirmSingleDelete(true); }}
+        filters={[
+          {
+            key: "status",
+            label: "Estado",
+            options: [
+              { label: "Pendiente", value: "PENDING" },
+              { label: "Pagado", value: "PAID" },
+              { label: "Procesando", value: "PROCESSING" },
+              { label: "Enviado", value: "SHIPPED" },
+              { label: "Entregado", value: "DELIVERED" },
+              { label: "Cancelado", value: "CANCELLED" },
+            ],
+            value: statusFilter,
+            onChange: (v) => { setStatusFilter(v); setCurrentPage(1); },
+          },
+        ]}
         startDate={tableStartDate}
         endDate={tableEndDate}
         onDateRangeChange={(s, e) => { setTableStartDate(s); setTableEndDate(e); setCurrentPage(1); }}
-        filters={[{
-          key: "status",
-          label: "Estado",
-          options: [
-            { label: "Pendiente", value: "PENDING" },
-            { label: "Pagado", value: "PAID" },
-            { label: "Procesando", value: "PROCESSING" },
-            { label: "Enviado", value: "SHIPPED" },
-            { label: "Entregado", value: "DELIVERED" },
-            { label: "Cancelado", value: "CANCELLED" },
-          ],
-          value: statusFilter,
-          onChange: (v) => { setStatusFilter(v); setCurrentPage(1); },
-        }]}
-        sortBy={sortBy}
-        sortDesc={sortDesc}
-        onSort={(key, desc) => { setSortBy(key); setSortDesc(desc); setCurrentPage(1); }}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
-        onPageChange={setCurrentPage}
-        onTrashClick={handleCancelOrders}
-      />
+      />)}
     </div>
   );
 };

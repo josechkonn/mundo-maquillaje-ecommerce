@@ -26,7 +26,7 @@ public class Municipality {
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_state", nullable = false)
+    @JoinColumn(name = "id_city", nullable = false)
     @JsonIgnore
-    private State state;
+    private City city;
 }

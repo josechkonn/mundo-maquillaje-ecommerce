@@ -3,6 +3,8 @@ import RequirePermission from "../components/admin/RequirePermission";
 import DashboardPage from "../pages/admin/DashboardPage";
 import ProductsPage from "../pages/admin/ProductsPage";
 import OrdersPage from "../pages/admin/OrdersPage";
+import OrderEditPage from "../pages/admin/OrderEditPage";
+import OrderCreatePage from "../pages/admin/OrderCreatePage";
 import UsersPage from "../pages/admin/UsersPage";
 import CategoriesPage from "../pages/admin/CategoriesPage";
 import DiscountsPage from "../pages/admin/DiscountsPage";
@@ -18,6 +20,7 @@ import CajasPage from "../pages/admin/CajasPage";
 import TransaccionesPage from "../pages/admin/TransaccionesPage";
 import UbicacionesPage from "../pages/admin/UbicacionesPage";
 import MetasMensualesPage from "../pages/admin/MetasMensualesPage";
+import NotFoundPage from "../pages/NotFoundPage";
 
 const AdminRoutes = () => {
   return (
@@ -43,6 +46,22 @@ const AdminRoutes = () => {
         element={
           <RequirePermission permission="manage.orders">
             <OrdersPage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="pedidos/crear"
+        element={
+          <RequirePermission permission="manage.orders">
+            <OrderCreatePage />
+          </RequirePermission>
+        }
+      />
+      <Route
+        path="pedidos/:orderId/editar"
+        element={
+          <RequirePermission permission="manage.orders">
+            <OrderEditPage />
           </RequirePermission>
         }
       />
@@ -166,7 +185,7 @@ const AdminRoutes = () => {
           </RequirePermission>
         }
       />
-      <Route path="*" element={<div>Página no encontrada en el Panel</div>} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 };

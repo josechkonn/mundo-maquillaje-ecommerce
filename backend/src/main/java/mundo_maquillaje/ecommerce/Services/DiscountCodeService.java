@@ -194,8 +194,12 @@ public class DiscountCodeService {
             if (tgtCode.equals("USD")) return amount / (rateVES * rateCOP);
             if (isVES(tgtCode)) return amount / rateCOP;
         } else {
-            double baseValue = amount / (sourceCurrency.getExchangeRate() != null ? sourceCurrency.getExchangeRate() : 1);
-            return baseValue * (targetCurrency.getExchangeRate() != null ? targetCurrency.getExchangeRate() : 1);
+            double srcRate = sourceCurrency.getExchangeRate() != null && sourceCurrency.getExchangeRate() != 0
+                    ? sourceCurrency.getExchangeRate() : 1;
+            double tgtRate = targetCurrency.getExchangeRate() != null && targetCurrency.getExchangeRate() != 0
+                    ? targetCurrency.getExchangeRate() : 1;
+            double baseValue = amount / srcRate;
+            return baseValue * tgtRate;
         }
 
         return amount;

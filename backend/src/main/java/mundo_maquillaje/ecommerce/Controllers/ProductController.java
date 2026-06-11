@@ -58,12 +58,28 @@ public class ProductController {
             return ResponseEntity.ok(productService.getProductsByParentCategory(parentCategoryId, pageable));
         }
         
-        return ResponseEntity.ok(productService.getAllProducts(pageable));
+        return ResponseEntity.ok(productService.getActiveProducts(pageable));
+    }
+
+    @GetMapping("/best-sellers")
+    public ResponseEntity<?> getBestSellers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        PageRequest pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(productService.getBestSellers(pageable));
+    }
+
+    @GetMapping("/new-products")
+    public ResponseEntity<?> getNewProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        PageRequest pageable = PageRequest.of(page, size, org.springframework.data.domain.Sort.by("createdAt").descending());
+        return ResponseEntity.ok(productService.getActiveProducts(pageable));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(@PathVariable UUID id) {
-        return ResponseEntity.ok(productService.getProductById(id));
+        return ResponseEntity.ok(productService.getProductByIdPublic(id));
     }
 
     @GetMapping("/slug/{slug}")

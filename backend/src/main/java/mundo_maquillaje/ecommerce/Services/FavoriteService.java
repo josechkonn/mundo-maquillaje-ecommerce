@@ -27,6 +27,7 @@ public class FavoriteService {
         return favoriteRepository.findByProfileId(profileId)
                 .stream()
                 .map(Favorite::getProduct)
+                .filter(p -> Boolean.TRUE.equals(p.getIsActive()))
                 .collect(Collectors.toList());
     }
 
@@ -36,6 +37,10 @@ public class FavoriteService {
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        if (!Boolean.TRUE.equals(product.getIsActive())) {
+            throw new RuntimeException("Product not found");
+        }
 
         Optional<Favorite> existing = favoriteRepository.findByProfileAndProduct(profile, product);
         if (existing.isEmpty()) {

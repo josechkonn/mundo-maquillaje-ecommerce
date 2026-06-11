@@ -22,7 +22,7 @@ const BrandsCarousel = () => {
     const fetchBrands = async () => {
       try {
         const data = await brandService.getAllBrands();
-        setBrands(data.filter(b => b.isActive));
+        setBrands(data.filter(b => b.isActive && b.logoUrl));
       } catch (error) {
         console.error("Error al cargar marcas:", error);
       } finally {

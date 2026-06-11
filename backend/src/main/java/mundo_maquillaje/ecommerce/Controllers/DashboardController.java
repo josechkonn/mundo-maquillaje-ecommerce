@@ -134,10 +134,15 @@ public class DashboardController {
                 .orElse(0.0);
 
         double currentRevenue = dashboardService.getCurrentMonthRevenue(currencyCode);
+        
+        YearMonth targetMonth = YearMonth.of(y, m);
+        YearMonth prevMonth = targetMonth.minusMonths(1);
+        double prevRevenue = dashboardService.getMonthRevenue(currencyCode, prevMonth.getMonthValue(), prevMonth.getYear());
 
         return ResponseEntity.ok(Map.of(
                 "goal", goalAmount,
                 "current", currentRevenue,
+                "previous", prevRevenue,
                 "month", m,
                 "year", y,
                 "currencyCode", currencyCode

@@ -104,8 +104,8 @@ class CartServiceTest {
         localItem.put("quantity", 2);
         localItems.add(localItem);
 
-        when(cartRepository.findTopByUserIdAndStatusOrderByCreatedAtDesc(userId, "ACTIVE"))
-                .thenReturn(Optional.of(activeCart));
+        when(cartRepository.findAllByUserIdAndStatus(userId, "ACTIVE"))
+                .thenReturn(new ArrayList<>(List.of(activeCart)));
         when(cartProductRepository.findAllByCartIdAndVariationId(activeCart.getId(), variation1.getId()))
                 .thenReturn(List.of(cartProduct1));
 
@@ -120,15 +120,14 @@ class CartServiceTest {
     }
 
     @Test
-    void syncCart_emptyLocalPayloadRemovesAllServerItems() {
-        when(cartRepository.findTopByUserIdAndStatusOrderByCreatedAtDesc(userId, "ACTIVE"))
-                .thenReturn(Optional.of(activeCart));
+    void syncCart_emptyLocalPayloadReturnsCurrentItems() {
+        when(cartRepository.findAllByUserIdAndStatus(userId, "ACTIVE"))
+                .thenReturn(new ArrayList<>(List.of(activeCart)));
 
-        cartService.syncCart(userId, new ArrayList<>());
+        List<CartProduct> result = cartService.syncCart(userId, new ArrayList<>());
 
-        verify(cartProductRepository).deleteAll(argThat((Iterable<CartProduct> list) ->
-                list != null && ((List<CartProduct>) list).size() == 2
-        ));
+        assertEquals(2, result.size());
+        verify(cartProductRepository, never()).deleteAll(any());
     }
 
     @Test
@@ -139,8 +138,8 @@ class CartServiceTest {
         localItem.put("quantity", 5);
         localItems.add(localItem);
 
-        when(cartRepository.findTopByUserIdAndStatusOrderByCreatedAtDesc(userId, "ACTIVE"))
-                .thenReturn(Optional.of(activeCart));
+        when(cartRepository.findAllByUserIdAndStatus(userId, "ACTIVE"))
+                .thenReturn(new ArrayList<>(List.of(activeCart)));
         when(cartProductRepository.findAllByCartIdAndVariationId(activeCart.getId(), variation1.getId()))
                 .thenReturn(List.of(cartProduct1));
 
@@ -152,8 +151,8 @@ class CartServiceTest {
 
     @Test
     void clearCart_setsStatusToCompleted() {
-        when(cartRepository.findTopByUserIdAndStatusOrderByCreatedAtDesc(userId, "ACTIVE"))
-                .thenReturn(Optional.of(activeCart));
+        when(cartRepository.findAllByUserIdAndStatus(userId, "ACTIVE"))
+                .thenReturn(new ArrayList<>(List.of(activeCart)));
 
         cartService.clearCart(userId);
 
@@ -164,14 +163,13 @@ class CartServiceTest {
 
     @Test
     void getOrCreateActiveCart_doesNotReturnCompletedCart() {
-        when(cartRepository.findTopByUserIdAndStatusOrderByCreatedAtDesc(userId, "ACTIVE"))
-                .thenReturn(Optional.empty());
+        when(cartRepository.findAllByUserIdAndStatus(userId, "ACTIVE"))
+                .thenReturn(new ArrayList<>());
 
         Cart newCart = Cart.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
                 .status("ACTIVE")
-                .products(new ArrayList<>())
                 .build();
         when(cartRepository.save(any())).thenReturn(newCart);
 
@@ -190,8 +188,8 @@ class CartServiceTest {
                 .product(new Product())
                 .build();
 
-        when(cartRepository.findTopByUserIdAndStatusOrderByCreatedAtDesc(userId, "ACTIVE"))
-                .thenReturn(Optional.of(activeCart));
+        when(cartRepository.findAllByUserIdAndStatus(userId, "ACTIVE"))
+                .thenReturn(new ArrayList<>(List.of(activeCart)));
         when(productVariationRepository.findById(noStockVariation.getId()))
                 .thenReturn(Optional.of(noStockVariation));
 
@@ -203,8 +201,8 @@ class CartServiceTest {
 
     @Test
     void addToCart_insufficientStockThrowsException() {
-        when(cartRepository.findTopByUserIdAndStatusOrderByCreatedAtDesc(userId, "ACTIVE"))
-                .thenReturn(Optional.of(activeCart));
+        when(cartRepository.findAllByUserIdAndStatus(userId, "ACTIVE"))
+                .thenReturn(new ArrayList<>(List.of(activeCart)));
         when(productVariationRepository.findById(variation1.getId()))
                 .thenReturn(Optional.of(variation1));
 
@@ -222,8 +220,8 @@ class CartServiceTest {
         localItem.put("quantity", 2);
         localItems.add(localItem);
 
-        when(cartRepository.findTopByUserIdAndStatusOrderByCreatedAtDesc(userId, "ACTIVE"))
-                .thenReturn(Optional.of(activeCart));
+        when(cartRepository.findAllByUserIdAndStatus(userId, "ACTIVE"))
+                .thenReturn(new ArrayList<>(List.of(activeCart)));
         when(cartProductRepository.findAllByCartIdAndVariationId(activeCart.getId(), variation1.getId()))
                 .thenReturn(List.of(cartProduct1));
 

@@ -49,4 +49,17 @@ public class CurrencyService {
         Currency currency = getCurrencyById(id);
         currencyRepository.delete(currency);
     }
+
+    @Transactional
+    public Currency updateVESRateFromBCV(Double rate) {
+        Currency ves = currencyRepository.findAll().stream()
+                .filter(c -> {
+                    String code = c.getCode().toUpperCase();
+                    return code.equals("VES") || code.equals("VEF") || code.equals("BS");
+                })
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No se encontró una moneda bolivariana (VES/VEF/BS) configurada"));
+        ves.setExchangeRate(rate);
+        return currencyRepository.save(ves);
+    }
 }

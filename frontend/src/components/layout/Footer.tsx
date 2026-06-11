@@ -148,7 +148,7 @@ const Footer = () => {
         .marquee-wrapper { overflow: hidden; white-space: nowrap; }
         .marquee-track {
           display: inline-flex;
-          animation: marquee 30s linear infinite;
+          animation: marquee 80s linear infinite;
         }
         .marquee-item {
           display: inline-flex;

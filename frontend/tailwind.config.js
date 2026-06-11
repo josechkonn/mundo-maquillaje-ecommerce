@@ -142,12 +142,17 @@ export default {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
         },
+        scaleIn: {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
       },
       animation: {
         "float-y": "floatY 3s ease-in-out infinite",
         "slide-in-right": "slideInRight 0.45s ease forwards",
         "slide-in-left": "slideInLeft 0.45s ease forwards",
         "fade-in": "fadeIn 0.35s ease forwards",
+        "scale-in": "scaleIn 0.25s ease forwards",
       },
 
       // ─────────────────────────────────────────────

@@ -45,8 +45,9 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
 };
 
 export const api = {
-  get: (endpoint: string) => apiFetch(endpoint, { method: "GET" }),
-  post: (endpoint: string, body: any) => apiFetch(endpoint, { method: "POST", body: JSON.stringify(body) }),
-  put: (endpoint: string, body: any) => apiFetch(endpoint, { method: "PUT", body: JSON.stringify(body) }),
-  delete: (endpoint: string) => apiFetch(endpoint, { method: "DELETE" }),
+  get: (endpoint: string, options?: Omit<RequestInit, "method" | "body">) => apiFetch(endpoint, { method: "GET", ...options }),
+  post: (endpoint: string, body: any, options?: Omit<RequestInit, "method" | "body">) => apiFetch(endpoint, { method: "POST", body: JSON.stringify(body), ...options }),
+  put: (endpoint: string, body: any, options?: Omit<RequestInit, "method" | "body">) => apiFetch(endpoint, { method: "PUT", body: JSON.stringify(body), ...options }),
+  patch: (endpoint: string, body: any, options?: Omit<RequestInit, "method" | "body">) => apiFetch(endpoint, { method: "PATCH", body: JSON.stringify(body), ...options }),
+  delete: (endpoint: string, options?: Omit<RequestInit, "method" | "body">) => apiFetch(endpoint, { method: "DELETE", ...options }),
 };

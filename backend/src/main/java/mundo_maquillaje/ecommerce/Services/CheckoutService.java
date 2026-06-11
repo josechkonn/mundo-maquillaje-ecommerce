@@ -19,7 +19,6 @@ public class CheckoutService {
     private final OrderRepository orderRepository;
     private final OrderProductRepository orderProductRepository;
     private final OrderDirectionRepository orderDirectionRepository;
-    private final TransactionRepository transactionRepository;
     private final ShippingMethodRepository shippingMethodRepository;
     private final PaymentMethodRepository paymentMethodRepository;
     private final AddressRepository addressRepository;
@@ -140,7 +139,10 @@ public class CheckoutService {
             String targetCurrencyCode = targetCurrency != null ? targetCurrency.getCode() : null;
             Map<String, Object> validation = discountCodeService.validateDiscountCode(request.getDiscountCode().trim(), subtotal, targetCurrencyCode, userId);
             if (Boolean.TRUE.equals(validation.get("valid"))) {
-                discountAmount = (double) validation.get("discountAmount");
+                Object discountAmtObj = validation.get("discountAmount");
+                if (discountAmtObj instanceof Number) {
+                    discountAmount = ((Number) discountAmtObj).doubleValue();
+                }
                 String discountIdStr = (String) validation.get("discountId");
                 if (discountIdStr != null) {
                     DiscountCode dc = discountCodeRepository.findById(UUID.fromString(discountIdStr)).orElse(null);
@@ -162,6 +164,8 @@ public class CheckoutService {
         order.setDiscountAmount(discountAmount);
         order.setShippingCost(shippingCost);
         order.setTotalAmount(subtotal + shippingCost - discountAmount);
+        order.setPaymentReference(request.getPaymentReference());
+        order.setReceiptUrl(receiptUrl);
         
         Order savedOrder = orderRepository.save(order);
         List<OrderProduct> savedProducts = orderProductRepository.saveAll(orderProducts);
@@ -178,28 +182,10 @@ public class CheckoutService {
         od.setState(address.getState() != null ? address.getState().getName() : "");
         OrderDirection savedDirection = orderDirectionRepository.save(od);
 
-        Transaction transaction = new Transaction();
-        transaction.setOrder(savedOrder);
-        transaction.setPaymentMethod(payment);
-        transaction.setCurrency(targetCurrency);
-        transaction.setAmount(savedOrder.getTotalAmount());
-        transaction.setReference(request.getPaymentReference());
-        transaction.setReceiptUrl(receiptUrl);
-        transaction.setStatus(TransactionStatus.PENDING);
-        transactionRepository.save(transaction);
-
         cartService.clearCart(userId);
 
         savedOrder.setProducts(savedProducts);
         savedOrder.setShippingAddress(savedDirection);
-
-        for (OrderProduct op : savedProducts) {
-            ProductVariation v = op.getVariation();
-            if (v != null) {
-                v.getImages().size();
-                v.getProduct().getName();
-            }
-        }
 
         return savedOrder;
     }
@@ -238,8 +224,12 @@ public class CheckoutService {
                 convertedValue = amount / rateCOP;
             }
         } else {
-            double baseValue = amount / (sourceCurrency.getExchangeRate() != null ? sourceCurrency.getExchangeRate() : 1);
-            convertedValue = baseValue * (targetCurrency.getExchangeRate() != null ? targetCurrency.getExchangeRate() : 1);
+            double srcRate = sourceCurrency.getExchangeRate() != null && sourceCurrency.getExchangeRate() != 0
+                    ? sourceCurrency.getExchangeRate() : 1;
+            double tgtRate = targetCurrency.getExchangeRate() != null && targetCurrency.getExchangeRate() != 0
+                    ? targetCurrency.getExchangeRate() : 1;
+            double baseValue = amount / srcRate;
+            convertedValue = baseValue * tgtRate;
         }
 
         return convertedValue;

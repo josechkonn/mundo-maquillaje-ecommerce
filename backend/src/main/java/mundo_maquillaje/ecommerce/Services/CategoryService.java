@@ -75,6 +75,8 @@ public class CategoryService {
         category.setName(details.getName());
         category.setDescription(details.getDescription());
         category.setLogoUrl(details.getLogoUrl());
+        category.setBannerUrl(details.getBannerUrl());
+        category.setSubBannerUrl(details.getSubBannerUrl());
         category.setIsActive(details.getIsActive());
         category.setParent(details.getParent());
 

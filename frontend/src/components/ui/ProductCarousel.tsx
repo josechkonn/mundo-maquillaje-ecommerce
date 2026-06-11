@@ -91,6 +91,49 @@ const ProductCarousel = ({
             display: none !important;
           }
         }
+        /* Fix: centrar dots de paginación */
+        .${paginationClass} .swiper-pagination-bullet {
+          width: 24px !important;
+          height: 24px !important;
+          border-radius: 50% !important;
+          border: 4px solid #a0a0a0 !important;
+          background: transparent !important;
+          opacity: 1 !important;
+          margin: 0 8px !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          position: relative !important;
+          padding: 0 !important;
+          box-sizing: border-box !important;
+        }
+        .${paginationClass} .swiper-pagination-bullet::after {
+          content: '' !important;
+          width: 12px !important;
+          height: 12px !important;
+          border-radius: 50% !important;
+          background: #a0a0a0 !important;
+          position: absolute !important;
+          top: 50% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          transition: background 0.2s !important;
+        }
+        .${paginationClass} .swiper-pagination-bullet.swiper-pagination-bullet-active {
+          border-color: #E7446B !important;
+          background: transparent !important;
+        }
+        .${paginationClass} .swiper-pagination-bullet.swiper-pagination-bullet-active::after {
+          background: #E7446B !important;
+          width: 12px !important;
+          height: 12px !important;
+        }
+        .${paginationClass} .swiper-pagination-bullet:hover {
+          border-color: #E7446B !important;
+        }
+        .${paginationClass} .swiper-pagination-bullet:hover::after {
+          background: #E7446B !important;
+        }
       `}</style>
     </div>
   );

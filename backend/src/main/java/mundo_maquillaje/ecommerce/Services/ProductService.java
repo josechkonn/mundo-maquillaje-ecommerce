@@ -12,10 +12,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import java.text.Normalizer;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,25 +36,58 @@ public class ProductService {
     }
 
     public Page<Product> getAllProducts(Pageable pageable) {
-        return productRepository.findAll(pageable);
+        return productRepository.findAllWithGraph(pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<Product> getActiveProducts(Pageable pageable) {
+        Page<Product> page = productRepository.findAll((root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.isTrue(root.get("isActive")));
+
+            Subquery<UUID> stockSub = query.subquery(UUID.class);
+            Root<ProductVariation> stockRoot = stockSub.from(ProductVariation.class);
+            stockSub.select(stockRoot.get("product").get("id")).where(
+                    cb.equal(stockRoot.get("product").get("id"), root.get("id")),
+                    cb.isTrue(stockRoot.get("isActive")));
+            predicates.add(cb.exists(stockSub));
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        }, pageable);
+        filterActiveVariations(page.getContent());
+        return page;
+    }
+
+    @Transactional(readOnly = true)
     public Page<Product> getProductsByCategory(UUID categoryId, Pageable pageable) {
-        return productRepository.findByCategoryId(categoryId, pageable);
+        Page<Product> page = productRepository.findByCategoryId(categoryId, pageable);
+        filterActiveVariations(page.getContent());
+        return page;
     }
 
+    @Transactional(readOnly = true)
     public Page<Product> getProductsByParentCategory(UUID parentId, Pageable pageable) {
-        return productRepository.findByCategoryParentId(parentId, pageable);
+        Page<Product> page = productRepository.findByCategoryParentId(parentId, pageable);
+        filterActiveVariations(page.getContent());
+        return page;
     }
 
+    @Transactional(readOnly = true)
     public Page<Product> searchProducts(String query, Pageable pageable) {
-        return productRepository.searchProducts(query, pageable);
+        Page<Product> page = productRepository.searchProducts(query, pageable);
+        filterActiveVariations(page.getContent());
+        return page;
     }
 
+    @Transactional(readOnly = true)
     public List<Product> searchProductsCursor(String query, UUID lastId, int size) {
-        return productRepository.findNextProducts(query != null ? query : "", lastId, PageRequest.of(0, size + 1));
+        List<Product> products = productRepository.findNextProducts(query != null ? query : "", lastId,
+                PageRequest.of(0, size + 1));
+        filterActiveVariations(products);
+        return products;
     }
 
+    @Transactional(readOnly = true)
     public Page<Product> getFilteredProducts(
             String search,
             UUID categoryId,
@@ -59,7 +100,8 @@ public class ProductService {
             int page,
             int size) {
 
-        // Solo usar Sort de Spring Data para nombre; el precio se ordena dentro de la Specification
+        // Solo usar Sort de Spring Data para nombre; el precio se ordena dentro de la
+        // Specification
         org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.unsorted();
         if (sortBy != null) {
             switch (sortBy) {
@@ -76,18 +118,43 @@ public class ProductService {
         Double rateCOP = productRepository.findExchangeRateByCode("COP");
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        return productRepository.findAll(ProductSpecifications.filterBy(search, categoryId, brandId, minPrice, maxPrice,
-                rateVES, rateCOP, targetCurrencyCode, sortBy), pageable);
+        Page<Product> productPage = productRepository
+                .findAll(ProductSpecifications.filterBy(search, categoryId, brandId, minPrice, maxPrice,
+                        rateVES, rateCOP, targetCurrencyCode, sortBy), pageable);
+        filterActiveVariations(productPage.getContent());
+        return productPage;
     }
 
     public Product getProductById(UUID id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        if (!Boolean.TRUE.equals(product.getIsActive())) {
+            throw new RuntimeException("Product not found");
+        }
+        return product;
+    }
+
+    @Transactional(readOnly = true)
+    public Product getProductByIdPublic(UUID id) {
+        Product product = getProductById(id);
+        filterActiveVariations(product);
+        return product;
+    }
+
+    public Product getProductByIdAdmin(UUID id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
     }
 
+    @Transactional(readOnly = true)
     public Product getProductBySlug(String slug) {
-        return productRepository.findBySlug(slug)
+        Product product = productRepository.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
+        if (!Boolean.TRUE.equals(product.getIsActive())) {
+            throw new RuntimeException("Product not found");
+        }
+        filterActiveVariations(product);
+        return product;
     }
 
     @Transactional
@@ -110,6 +177,9 @@ public class ProductService {
             // Link each variation (and its images) back to the product/variation
             product.getVariations().forEach(v -> {
                 v.setProduct(product);
+                if (v.getAlertQuantity() == null) {
+                    v.setAlertQuantity(5);
+                }
                 if (v.getImages() != null) {
                     v.getImages().forEach(img -> img.setVariation(v));
                 }
@@ -140,6 +210,9 @@ public class ProductService {
             product.getVariations().clear();
             details.getVariations().forEach(v -> {
                 v.setProduct(product);
+                if (v.getAlertQuantity() == null) {
+                    v.setAlertQuantity(5);
+                }
                 if (v.getImages() != null) {
                     v.getImages().forEach(img -> img.setVariation(v));
                 }
@@ -165,6 +238,22 @@ public class ProductService {
         return slug.toLowerCase(Locale.ENGLISH);
     }
 
+    @Transactional(readOnly = true)
+    public Page<Product> getBestSellers(Pageable pageable) {
+        List<UUID> orderedIds = productRepository.findBestSellerIds(pageable);
+        if (orderedIds.isEmpty()) {
+            return org.springframework.data.domain.Page.empty(pageable);
+        }
+        List<Product> products = productRepository.findByIdsInWithGraph(orderedIds);
+        Map<UUID, Integer> orderMap = new HashMap<>();
+        for (int i = 0; i < orderedIds.size(); i++) {
+            orderMap.put(orderedIds.get(i), i);
+        }
+        products.sort(Comparator.comparingInt(p -> orderMap.getOrDefault(p.getId(), Integer.MAX_VALUE)));
+        filterActiveVariations(products);
+        return new org.springframework.data.domain.PageImpl<>(products, pageable, orderedIds.size());
+    }
+
     public java.util.Map<String, Double> getPriceRange() {
         java.util.List<Object[]> resultList = productRepository.getMinMaxPrices();
         java.util.Map<String, Double> range = new java.util.HashMap<>();
@@ -182,5 +271,19 @@ public class ProductService {
         range.put("max", max);
 
         return range;
+    }
+
+    private void filterActiveVariations(List<Product> products) {
+        for (Product p : products) {
+            filterActiveVariations(p);
+        }
+    }
+
+    private void filterActiveVariations(Product p) {
+        if (p.getVariations() != null) {
+            p.setVariations(p.getVariations().stream()
+                    .filter(v -> Boolean.TRUE.equals(v.getIsActive()))
+                    .collect(Collectors.toList()));
+        }
     }
 }

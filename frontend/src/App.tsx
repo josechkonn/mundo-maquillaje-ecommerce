@@ -11,6 +11,7 @@ import RoleMiddleware from "./routes/middleware/RoleMiddleware";
 import AuthRoutes from "./routes/AuthRoutes";
 import CustomerRoutes from "./routes/CustomerRoutes";
 import UpdatePassword from "./pages/auth/UpdatePassword";
+import NotFoundPage from "./pages/NotFoundPage";
 import ScrollToTop from "./components/layout/ScrollToTop";
 
 function PageTracker() {
@@ -62,7 +63,7 @@ function App() {
         {PublicRoutes}
 
         {/* 5. 404 GLOBAL */}
-        <Route path="*" element={<div>404 - Not Found</div>} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );

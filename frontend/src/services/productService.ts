@@ -8,6 +8,7 @@ export interface Currency {
   exchangeRate: number;
   decimalPlaces: number;
   symbolPosition: "LEFT" | "RIGHT";
+  isActive?: boolean;
 }
 
 export interface ProductVariation {
@@ -69,7 +70,8 @@ export const productService = {
     maxPrice?: number,
     sortBy?: string,
     targetRate?: number,
-    targetCurrencyCode?: string
+    targetCurrencyCode?: string,
+    includeInactive?: boolean
   ): Promise<PageResponse<Product> | Product[]> => {
     let url = `/products?page=${page}&size=${size}`;
     if (categoryId) url += `&categoryId=${categoryId}`;
@@ -82,7 +84,12 @@ export const productService = {
     if (sortBy) url += `&sortBy=${sortBy}`;
     if (targetRate) url += `&targetRate=${targetRate}`;
     if (targetCurrencyCode) url += `&targetCurrencyCode=${targetCurrencyCode}`;
+    if (includeInactive) url += `&includeInactive=true`;
     return api.get(url);
+  },
+
+  getAdminProducts: async (page = 0, size = 1000): Promise<PageResponse<Product>> => {
+    return api.get(`/admin/products?page=${page}&size=${size}`);
   },
 
   /**
@@ -90,6 +97,20 @@ export const productService = {
    */
   getPriceRange: async () => {
     return api.get("/products/price-range");
+  },
+
+  /**
+   * Obtiene los productos más vendidos
+   */
+  getBestSellers: async (page = 0, size = 10): Promise<PageResponse<Product>> => {
+    return api.get(`/products/best-sellers?page=${page}&size=${size}`);
+  },
+
+  /**
+   * Obtiene los productos más nuevos
+   */
+  getNewProducts: async (page = 0, size = 10): Promise<PageResponse<Product>> => {
+    return api.get(`/products/new-products?page=${page}&size=${size}`);
   },
 
   /**
@@ -125,5 +146,17 @@ export const productService = {
    */
   deleteProduct: async (id: string): Promise<void> => {
     return api.delete(`/products/${id}`);
+  },
+
+  addVariationImage: async (variationId: string, image: Partial<ProductImage>): Promise<ProductImage> => {
+    return api.post(`/variations/${variationId}/images`, image);
+  },
+
+  deleteVariationImage: async (variationId: string, imageId: string): Promise<void> => {
+    return api.delete(`/variations/${variationId}/images/${imageId}`);
+  },
+
+  setMainVariationImage: async (variationId: string, imageId: string): Promise<void> => {
+    return api.put(`/variations/${variationId}/images/${imageId}/main`, {});
   }
 };

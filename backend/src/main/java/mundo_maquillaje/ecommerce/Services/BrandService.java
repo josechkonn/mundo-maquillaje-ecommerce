@@ -17,7 +17,6 @@ import java.util.regex.Pattern;
 public class BrandService {
 
     private final BrandRepository brandRepository;
-    private final ProfileService profileService;
 
     public List<Brand> getAllBrands() {
         return brandRepository.findAll();
@@ -58,10 +57,6 @@ public class BrandService {
     public void deleteBrand(UUID id) {
         Brand brand = getBrandById(id);
         brandRepository.delete(brand);
-    }
-
-    public boolean isAdmin(UUID userId) {
-        return profileService.isAdmin(userId);
     }
 
     private String generateSlug(String input) {

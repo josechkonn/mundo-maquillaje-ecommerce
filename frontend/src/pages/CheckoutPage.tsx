@@ -4,7 +4,8 @@ import { toastError, toastSuccess, toastLoading, dismissToast } from "../lib/toa
 import { useCheckoutStore } from "../store/checkoutStore";
 import { useCartStore } from "../store/cartStore";
 import { useCurrencyStore } from "../store/currencyStore";
-import { convertAndFormatPrice } from "../lib/formatters";
+import { convertAndFormatPrice, convertPriceNumber } from "../lib/formatters";
+import { type Currency } from "../services/productService";
 import { trackingService } from "../services/trackingService";
 import CartSummary from "../components/cart/CartSummary";
 import AddressCard from "../components/account/AddressCard";
@@ -98,6 +99,8 @@ const CheckoutPage = () => {
 
       dismissToast(loadingId);
       toastSuccess("¡Compra realizada con éxito!");
+
+      trackingService.trackPurchase().catch(() => {});
       
       await clearCart(true);
       
@@ -114,50 +117,68 @@ const CheckoutPage = () => {
     }
   };
 
-  const usdSubtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const allCurrencies = useCurrencyStore((s) => s.currencies);
+  const usdCurrency: Currency = { id: "USD", name: "", code: "USD", symbol: "$", exchangeRate: 1, decimalPlaces: 2, symbolPosition: "LEFT" };
+  const usdSubtotal = items.reduce((acc, item) => {
+    const itemCurrency: Currency = {
+      id: item.currencyId,
+      name: "",
+      code: item.currencyCode,
+      symbol: item.currencySymbol,
+      exchangeRate: item.currencyExchangeRate,
+      decimalPlaces: item.currencyDecimalPlaces,
+      symbolPosition: item.currencySymbolPosition as "LEFT" | "RIGHT",
+    };
+    return acc + convertPriceNumber(item.price * item.quantity, itemCurrency, usdCurrency, allCurrencies);
+  }, 0);
 
   const getMethodDisplayPrice = (method: any) => {
     if (!method) return "";
-    const name = method.name.toLowerCase();
     const threshold = method.freeShippingThreshold;
     const isFree = threshold != null && usdSubtotal >= threshold;
 
-    if (name.includes("delivery")) {
-      if (isFree) return "Gratis";
-      const usdPrice = method.price;
-      return convertAndFormatPrice(usdPrice, { code: "USD", symbol: "$", decimalPlaces: 2, symbolPosition: "LEFT", exchangeRate: 1 } as any, selectedCurrency, currencies);
+    if (method.isCod) {
+      return "Cobro en Destino";
     }
-    return isFree ? "Gratis (Prepago)" : "Cobro en Destino";
+    if (isFree || method.price === 0) return "Gratis";
+    const usdPrice = method.price;
+    return convertAndFormatPrice(usdPrice, { code: "USD", symbol: "$", decimalPlaces: 2, symbolPosition: "LEFT", exchangeRate: 1 } as any, selectedCurrency, currencies);
   };
 
   const currentShippingMethod = shippingMethods.find(m => m.id === selectedShippingId);
   const calculatedShippingCost = (() => {
     if (!currentShippingMethod) return 0;
-    const name = currentShippingMethod.name.toLowerCase();
     const threshold = currentShippingMethod.freeShippingThreshold;
     const isFree = threshold != null && usdSubtotal >= threshold;
 
-    if (name.includes("delivery")) {
-      return isFree ? 0 : currentShippingMethod.price;
+    if (currentShippingMethod.isCod) {
+      return 0; // Contra entrega: el courier cobra al recibir
     }
-    return 0; // Para Zoom y MRW la tienda cobra $0.00 de envío (C.O.D. o prepago por tienda)
+    return isFree ? 0 : currentShippingMethod.price;
   })();
 
   const calculatedShippingLabel = (() => {
     if (!currentShippingMethod) return "A calcular";
-    const name = currentShippingMethod.name.toLowerCase();
     const threshold = currentShippingMethod.freeShippingThreshold;
     const isFree = threshold != null && usdSubtotal >= threshold;
 
-    if (name.includes("delivery")) {
-      return isFree ? "Gratis" : undefined; // undefined para que renderice el precio convertido
+    if (currentShippingMethod.isCod) {
+      return "Cobro en Destino";
     }
-    return isFree ? "Gratis (Prepago)" : "Cobro en Destino";
+    if (isFree || currentShippingMethod.price === 0) return "Gratis";
+    return undefined;
   })();
 
   useEffect(() => {
-    fetchConfig();
+    fetchConfig(selectedCurrency?.id);
   }, [fetchConfig]);
+
+  useEffect(() => {
+    if (!selectedPaymentId && paymentMethods.length > 0 && selectedCurrency) {
+      const matched = paymentMethods.find(pm => pm.currency?.id === selectedCurrency.id);
+      if (matched) setSelectedPayment(matched.id);
+    }
+  }, [paymentMethods, selectedCurrency?.id]);
 
   if (isLoading) {
     return (
@@ -268,6 +289,7 @@ const CheckoutPage = () => {
                   <SelectionCard
                     key={method.id}
                     title={method.name}
+                    imageUrl={method.imageUrl}
                     isSelected={selectedPaymentId === method.id}
                     onSelect={() => handleSelectPayment(method.id)}
                     showFields={selectedPaymentId === method.id}
@@ -407,7 +429,7 @@ const CheckoutStep = ({ number, title, children }: { number: number; title: stri
   </div>
 );
 
-const SelectionCard = ({ title, price, isSelected, onSelect, showFields, fields }: any) => {
+const SelectionCard = ({ title, imageUrl, price, isSelected, onSelect, showFields, fields }: any) => {
   return (
     <div>
       {/* Card cabecera */}
@@ -428,6 +450,11 @@ const SelectionCard = ({ title, price, isSelected, onSelect, showFields, fields 
             </div>
           ) : (
             <div className="w-7 h-7 rounded-full border-2 border-neutral-300 flex-shrink-0" />
+          )}
+          {imageUrl && (
+            <div className="w-10 h-10 rounded-lg overflow-hidden border border-neutral-100 bg-neutral-50 flex-shrink-0">
+              <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+            </div>
           )}
           <p className={`font-bold text-p-b transition-colors ${isSelected ? "text-text-base" : "text-text-muted"}`}>
             {title}
