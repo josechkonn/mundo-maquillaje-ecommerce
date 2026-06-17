@@ -1,0 +1,2 @@
+ALTER TABLE products_variations ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+UPDATE products_variations SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL;

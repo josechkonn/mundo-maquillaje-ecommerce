@@ -1,0 +1,182 @@
+import { useState, useEffect } from "react";
+import { HeartIcon } from "@heroicons/react/24/outline";
+import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
+import { CheckIcon } from "@heroicons/react/24/solid";
+import { type Product, type ProductVariation } from "../../services/productService";
+import { convertAndFormatPrice } from "../../lib/formatters";
+import { useCurrencyStore } from "../../store/currencyStore";
+import { useFavoritesStore } from "../../store/favoritesStore";
+import { useAuthStore } from "../../store/authStore";
+import { useCartStore } from "../../store/cartStore";
+import { toastSuccess, toastError } from "../../lib/toasts";
+import VariationSelector from "./VariationSelector";
+import QuantitySelector from "./QuantitySelector";
+import DescriptionViewer from "./DescriptionViewer";
+import Button from "../ui/Button";
+
+interface ProductInfoProps {
+  product: Product;
+  onVariationChange: (variation: ProductVariation) => void;
+  onHoverVariation?: (variation: ProductVariation | null) => void;
+}
+
+const ProductInfo = ({ product, onVariationChange, onHoverVariation }: ProductInfoProps) => {
+  const { selectedCurrency, currencies } = useCurrencyStore();
+  const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
+  const user = useAuthStore(state => state.user);
+  const { addItem, setIsDrawerOpen } = useCartStore();
+  const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [addedToCart, setAddedToCart] = useState(false);
+
+  const favorited = isFavorite(product.id);
+
+  const toggleFavorite = () => {
+    if (favorited) {
+      removeFavorite(product.id, !!user);
+    } else {
+      addFavorite(product, !!user);
+    }
+  };
+
+  const activeVariations = (product.variations || []).filter(v => v.isActive !== false);
+
+  // Seleccionar la primera variación por defecto al cargar
+  useEffect(() => {
+    if (activeVariations.length > 0) {
+      handleVariationSelect(activeVariations[0]);
+    }
+  }, [product]);
+
+  const handleVariationSelect = (v: ProductVariation) => {
+    setSelectedVariation(v);
+    setQuantity(1);
+    onVariationChange(v);
+  };
+
+  const currentPrice = selectedVariation?.price || activeVariations[0]?.price || 0;
+  const currentStock = selectedVariation?.stock ?? 0;
+
+  // Si no hay moneda seleccionada aún, no renderizamos el precio formateado
+  if (!selectedCurrency) {
+    return (
+      <div className="flex animate-pulse">
+        <div className="h-10 w-32 bg-gray-100 rounded-lg"></div>
+      </div>
+    );
+  }
+
+  const formattedPrice = convertAndFormatPrice(
+    currentPrice,
+    product.currency,
+    selectedCurrency,
+    currencies
+  );
+
+  // Separamos el código de la moneda (ej: "COP") del resto del precio para darle color distinto
+  const priceParts = formattedPrice.split(" ");
+  const currencyCode = priceParts.pop(); // Sacamos el "COP" (último elemento)
+  const priceValue = priceParts.join(" "); // Reconstruimos el "$ 35.000"
+
+  return (
+    <div className="flex flex-col">
+      {/* Name and Favorite Icon */}
+      <div className="flex justify-between items-start mb-2">
+        <div className="flex flex-col">
+          <span className="text-brand-500 font-bold text-p-s uppercase tracking-widest mb-2">
+            {product.brand?.name}
+          </span>
+          <h3 className="text-h3-s md:text-h3-b font-normal text-text-base leading-tight">
+            {selectedVariation?.name || product.name}
+          </h3>
+        </div>
+        <button
+          onClick={toggleFavorite}
+          className={`p-3 rounded-full transition-all duration-300 ${favorited ? "text-brand-500 scale-110" : "text-gray-300 hover:text-brand-500"
+            }`}
+          title={favorited ? "Quitar de favoritos" : "Añadir a favoritos"}
+        >
+          {favorited ? (
+            <HeartIconSolid className="w-8 h-8" />
+          ) : (
+            <HeartIcon className="w-8 h-8" />
+          )}
+        </button>
+      </div>
+
+      {/* Price */}
+      <div className="mb-8 flex items-baseline gap-2">
+        <div className="text-h3-b md:text-h2-s font-black text-brand-600">
+          <span>{priceValue}</span>
+          <span className="ml-2 text-text-muted font-normal">{currencyCode}</span>
+        </div>
+      </div>
+
+      {/* Variation Selector */}
+      <VariationSelector
+        variations={activeVariations}
+        selectedVariation={selectedVariation}
+        onSelect={handleVariationSelect}
+        onHoverVariation={onHoverVariation}
+      />
+
+      {/* Quantity Selector */}
+      <QuantitySelector
+        quantity={quantity}
+        maxStock={currentStock}
+        onChange={setQuantity}
+      />
+
+      {/* CTA Button Reutilizable */}
+      <div className="space-y-4">
+        <Button
+          onClick={() => {
+            if (!selectedVariation) return;
+            const mainImg = selectedVariation.images?.find(img => img.isMain)?.urlImage
+              || selectedVariation.images?.[0]?.urlImage
+              || "/placeholder-product.png";
+
+            addItem({
+              variationId: selectedVariation.id,
+              productId: product.id,
+              productName: selectedVariation.name || product.name,
+              productSlug: product.slug,
+              variationName: selectedVariation.attributeValue || selectedVariation.name,
+              price: selectedVariation.price,
+              quantity,
+              maxStock: selectedVariation.stock,
+              imageUrl: mainImg,
+              hexColor: selectedVariation.hexColor,
+              currencyId: product.currency.id,
+              currencyCode: product.currency.code,
+              currencySymbol: product.currency.symbol,
+              currencyDecimalPlaces: product.currency.decimalPlaces,
+              currencySymbolPosition: product.currency.symbolPosition,
+              currencyExchangeRate: product.currency.exchangeRate,
+            }, !!user).catch((e: any) => {
+              toastError(e.message || "No se pudo añadir al carrito");
+            });
+
+            setAddedToCart(true);
+            setIsDrawerOpen(true);
+            toastSuccess("Producto añadido al carrito");
+            setTimeout(() => setAddedToCart(false), 2000);
+          }}
+          disabled={currentStock <= 0}
+          className={`shadow-brand/20 shadow-lg transition-all duration-300 ${
+            addedToCart ? "!bg-green-500 !hover:bg-green-600" : ""
+          }`}
+        >
+          {addedToCart ? (
+            <><CheckIcon className="w-5 h-5" /> Añadido al carrito</>
+          ) : currentStock > 0 ? "Agregar al carrito" : "Agotado"}
+        </Button>
+      </div>
+
+      {/* Description Viewer */}
+      <DescriptionViewer description={selectedVariation?.description || product.description || ""} name={selectedVariation?.name || product.name} />
+    </div>
+  );
+};
+
+export default ProductInfo;
