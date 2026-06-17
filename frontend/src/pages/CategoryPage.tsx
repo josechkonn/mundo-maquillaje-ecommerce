@@ -138,9 +138,9 @@ const CategoryPage = () => {
       <CategoryBanner name={category.name} bannerUrl={category.bannerUrl} />
 
       {/* Breadcrumb */}
-      <div className="bg-neutral-100 border-b border-neutral-100">
-        <div className="max-w-[95%] mx-auto px-4 py-4 flex items-center gap-2 text-[13px] flex-wrap">
-          <Link to="/" className="text-neutral-400 hover:text-brand-500 transition-colors">Inicio</Link>
+      <div className="bg-neutral-100 border-b border-neutral-200">
+        <div className="max-w-[95%] mx-auto px-4 py-3 flex items-center gap-1.5 text-[13px] flex-wrap">
+          <Link to="/" className="text-brand-400 hover:text-brand-500 transition-colors font-medium">Inicio</Link>
 
           {/* Padres Dinámicos */}
           {(() => {
@@ -151,11 +151,11 @@ const CategoryPage = () => {
               current = current.parent;
             }
             return parents.map(parent => (
-              <div key={parent.id} className="flex items-center gap-2">
-                <div className="w-4 h-4 text-neutral-300 flex items-center justify-center">/</div>
+              <div key={parent.id} className="flex items-center gap-1.5">
+                <span className="text-neutral-400">/</span>
                 <Link
                   to={`/productos?category=${parent.id}`}
-                  className="text-neutral-400 hover:text-brand-500 transition-colors"
+                  className="text-brand-400 hover:text-brand-500 transition-colors font-medium"
                 >
                   {parent.name}
                 </Link>
@@ -163,8 +163,8 @@ const CategoryPage = () => {
             ));
           })()}
 
-          <div className="w-4 h-4 text-neutral-300 flex items-center justify-center">/</div>
-          <span className="text-neutral-800 font-medium">{category.name}</span>
+          <span className="text-neutral-400">/</span>
+          <span className="text-text-base font-semibold">{category.name}</span>
         </div>
       </div>
 
@@ -183,7 +183,7 @@ const CategoryPage = () => {
       )}
 
       {/* Secciones de Productos con Lazy Loading UI */}
-      <div className="w-full py-4 md:py-16 space-y-16 md:space-y-24 bg-white overflow-hidden">
+      <div className="w-full py-4 md:py-16 space-y-16 md:space-y-24 bg-neutral-50 overflow-hidden">
         {productsLoading ? (
           renderSkeletons()
         ) : sections.length > 0 ? (
