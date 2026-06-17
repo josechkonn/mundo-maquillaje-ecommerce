@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @Repository
 public interface ProductVariationRepository extends JpaRepository<ProductVariation, UUID> {
-    @Query("SELECT v FROM ProductVariation v WHERE v.product.id = :productId AND v.isActive = true")
+    @Query("SELECT v FROM ProductVariation v WHERE v.product.id = :productId AND v.isActive = true ORDER BY v.createdAt ASC")
     List<ProductVariation> findByProductId(@Param("productId") UUID productId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

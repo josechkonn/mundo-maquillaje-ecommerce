@@ -59,6 +59,7 @@ public class Product {
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("product-variations")
+    @OrderBy("createdAt ASC")
     @Builder.Default
     @BatchSize(size = 20)
     private List<ProductVariation> variations = new ArrayList<>();

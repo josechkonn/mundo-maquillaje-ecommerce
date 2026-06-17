@@ -240,7 +240,7 @@ public class ProductService {
                 product.getVariations().add(detail);
             }
 
-            product.getVariations().removeIf(v -> !seenIds.contains(v.getId()));
+            product.getVariations().removeIf(v -> v.getId() != null && !seenIds.contains(v.getId()));
         }
 
         return productRepository.save(product);
@@ -275,7 +275,7 @@ public class ProductService {
             variation.getImages().add(img);
         }
 
-        variation.getImages().removeIf(i -> !seenImageIds.contains(i.getId()));
+        variation.getImages().removeIf(i -> i.getId() != null && !seenImageIds.contains(i.getId()));
     }
 
     @Transactional

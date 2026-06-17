@@ -24,6 +24,7 @@ export interface ProductVariation {
   attributeValue?: string;
   hexColor?: string;
   images: ProductImage[];
+  createdAt?: string;
 }
 
 export interface ProductImage {

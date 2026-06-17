@@ -19,7 +19,7 @@ const RoleMiddleware = () => {
   }
 
   if (!user) {
-    return <Navigate to="/auth/sign-in" replace />;
+    return <Navigate to="/auth/login" replace />;
   }
 
   if (!hasPermission("access.admin")) {
