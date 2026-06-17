@@ -765,7 +765,8 @@ function DataTable<T>({
                     {columns.map((col, index) => (
                       <th
                         key={col.key || index}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           if (col.sortable && onSort) {
                             const isCurrent = sortBy === col.key;
                             const nextDesc = isCurrent ? !sortDesc : false;

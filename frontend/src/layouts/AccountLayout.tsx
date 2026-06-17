@@ -2,7 +2,7 @@ import { Outlet, NavLink } from "react-router-dom";
 import Header from "../components/layout/Header";
 import AccountSidebar from "../components/account/AccountSidebar";
 import Footer from "../components/layout/Footer";
-import { supabase } from "../lib/supabase";
+import { useAuthStore } from "../store/authStore";
 import {
   HomeIcon,
   ClipboardDocumentListIcon,
@@ -18,7 +18,7 @@ import {
  */
 const AccountLayout = () => {
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await useAuthStore.getState().signOut();
   };
 
   const LINKS = [

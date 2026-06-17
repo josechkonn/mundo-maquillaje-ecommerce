@@ -15,13 +15,7 @@ import java.text.Normalizer;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -191,9 +185,10 @@ public class ProductService {
 
     @Transactional
     public Product updateProduct(UUID id, Product details) {
-        Product product = getProductById(id);
+        Product product = getProductByIdAdmin(id);
 
         product.setName(details.getName());
+        product.setDescription(details.getDescription());
         product.setIsActive(details.getIsActive());
         product.setCategory(details.getCategory());
         product.setBrand(details.getBrand());
@@ -206,21 +201,81 @@ public class ProductService {
         }
 
         // Update variations and their nested images
-        if (details.getVariations() != null && !details.getVariations().isEmpty()) {
-            product.getVariations().clear();
-            details.getVariations().forEach(v -> {
-                v.setProduct(product);
-                if (v.getAlertQuantity() == null) {
-                    v.setAlertQuantity(5);
+        if (details.getVariations() != null) {
+            product.getVariations().size();
+            Set<UUID> seenIds = new HashSet<>();
+
+            for (ProductVariation detail : details.getVariations()) {
+                if (detail.getId() != null) {
+                    ProductVariation existing = product.getVariations().stream()
+                            .filter(v -> detail.getId().equals(v.getId()))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (existing != null) {
+                        existing.setName(detail.getName());
+                        existing.setSku(detail.getSku());
+                        existing.setPrice(detail.getPrice());
+                        existing.setStock(detail.getStock());
+                        existing.setAttributeName(detail.getAttributeName());
+                        existing.setAttributeValue(detail.getAttributeValue());
+                        existing.setHexColor(detail.getHexColor());
+                        existing.setDescription(detail.getDescription());
+                        existing.setAlertQuantity(detail.getAlertQuantity() != null ? detail.getAlertQuantity() : 5);
+                        existing.setIsActive(detail.getIsActive());
+                        updateVariationImages(existing, detail.getImages());
+                        seenIds.add(detail.getId());
+                        continue;
+                    }
                 }
-                if (v.getImages() != null) {
-                    v.getImages().forEach(img -> img.setVariation(v));
+
+                detail.setId(null);
+                detail.setProduct(product);
+                if (detail.getAlertQuantity() == null) {
+                    detail.setAlertQuantity(5);
                 }
-                product.getVariations().add(v);
-            });
+                if (detail.getImages() != null) {
+                    detail.getImages().forEach(img -> img.setVariation(detail));
+                }
+                product.getVariations().add(detail);
+            }
+
+            product.getVariations().removeIf(v -> !seenIds.contains(v.getId()));
         }
 
         return productRepository.save(product);
+    }
+
+    private void updateVariationImages(ProductVariation variation, List<mundo_maquillaje.ecommerce.Models.ProductImage> newImages) {
+        if (newImages == null) {
+            variation.getImages().clear();
+            return;
+        }
+
+        Set<UUID> seenImageIds = new HashSet<>();
+        for (mundo_maquillaje.ecommerce.Models.ProductImage img : newImages) {
+            if (img.getId() != null) {
+                mundo_maquillaje.ecommerce.Models.ProductImage existing = variation.getImages().stream()
+                        .filter(i -> img.getId().equals(i.getId()))
+                        .findFirst()
+                        .orElse(null);
+
+                if (existing != null) {
+                    existing.setUrlImage(img.getUrlImage());
+                    existing.setOrder(img.getOrder());
+                    existing.setAltText(img.getAltText());
+                    existing.setIsMain(img.getIsMain());
+                    seenImageIds.add(img.getId());
+                    continue;
+                }
+            }
+
+            img.setId(null);
+            img.setVariation(variation);
+            variation.getImages().add(img);
+        }
+
+        variation.getImages().removeIf(i -> !seenImageIds.contains(i.getId()));
     }
 
     @Transactional

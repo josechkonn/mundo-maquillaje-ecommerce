@@ -286,6 +286,8 @@ public class OrderService {
                 .products(toProductDTOs(productsByOrder.getOrDefault(order.getId(), Collections.emptyList())))
                 .paymentMethod(toPaymentMethodDTO(order.getPaymentMethod()))
                 .transactions(toTransactionDTOs(transactionsByOrder.getOrDefault(order.getId(), Collections.emptyList())))
+                .paymentReference(order.getPaymentReference())
+                .receiptUrl(order.getReceiptUrl())
                 .build();
     }
 

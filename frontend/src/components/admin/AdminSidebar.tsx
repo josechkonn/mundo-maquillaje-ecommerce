@@ -27,8 +27,8 @@ import {
   PlusIcon,
   ShoppingCartIcon,
 } from "@heroicons/react/24/outline";
-import { supabase } from "../../lib/supabase";
 import { usePermissions } from "../../hooks/usePermissions";
+import { useAuthStore } from "../../store/authStore";
 import type { Permission } from "../../lib/permissions";
 import DepositModal from "./modals/DepositModal";
 import WithdrawModal from "./modals/WithdrawModal";
@@ -162,7 +162,7 @@ const AdminSidebar = ({ collapsed, mobileOpen, onMobileClose, isMobile }: AdminS
   const [withdrawOpen, setWithdrawOpen] = useState(false);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await useAuthStore.getState().signOut();
   };
 
   const handleNavClick = () => {

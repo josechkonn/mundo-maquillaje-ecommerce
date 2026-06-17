@@ -54,7 +54,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     set({ user: null, session: null, profile: null });
     useFavoritesStore.getState().clearFavorites();
   },
@@ -73,16 +73,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       const user = session?.user ?? null;
-      set({ session, user, isLoading: false });
+      set({ session, user });
       if (session) {
         syncTokensWithBackend(session.access_token, session.refresh_token);
-        get().fetchProfile();
+        const profilePromise = get().fetchProfile();
         useFavoritesStore.getState().syncFavorites();
+        await profilePromise;
       } else {
         useCartStore.getState().loadCart(false);
       }
+      set({ isLoading: false });
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -92,16 +94,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         if (freshSession) {
           syncTokensWithBackend(freshSession.access_token, freshSession.refresh_token);
-          get().fetchProfile();
-          useFavoritesStore.getState().syncFavorites();
+
+          if (event === 'INITIAL_SESSION') return;
+
           if (event === 'SIGNED_IN') {
+            set({ isLoading: true });
             useCartStore.getState().migrateToBackend();
-          } else if (event === 'INITIAL_SESSION') {
-            useCartStore.getState().loadCart(true);
           }
+
+          get().fetchProfile().finally(() => set({ isLoading: false }));
+          useFavoritesStore.getState().syncFavorites();
         } else {
           syncTokensWithBackend(null, null);
-          set({ profile: null });
+          set({ profile: null, isLoading: false });
           useFavoritesStore.getState().clearFavorites();
           const cart = useCartStore.getState();
           cart.saveForGuest();

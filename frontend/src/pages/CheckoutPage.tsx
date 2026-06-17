@@ -48,6 +48,7 @@ const CheckoutPage = () => {
 
   const [isAddressModalOpen, setIsAddressModalOpen] = React.useState(false);
   const [editingAddress, setEditingAddress] = React.useState<any>(null);
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -200,6 +201,8 @@ const CheckoutPage = () => {
   };
 
   const handleSaveAddress = async (data: any) => {
+    if (isSavingAddress) return;
+    setIsSavingAddress(true);
     try {
       if (editingAddress) {
         await addressService.update(editingAddress.id, data);
@@ -210,6 +213,8 @@ const CheckoutPage = () => {
       setIsAddressModalOpen(false);
     } catch (error: any) {
       toastError(error.message || "Error al guardar la dirección");
+    } finally {
+      setIsSavingAddress(false);
     }
   };
 
@@ -371,6 +376,7 @@ const CheckoutPage = () => {
           onSubmit={handleSaveAddress}
           onCancel={() => setIsAddressModalOpen(false)}
           hideHeader
+          isLoading={isSavingAddress}
         />
       </Modal>
 

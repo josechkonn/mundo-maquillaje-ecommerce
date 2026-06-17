@@ -100,6 +100,8 @@ export interface BackendOrder {
   paymentMethod?: PaymentMethodResponse;
   transactions?: TransactionResponse[];
   shippingMethod?: { id: string; name: string };
+  paymentReference?: string;
+  receiptUrl?: string;
 }
 
 export interface CreateOrderRequest {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { XMarkIcon, ArrowUpRightIcon } from "@heroicons/react/24/outline";
+import { ArrowUpRightIcon } from "@heroicons/react/24/outline";
 import { cashRegisterService, type CashRegister } from "../../../services/cashRegisterService";
 import Modal from "../../ui/Modal";
 import toast from "react-hot-toast";
@@ -74,15 +74,8 @@ const WithdrawModal = ({ isOpen, onClose, onSuccess }: WithdrawModalProps) => {
   );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} header={header} maxWidth="md" hideHeader>
-      <form onSubmit={handleSubmit} className="space-y-5 relative">
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-neutral-100 transition-colors text-neutral-700"
-        >
-          <XMarkIcon className="w-5 h-5" />
-        </button>
+    <Modal isOpen={isOpen} onClose={onClose} header={header} maxWidth="md">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {fetching ? (
           <div className="py-8 text-center text-neutral-500">Cargando cajas...</div>
         ) : (

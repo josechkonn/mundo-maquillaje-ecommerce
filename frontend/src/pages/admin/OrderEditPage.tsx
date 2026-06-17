@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeftIcon, PlusIcon, TrashIcon, PencilIcon, XMarkIcon, CheckIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, PlusIcon, TrashIcon, PencilIcon, XMarkIcon, CheckIcon, PhotoIcon, CreditCardIcon } from "@heroicons/react/24/outline";
 import { orderService, type BackendOrder, type CurrencyResponse } from "../../services/orderService";
 import { currencyService } from "../../services/currencyService";
 import { productService, type Product, type ProductVariation } from "../../services/productService";
@@ -344,7 +344,103 @@ const OrderEditPage = () => {
         </div>
       </div>
 
-      {/* Container 3: Configuración adicional */}
+      {/* Container 3: Comprobante de pago */}
+      <div className="bg-white rounded-3xl p-6 space-y-6">
+        <div>
+          <h4 className="text-h4-b font-extrabold text-neutral-800 tracking-tight">Comprobante de pago</h4>
+          <div className="mt-2 h-px bg-neutral-200" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Columna izquierda: Referencia y estado */}
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Número de referencia</label>
+              <p className="text-sm font-bold text-neutral-800 mt-1">
+                {order.paymentReference || (
+                  <span className="text-neutral-400 font-normal">Sin referencia</span>
+                )}
+              </p>
+            </div>
+
+            {/* Transacciones asociadas */}
+            {order.transactions && order.transactions.length > 0 && (
+              <div>
+                <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 block">Historial de transacciones</label>
+                <div className="space-y-2">
+                  {order.transactions.map((tx) => {
+                    const isVerified = tx.status === "VERIFIED";
+                    const isRejected = tx.status === "REJECTED";
+                    const isPending = tx.status === "PENDING";
+                    return (
+                      <div key={tx.id} className="flex items-center gap-3 p-3 rounded-xl border border-neutral-200 bg-neutral-50">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          isVerified ? "bg-green-100 text-green-600" :
+                          isRejected ? "bg-red-100 text-red-600" :
+                          "bg-yellow-100 text-yellow-600"
+                        }`}>
+                          <CreditCardIcon className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-neutral-800">
+                            {isVerified ? "Verificado" : isRejected ? "Rechazado" : "Pendiente"}
+                          </p>
+                          <p className="text-xs text-neutral-500">
+                            {new Date(tx.createdAt).toLocaleDateString("es-VE", {
+                              day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+                            })}
+                          </p>
+                          {tx.reference && (
+                            <p className="text-xs text-neutral-600 mt-0.5 font-medium">Ref: {tx.reference}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {(!order.transactions || order.transactions.length === 0) && !order.paymentReference && !order.receiptUrl && (
+              <div className="flex flex-col items-center justify-center py-8 text-neutral-400">
+                <CreditCardIcon className="w-12 h-12 mb-2" />
+                <p className="text-sm">Este pedido no tiene comprobante de pago adjunto</p>
+              </div>
+            )}
+          </div>
+
+          {/* Columna derecha: Imagen del comprobante */}
+          <div>
+            <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 block">Imagen del comprobante</label>
+            {order.receiptUrl ? (
+              <a
+                href={order.receiptUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative block w-full max-w-md aspect-[4/3] rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100 hover:ring-2 hover:ring-brand-400 transition-all"
+              >
+                <img
+                  src={order.receiptUrl}
+                  alt="Comprobante de pago"
+                  className="w-full h-full object-contain"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 px-4 py-2 rounded-xl">
+                    Ver completo
+                  </span>
+                </div>
+              </a>
+            ) : (
+              <div className="flex flex-col items-center justify-center w-full max-w-md aspect-[4/3] rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 text-neutral-400">
+                <PhotoIcon className="w-12 h-12 mb-2" />
+                <p className="text-sm">Sin imagen</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Container 4: Configuración adicional */}
       <div className="bg-white rounded-3xl p-6 space-y-6">
         <div>
           <h4 className="text-h4-b font-extrabold text-neutral-800 tracking-tight">Configuración</h4>

@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 import UserForm from "./users/UserForm";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import DataTable, { type ColumnDef } from "../../components/ui/DataTable";
-import UsersSkeleton from "../../components/admin/skeletons/UsersSkeleton";
 
 const ROLES = [
   { label: "Admin", value: "ADMIN" },
@@ -245,13 +244,12 @@ const UsersPage = () => {
         loading={deleting}
       />
 
-      {loading ? <UsersSkeleton /> : (
       <DataTable
         title="Usuarios"
         titleInfo={`${totalItems || 0} usuarios registrados`}
         columns={columns}
         data={users}
-        isLoading={false}
+        isLoading={loading}
         currentPage={currentPage}
         totalPages={totalPages}
         totalItems={totalItems}
@@ -310,7 +308,7 @@ const UsersPage = () => {
             </button>
           </div>
         )}
-      />)}
+      />
     </>
   );
 };

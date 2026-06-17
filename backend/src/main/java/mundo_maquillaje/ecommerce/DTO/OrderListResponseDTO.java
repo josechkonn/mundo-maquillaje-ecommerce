@@ -31,4 +31,6 @@ public class OrderListResponseDTO {
     private List<OrderProductDTO> products;
     private PaymentMethodDTO paymentMethod;
     private List<TransactionDTO> transactions;
+    private String paymentReference;
+    private String receiptUrl;
 }

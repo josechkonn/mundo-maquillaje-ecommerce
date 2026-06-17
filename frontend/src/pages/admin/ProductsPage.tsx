@@ -8,7 +8,6 @@ import { convertPriceNumber } from "../../lib/formatters";
 import toast from "react-hot-toast";
 import ProductForm from "./products/ProductForm";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
-import ProductsSkeleton from "../../components/admin/skeletons/ProductsSkeleton";
 import DataTable, { type ColumnDef } from "../../components/ui/DataTable";
 
 const ProductsPage = () => {
@@ -73,6 +72,16 @@ const ProductsPage = () => {
     });
   }, [products, statusFilter, brandFilter, categoryFilter, search]);
 
+  const getTotalStock = (product: Product): number => {
+    return product.variations?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+  };
+
+  const getStockColor = (stock: number): string => {
+    if (stock === 0) return "bg-danger-500";
+    if (stock <= 10) return "bg-amber-500";
+    return "bg-success-500";
+  };
+
   const sortedProducts = useMemo(() => {
     if (!sortBy) return filtered;
     return [...filtered].sort((a, b) => {
@@ -116,16 +125,6 @@ const ProductsPage = () => {
   }, [search, statusFilter, brandFilter, categoryFilter]);
 
   const activeCount = products.filter(p => p.isActive).length;
-
-  const getTotalStock = (product: Product): number => {
-    return product.variations?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
-  };
-
-  const getStockColor = (stock: number): string => {
-    if (stock === 0) return "bg-danger-500";
-    if (stock <= 10) return "bg-amber-500";
-    return "bg-success-500";
-  };
 
   const getMainImage = (product: Product): string | undefined => {
     for (const v of product.variations || []) {
@@ -377,13 +376,12 @@ const ProductsPage = () => {
         loading={deleting}
       />
 
-      {loading ? <ProductsSkeleton /> : (
       <DataTable
         title="Productos"
         titleInfo={`${sortedProducts.length} productos · ${activeCount} activos`}
         columns={columns}
         data={paginatedProducts}
-        isLoading={false}
+        isLoading={loading}
         totalItems={filtered.length}
         currentPage={currentPage}
         totalPages={totalPages}
@@ -457,7 +455,7 @@ const ProductsPage = () => {
             </button>
           </div>
         )}
-      />)}
+      />
     </>
   );
 };

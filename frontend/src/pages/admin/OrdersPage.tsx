@@ -8,7 +8,6 @@ import { formatPrice } from "../../lib/formatters";
 import DataTable, { type ColumnDef } from "../../components/ui/DataTable";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import StatCard from "../../components/admin/dashboard/StatCard";
-import OrdersSkeleton from "../../components/admin/skeletons/OrdersSkeleton";
 import {
   ShoppingCartIcon,
   ClockIcon,
@@ -255,13 +254,12 @@ const OrdersPage = () => {
       </div>
 
       {/* Table */}
-      {isLoading ? <OrdersSkeleton /> : (
       <DataTable
         title="Pedidos"
         titleInfo={`${totalItems || 0} pedidos registrados`}
         columns={columns}
         data={orders}
-        isLoading={false}
+        isLoading={isLoading}
         currentPage={currentPage}
         totalPages={totalPages}
         totalItems={totalItems}
@@ -299,7 +297,7 @@ const OrdersPage = () => {
         startDate={tableStartDate}
         endDate={tableEndDate}
         onDateRangeChange={(s, e) => { setTableStartDate(s); setTableEndDate(e); setCurrentPage(1); }}
-      />)}
+      />
     </div>
   );
 };

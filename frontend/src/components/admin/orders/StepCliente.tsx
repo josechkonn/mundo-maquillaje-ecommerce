@@ -325,9 +325,9 @@ const StepCliente = ({ selectedClient, onSelectClient, address, onAddressChange,
                   </button>
                 ))
               )}
-            </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
 
         {selectedClient && (
           <div className="mt-3 flex items-center gap-3 px-4 py-3 bg-green-50 rounded-2xl border border-green-200">
@@ -408,6 +408,18 @@ const StepCliente = ({ selectedClient, onSelectClient, address, onAddressChange,
         )}
 
         {(showManualForm || savedAddresses.length === 0) && selectedClient && (
+          <>
+            {showManualForm && savedAddresses.length > 0 && (
+              <button
+                onClick={() => setShowManualForm(false)}
+                className="flex items-center gap-2 text-sm font-medium text-brand-500 hover:text-brand-600 transition-colors mb-4"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Volver a direcciones guardadas
+              </button>
+            )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1.5 block">Nombre completo</label>
@@ -463,6 +475,7 @@ const StepCliente = ({ selectedClient, onSelectClient, address, onAddressChange,
               </select>
             </div>
           </div>
+          </>
         )}
       </div>
 

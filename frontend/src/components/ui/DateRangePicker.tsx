@@ -116,6 +116,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
     setTempEnd("");
     setSelecting("start");
     onChange("", "");
+    if (!hideToggle) onToggle();
   };
 
   const handleApply = () => {
@@ -338,7 +339,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
       )}
 
       {(isOpen || hideToggle) && (
-        <div className={`${hideToggle ? "" : "absolute left-0 top-full mt-2"} w-72 bg-white rounded-[10px] border border-neutral-100 shadow-xl z-50 p-4 text-left animate-fade-in select-none daterange-calendar`} onMouseDown={(e) => e.stopPropagation()}>
+        <div className={`${hideToggle ? "" : "absolute left-0 top-full mt-2"} w-72 bg-white rounded-[10px] border border-neutral-100 shadow-xl z-[60] p-4 text-left animate-fade-in select-none daterange-calendar`} onMouseDown={(e) => e.stopPropagation()}>
           {quickRanges.length > 0 && (
             <div className="flex gap-1 mb-3">
               {quickRanges.map((range) => (

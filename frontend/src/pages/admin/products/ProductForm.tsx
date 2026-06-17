@@ -79,7 +79,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   }, []);
 
   useEffect(() => {
-    if (!isEditing && variations.length === 0 && currencies.length > 0 && !dirty) {
+    if (!isEditing && variations.length === 0 && currencies.length > 0) {
       const baseCode = currencies.find(c => c.id === currencyId)?.code ?? currencies[0]?.code ?? "";
       const newVariation: ProductVariation = {
         id: crypto.randomUUID(),
@@ -606,7 +606,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
           {/* Step 1: Información Básica */}
           {step === 0 && (
-            <div className="max-w-2xl mx-auto space-y-6">
+            <div className="max-w-4xl mx-auto space-y-6">
               <div className={cardClass}>
                 <h3 className="text-p-b font-bold text-text-base">Información Básica</h3>
                 <div><label className={labelClass}>Nombre</label><input value={name} onChange={e => { setName(e.target.value); markDirty(); }} placeholder="Ej: Labial Mate L'Oréal" className={inputClass} /></div>
@@ -641,7 +641,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
           {/* Step 2: Precios y Variantes */}
           {step === 1 && (
-            <div className="space-y-6">
+            <div className="max-w-7xl mx-auto space-y-6">
               <div className={cardClass}>
                 <h3 className="text-p-b font-bold text-text-base">Moneda y Precios</h3>
                 <p className="text-p-xs text-text-muted mb-3">Selecciona la moneda base. Las demás se calculan automáticamente.</p>
@@ -818,7 +818,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
           {/* Step 3: Revisar y Guardar */}
           {step === 2 && (
-            <div className="max-w-3xl mx-auto space-y-6">
+            <div className="max-w-4xl mx-auto space-y-6">
               <div className={cardClass}>
                 <h3 className="text-p-b font-bold text-text-base flex items-center gap-2"><CheckIcon className="w-5 h-5 text-success-500" /> Información del producto</h3>
                 <div className="grid grid-cols-2 gap-4">

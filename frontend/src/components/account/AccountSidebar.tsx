@@ -6,11 +6,11 @@ import {
   HeartIcon,
   LockClosedIcon
 } from "@heroicons/react/24/outline";
-import { supabase } from "../../lib/supabase";
+import { useAuthStore } from "../../store/authStore";
 
 const AccountSidebar = () => {
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await useAuthStore.getState().signOut();
   };
 
   const LINKS = [
