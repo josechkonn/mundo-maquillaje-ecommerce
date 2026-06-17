@@ -16,7 +16,7 @@ import {
   NumberedListIcon,
   LinkIcon,
 } from "@heroicons/react/24/outline";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 
 const TEXT_COLORS = [
   "#222222",
@@ -51,6 +51,13 @@ interface RichTextEditorProps {
   minHeight?: string;
 }
 
+const normalizeHtml = (html: string): string => {
+  if (!html) return "";
+  const stripped = html.replace(/<\/?p>/g, "").replace(/<br\s*\/?>/g, "").trim();
+  if (!stripped) return "";
+  return html;
+};
+
 const RichTextEditor = ({
   value,
   onChange,
@@ -58,6 +65,10 @@ const RichTextEditor = ({
   disabled = false,
   minHeight = "120px",
 }: RichTextEditorProps) => {
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const isSettingContent = useRef(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -77,26 +88,24 @@ const RichTextEditor = ({
     content: value || "",
     editable: !disabled,
     onUpdate: ({ editor }) => {
+      if (isSettingContent.current) return;
       const html = editor.getHTML();
-      const isEmpty =
-        html === "<p></p>" ||
-        html === "<p><br></p>" ||
-        html === "" ||
-        editor.getText().trim() === "";
-      onChange(isEmpty ? "" : html);
+      const isEmpty = normalizeHtml(html) === "";
+      onChangeRef.current(isEmpty ? "" : html);
     },
   });
 
   useEffect(() => {
     if (editor && !editor.isDestroyed) {
+      const currentText = editor.getText().trim();
+      const incomingNormalized = normalizeHtml(value || "");
+      if (incomingNormalized === "" && currentText === "") return;
       const currentHTML = editor.getHTML();
-      const normalizedCurrent =
-        currentHTML === "<p></p>" || currentHTML === "<p><br></p>"
-          ? ""
-          : currentHTML;
-      const normalizedValue = value || "";
-      if (normalizedCurrent !== normalizedValue) {
-        editor.commands.setContent(normalizedValue || "", false);
+      const currentNormalized = normalizeHtml(currentHTML);
+      if (currentNormalized !== incomingNormalized) {
+        isSettingContent.current = true;
+        editor.commands.setContent(value || "", false);
+        requestAnimationFrame(() => { isSettingContent.current = false; });
       }
     }
   }, [value, editor]);

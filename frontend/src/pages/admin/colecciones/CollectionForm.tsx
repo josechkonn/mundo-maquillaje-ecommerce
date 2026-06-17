@@ -218,9 +218,10 @@ const CollectionForm = ({ collection, onSave, onCancel }: CollectionFormProps) =
           {/* Card B: Imagen */}
           <div className={cardClass}>
             <h3 className="text-p-b font-bold text-text-base">Imagen de la Colección</h3>
+            <p className="text-p-xs text-text-muted">Proporción recomendada: <strong>4:3</strong> (ej. 800×600 px)</p>
             <div className="flex items-center justify-center">
               {imageUrl ? (
-                <div className="relative w-full aspect-square rounded-2xl overflow-hidden border border-neutral-100">
+                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-neutral-100">
                   <img src={imageUrl} alt="" className="w-full h-full object-cover" />
                   <button
                     onClick={() => { setImageUrl(""); markDirty(); }}
@@ -232,10 +233,11 @@ const CollectionForm = ({ collection, onSave, onCancel }: CollectionFormProps) =
               ) : (
                 <div
                   onClick={() => setShowImagePicker(true)}
-                  className="w-full aspect-square rounded-2xl border-2 border-dashed border-neutral-300 flex flex-col items-center justify-center text-text-muted hover:border-brand-400 transition-colors cursor-pointer"
+                  className="w-full aspect-[4/3] rounded-2xl border-2 border-dashed border-neutral-300 flex flex-col items-center justify-center text-text-muted hover:border-brand-400 transition-colors cursor-pointer"
                 >
                   <PhotoIcon className="w-10 h-10" />
                   <span className="text-p-xs mt-2 font-medium">Arrastra o haz clic para subir</span>
+                  <span className="text-[10px] text-text-muted/60 mt-1">4:3 recomendado</span>
                 </div>
               )}
             </div>
