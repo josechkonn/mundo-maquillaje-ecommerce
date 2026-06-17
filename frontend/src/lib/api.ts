@@ -25,8 +25,17 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session) {
-      // Si tenemos sesión nueva, reintentamos la petición original una vez
-      // El authListener ya se encargará de sincronizar la cookie en segundo plano
+      // Sincronizar la cookie actualizada con el backend antes de reintentar
+      await fetch(`${BASE_URL}/auth/sync-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+        }),
+      });
+      // Reintentar la petición original
       response = await fetch(url, defaultOptions);
     } else {
       // Si no hay sesión, cerramos todo

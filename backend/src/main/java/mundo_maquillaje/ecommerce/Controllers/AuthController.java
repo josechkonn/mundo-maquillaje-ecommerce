@@ -3,6 +3,7 @@ package mundo_maquillaje.ecommerce.Controllers;
 import lombok.RequiredArgsConstructor;
 import mundo_maquillaje.ecommerce.Models.Profile;
 import mundo_maquillaje.ecommerce.Services.ProfileService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,12 @@ import java.util.UUID;
 public class AuthController {
 
     private final ProfileService profileService;
+
+    @Value("${COOKIE_SECURE:false}")
+    private boolean cookieSecure;
+
+    @Value("${COOKIE_SAME_SITE:Lax}")
+    private String cookieSameSite;
 
     @GetMapping("/me")
     public ResponseEntity<?> getMe(Authentication authentication) {
@@ -40,18 +47,18 @@ public class AuthController {
 
         ResponseCookie accessCookie = ResponseCookie.from("access_token", isLogout ? "" : accessToken)
                 .httpOnly(true)
-                .secure(false) // Set to true in production with HTTPS
+                .secure(cookieSecure)
                 .path("/")
                 .maxAge(maxAge)
-                .sameSite("Lax")
+                .sameSite(cookieSameSite)
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", isLogout ? "" : refreshToken)
                 .httpOnly(true)
-                .secure(false)
+                .secure(cookieSecure)
                 .path("/")
                 .maxAge(maxAge)
-                .sameSite("Lax")
+                .sameSite(cookieSameSite)
                 .build();
 
         HttpHeaders headers = new HttpHeaders();

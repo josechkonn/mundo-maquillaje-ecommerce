@@ -77,7 +77,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const user = session?.user ?? null;
       set({ session, user });
       if (session) {
-        syncTokensWithBackend(session.access_token, session.refresh_token);
+        await syncTokensWithBackend(session.access_token, session.refresh_token);
         const profilePromise = get().fetchProfile();
         useFavoritesStore.getState().syncFavorites();
         await profilePromise;
