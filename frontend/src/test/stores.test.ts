@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { useReportsStore } from "../store/reportsStore";
 import { useDashboardDateStore } from "../store/dashboardDateStore";
 

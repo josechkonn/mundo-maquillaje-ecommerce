@@ -11,7 +11,7 @@ interface Address {
   direction: string;
   city: string;
   stateId: string;
-  cityId: string;
+  cityId?: string;
   municipalityId: string;
   parishId: string;
   stateName?: string;
@@ -165,7 +165,7 @@ const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = 
     }
   }, [initialData]);
 
-  const handleStateChange = useCallback((id: string, name: string) => {
+  const handleStateChange = useCallback((id: string, _name: string) => {
     setFormData(prev => ({ ...prev, stateId: id, cityId: "", municipalityId: "", parishId: "" }));
     setCities([]);
     setMunicipalities([]);
@@ -271,7 +271,7 @@ const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = 
             label="Ciudad:"
             placeholder="Selecciona una ciudad"
             options={cities}
-            value={formData.cityId}
+            value={formData.cityId ?? ""}
             onChange={handleCityChange}
             disabled={!formData.stateId}
             loading={loadingCities}

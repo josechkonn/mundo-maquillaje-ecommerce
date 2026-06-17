@@ -1,7 +1,7 @@
 import { useAuthStore } from "../store/authStore";
 import { supabase } from "./supabase";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
 const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   const url = `${BASE_URL}${endpoint}`;

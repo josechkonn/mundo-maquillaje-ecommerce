@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useCurrencyStore } from "../store/currencyStore";
 import { currencyService } from "../services/currencyService";
 
@@ -11,12 +11,12 @@ vi.mock("../services/currencyService", () => ({
 const mockCurrencies = [
   {
     id: "1", code: "USD", name: "US Dollar", symbol: "$",
-    decimalPlaces: 2, symbolPosition: "LEFT", exchangeRate: 1, isActive: true,
+    decimalPlaces: 2, symbolPosition: "LEFT" as const, exchangeRate: 1, isActive: true,
     createdAt: "2024-01-01T00:00:00Z", updatedAt: "2024-01-01T00:00:00Z",
   },
   {
     id: "2", code: "VES", name: "Bolívar", symbol: "Bs",
-    decimalPlaces: 2, symbolPosition: "RIGHT", exchangeRate: 3688.50, isActive: true,
+    decimalPlaces: 2, symbolPosition: "RIGHT" as const, exchangeRate: 3688.50, isActive: true,
     createdAt: "2024-01-01T00:00:00Z", updatedAt: "2024-01-01T00:00:00Z",
   },
 ];

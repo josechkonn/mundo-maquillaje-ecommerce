@@ -5,19 +5,16 @@ import { type Currency } from "../services/productService";
 const USD: Currency = {
   id: "1", code: "USD", name: "US Dollar", symbol: "$",
   decimalPlaces: 2, symbolPosition: "LEFT", exchangeRate: 1, isActive: true,
-  createdAt: "", updatedAt: "",
 };
 
 const VES: Currency = {
   id: "2", code: "VES", name: "Bolívar", symbol: "Bs",
   decimalPlaces: 2, symbolPosition: "RIGHT", exchangeRate: 3688.50, isActive: true,
-  createdAt: "", updatedAt: "",
 };
 
 const COP: Currency = {
   id: "3", code: "COP", name: "Peso Colombiano", symbol: "$",
   decimalPlaces: 0, symbolPosition: "LEFT", exchangeRate: 4523.00, isActive: true,
-  createdAt: "", updatedAt: "",
 };
 
 const currencies = [USD, VES, COP];

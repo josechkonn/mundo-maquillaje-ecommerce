@@ -171,7 +171,7 @@ const CheckoutPage = () => {
   })();
 
   useEffect(() => {
-    fetchConfig(selectedCurrency?.id);
+    fetchConfig();
   }, [fetchConfig]);
 
   useEffect(() => {

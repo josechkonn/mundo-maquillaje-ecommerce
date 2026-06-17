@@ -39,7 +39,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   fetchProfile: async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/auth/me", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8080/api"}/auth/me`, {
         credentials: "include",
       });
       if (res.ok) {
@@ -62,7 +62,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initializeAuthListener: () => {
     const syncTokensWithBackend = async (accessToken: string | null, refreshToken: string | null) => {
       try {
-        await fetch("http://localhost:8080/api/auth/sync-session", {
+        await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8080/api"}/auth/sync-session`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",

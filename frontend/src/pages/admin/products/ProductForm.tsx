@@ -249,7 +249,6 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
   useEffect(() => {
     if (!isEditing && variations.length === 0 && currencies.length > 0) {
-      const baseCode = currencies.find(c => c.id === currencyId)?.code ?? currencies[0]?.code ?? "";
       const newVariation: ProductVariation = {
         id: crypto.randomUUID(),
         name: "",
@@ -420,11 +419,10 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       brand: { id: selectedBrand.id, name: selectedBrand.name },
       currency: selectedCurrency,
       variations: variations.map(v => {
-        const { id, images, ...rest } = v;
+        const { images, ...rest } = v;
         return {
-          ...(isEditing ? { id } : {}),
           ...rest,
-          ...(images.length > 0 ? { images: images.map(({ id: imgId, ...imgRest }) => isEditing ? { id: imgId, ...imgRest } : imgRest) } : {}),
+          images: images.length > 0 ? images.map(({ id: imgId, ...imgRest }) => ({ id: imgId, ...imgRest })) : [],
           price: variationPrices[v.id]?.[selectedCurrency.code] ?? v.price,
         };
       }),

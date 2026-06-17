@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ChevronDownIcon, SparklesIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import { type Currency } from "../../../services/productService";
 import { type ShippingMethod } from "../../../services/shippingMethodService";

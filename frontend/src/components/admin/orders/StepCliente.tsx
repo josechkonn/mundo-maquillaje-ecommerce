@@ -40,7 +40,7 @@ const StepCliente = ({ selectedClient, onSelectClient, address, onAddressChange,
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showManualForm, setShowManualForm] = useState(false);
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

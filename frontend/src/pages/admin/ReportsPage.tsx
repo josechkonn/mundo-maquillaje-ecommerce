@@ -14,12 +14,6 @@ const RevenueByCategoryReport = lazy(() => import("../../components/admin/report
 const TransactionsReport = lazy(() => import("../../components/admin/reports/TransactionsReport"));
 const ConversionReport = lazy(() => import("../../components/admin/reports/ConversionReport"));
 
-const ReportFallback = () => (
-  <div className="flex items-center justify-center h-64">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-400" />
-  </div>
-);
-
 const ReportsPage = () => {
   const { selectedReport, setSelectedReport } = useReportsStore();
   const { startDate, endDate } = useDashboardDateStore();

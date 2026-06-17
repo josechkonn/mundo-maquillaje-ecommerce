@@ -14,7 +14,6 @@ const Stepper = ({ steps, currentStep }: StepperProps) => {
         {steps.map((step, idx) => {
           const isCompleted = idx < currentStep;
           const isActive = idx === currentStep;
-          const isPending = idx > currentStep;
 
           return (
             <div key={idx} className="flex items-center">

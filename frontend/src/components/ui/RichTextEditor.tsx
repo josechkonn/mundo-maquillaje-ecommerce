@@ -104,7 +104,7 @@ const RichTextEditor = ({
       const currentNormalized = normalizeHtml(currentHTML);
       if (currentNormalized !== incomingNormalized) {
         isSettingContent.current = true;
-        editor.commands.setContent(value || "", false);
+        editor.commands.setContent(value || "");
         requestAnimationFrame(() => { isSettingContent.current = false; });
       }
     }

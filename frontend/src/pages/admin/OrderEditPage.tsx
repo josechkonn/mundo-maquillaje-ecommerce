@@ -576,7 +576,6 @@ const OrderEditPage = () => {
                   {order.transactions.map((tx) => {
                     const isVerified = tx.status === "VERIFIED";
                     const isRejected = tx.status === "REJECTED";
-                    const isPending = tx.status === "PENDING";
                     return (
                       <div key={tx.id} className="flex items-center gap-3 p-3 rounded-xl border border-neutral-200 bg-neutral-50">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
