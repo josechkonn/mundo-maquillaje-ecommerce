@@ -49,16 +49,19 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/sync-session").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/brands", "/api/brands/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories", "/api/categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/currencies", "/api/currencies/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/banners", "/api/banners/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/collections", "/api/collections/**").permitAll()
-                        .requestMatchers("/api/cart/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/discount-codes/validate").permitAll()
-                        .requestMatchers("/api/discount-codes/**").authenticated()
+                        .requestMatchers("/api/auth/sync-session", "/auth/sync-session").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/brands", "/api/brands/**", "/brands", "/brands/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories", "/api/categories/**", "/categories", "/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/currencies", "/api/currencies/**", "/currencies", "/currencies/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**", "/products", "/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/banners", "/api/banners/**", "/banners", "/banners/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/collections", "/api/collections/**", "/collections", "/collections/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/checkout/config", "/checkout/config").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/config", "/config").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/tracking/event", "/tracking/event").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/discount-codes/validate", "/discount-codes/validate").permitAll()
+                        .requestMatchers("/api/cart/**", "/cart/**").authenticated()
+                        .requestMatchers("/api/discount-codes/**", "/discount-codes/**").authenticated()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .bearerTokenResolver(bearerTokenResolver())
@@ -107,7 +110,7 @@ public class SecurityConfig {
             @Override
             public String resolve(HttpServletRequest request) {
                 String path = request.getRequestURI();
-                if (path != null && path.equals("/api/auth/sync-session")) {
+                if (path != null && (path.equals("/api/auth/sync-session") || path.equals("/auth/sync-session"))) {
                     return null;
                 }
 
