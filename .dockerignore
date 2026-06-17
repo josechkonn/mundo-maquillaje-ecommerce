@@ -1,0 +1,11 @@
+.git
+.gitignore
+.gitattributes
+.dockerignore
+.env*
+*.md
+node_modules
+frontend/
+backend/.env.local
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
