@@ -39,6 +39,7 @@ export interface Product {
   id: string;
   name: string;
   slug: string;
+  description?: string;
   isActive: boolean;
   category: { id: string; name: string };
   brand: { id: string; name: string };

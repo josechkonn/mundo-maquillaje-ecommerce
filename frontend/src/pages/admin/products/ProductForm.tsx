@@ -57,6 +57,8 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [editingVariationIndex, setEditingVariationIndex] = useState<number | null>(null);
   const [basePriceDraft, setBasePriceDraft] = useState<string | null>(null);
   const [varPriceDraft, setVarPriceDraft] = useState<Record<string, string | null>>({});
+  const [stockDraft, setStockDraft] = useState<Record<string, string>>({});
+  const [alertDraft, setAlertDraft] = useState<Record<string, string>>({});
   const [useDefaultTitleMap, setUseDefaultTitleMap] = useState<Record<string, boolean>>({});
   const [useDefaultDescMap, setUseDefaultDescMap] = useState<Record<string, boolean>>({});
   const slugManuallyEdited = useRef(false);
@@ -97,11 +99,24 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         images: [],
       };
       setVariations([newVariation]);
+      setUseDefaultTitleMap({ [newVariation.id]: true });
       const prices: Record<string, number> = {};
       currencies.forEach(c => { prices[c.code] = 0; });
       setVariationPrices({ [newVariation.id]: prices });
     }
   }, [isEditing, currencies]);
+
+  useEffect(() => {
+    if (isEditing && product?.variations && product?.name) {
+      const map: Record<string, boolean> = {};
+      product.variations.forEach((v, idx) => {
+        if (v.name === product.name || (product.variations.length > 1 ? false : idx === 0)) {
+          map[v.id] = true;
+        }
+      });
+      if (Object.keys(map).length > 0) setUseDefaultTitleMap(map);
+    }
+  }, [isEditing, product]);
 
   useEffect(() => {
     if (currencies.length > 0) {
@@ -135,6 +150,15 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       setSlug(name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
     }
   }, [name, isEditing]);
+
+  useEffect(() => {
+    setVariations(prev => prev.map((v, idx) => {
+      if ((!hasVariants && idx === 0) || useDefaultTitleMap[v.id]) {
+        return { ...v, name: name };
+      }
+      return v;
+    }));
+  }, [name, hasVariants]);
 
   const markDirty = useCallback(() => { if (!dirty) setDirty(true); }, [dirty]);
 
@@ -370,7 +394,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                     </div>
                   </td>
                   <td className="py-3 px-4" style={{ width: "200px" }}><input value={variation.sku} onChange={e => updateVariation(idx, "sku", e.target.value)} placeholder="SKU" className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
-                  <td className="py-3 px-4" style={{ width: "144px" }}><input type="number" min={0} value={variation.stock} onChange={e => updateVariation(idx, "stock", parseInt(e.target.value) || 0)} className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
+                  <td className="py-3 px-4" style={{ width: "144px" }}><input type="number" min={0} value={stockDraft[variation.id] ?? variation.stock} onFocus={() => { if (stockDraft[variation.id] === undefined) setStockDraft(prev => ({ ...prev, [variation.id]: String(variation.stock) })); }} onChange={e => { const val = e.target.value; setStockDraft(prev => ({ ...prev, [variation.id]: val })); updateVariation(idx, "stock", parseInt(val) || 0); }} onBlur={() => setStockDraft(prev => { const next = { ...prev }; delete next[variation.id]; return next; })} className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
                   {currencies.map(currency => {
                     const isBase = currency.id === currencyId;
                     const varPrices = variationPrices[variation.id] || {};
@@ -398,7 +422,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                       </td>
                     );
                   })}
-                  <td className="py-3 px-4" style={{ width: "128px" }}><input type="number" min={0} value={variation.alertQuantity ?? 5} onChange={e => updateVariation(idx, "alertQuantity", parseInt(e.target.value) || 0)} className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
+                  <td className="py-3 px-4" style={{ width: "128px" }}><input type="number" min={0} value={alertDraft[variation.id] ?? (variation.alertQuantity ?? 5)} onFocus={() => { if (alertDraft[variation.id] === undefined) setAlertDraft(prev => ({ ...prev, [variation.id]: String(variation.alertQuantity ?? 5) })); }} onChange={e => { const val = e.target.value; setAlertDraft(prev => ({ ...prev, [variation.id]: val })); updateVariation(idx, "alertQuantity", parseInt(val) || 0); }} onBlur={() => setAlertDraft(prev => { const next = { ...prev }; delete next[variation.id]; return next; })} className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
                   <td className="py-3 px-4" style={{ width: "96px" }}>
                     <button onClick={() => updateVariation(idx, "isActive", !variation.isActive)} className={`relative w-9 h-5 rounded-full transition-colors ${variation.isActive ? "bg-success-500" : "bg-neutral-300"}`}>
                       <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${variation.isActive ? "translate-x-4" : ""}`} />
@@ -490,28 +514,20 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                   </button>
                 </div>
               </div>
-              <div>
-                <label className={`${labelClass} mb-1.5 block`}>Nombre</label>
-                <input
-                  value={baseVariation.name}
-                  onChange={e => { updateVariation(0, "name", e.target.value); }}
-                  placeholder={name || "Nombre de la variante"}
-                  className={inputClass}
-                />
-              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className={`${labelClass} mb-1.5 block`}>SKU</label>
                   <input value={baseVariation.sku} onChange={e => updateVariation(0, "sku", e.target.value)} placeholder="SKU del producto" className={inputClass} />
                 </div>
-                <div>
-                  <label className={`${labelClass} mb-1.5 block`}>Stock</label>
-                  <input type="number" min={0} value={baseVariation.stock} onChange={e => updateVariation(0, "stock", parseInt(e.target.value) || 0)} className={inputClass} />
-                </div>
-                <div>
-                  <label className={`${labelClass} mb-1.5 block`}>Cantidad de alerta</label>
-                  <input type="number" min={0} value={baseVariation.alertQuantity ?? 5} onChange={e => updateVariation(0, "alertQuantity", parseInt(e.target.value) || 0)} className={inputClass} />
-                </div>
+<div>
+                   <label className={`${labelClass} mb-1.5 block`}>Stock</label>
+                   <input type="number" min={0} value={stockDraft[baseVariation.id] ?? baseVariation.stock} onFocus={() => { if (stockDraft[baseVariation.id] === undefined) setStockDraft(prev => ({ ...prev, [baseVariation.id]: String(baseVariation.stock) })); }} onChange={e => { const val = e.target.value; setStockDraft(prev => ({ ...prev, [baseVariation.id]: val })); updateVariation(0, "stock", parseInt(val) || 0); }} onBlur={() => setStockDraft(prev => { const next = { ...prev }; delete next[baseVariation.id]; return next; })} className={inputClass} />
+                 </div>
+                 <div>
+                   <label className={`${labelClass} mb-1.5 block`}>Cantidad de alerta</label>
+                   <input type="number" min={0} value={alertDraft[baseVariation.id] ?? (baseVariation.alertQuantity ?? 5)} onFocus={() => { if (alertDraft[baseVariation.id] === undefined) setAlertDraft(prev => ({ ...prev, [baseVariation.id]: String(baseVariation.alertQuantity ?? 5) })); }} onChange={e => { const val = e.target.value; setAlertDraft(prev => ({ ...prev, [baseVariation.id]: val })); updateVariation(0, "alertQuantity", parseInt(val) || 0); }} onBlur={() => setAlertDraft(prev => { const next = { ...prev }; delete next[baseVariation.id]; return next; })} className={inputClass} />
+                 </div>
               </div>
             </>
           )}

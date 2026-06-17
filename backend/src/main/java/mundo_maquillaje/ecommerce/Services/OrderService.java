@@ -56,6 +56,7 @@ public class OrderService {
     private final ShippingMethodRepository shippingMethodRepository;
     private final ProductVariationRepository productVariationRepository;
     private final CashRegisterService cashRegisterService;
+    private final OrderNumberService orderNumberService;
 
     @Transactional(readOnly = true)
     public Page<OrderListResponseDTO> getUserOrders(
@@ -692,6 +693,7 @@ public class OrderService {
         order.setPaymentReference(body.containsKey("paymentReference") ? body.get("paymentReference").toString() : null);
         order.setReceiptUrl(body.containsKey("receiptUrl") ? body.get("receiptUrl").toString() : null);
         order.setStatus(body.containsKey("status") ? OrderStatus.valueOf(body.get("status").toString().toUpperCase()) : OrderStatus.PENDING);
+        order.setOrderNumber(orderNumberService.generateOrderNumber());
 
         order = orderRepository.save(order);
 

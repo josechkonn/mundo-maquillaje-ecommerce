@@ -47,7 +47,10 @@ const ImagePickerModal = ({ isOpen, onClose, currentUrl, onSave, bucket = "produ
 
       const { error: uploadError } = await supabase.storage
         .from(bucket)
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          contentType: file.type,
+          upsert: true,
+        });
 
       if (uploadError) {
         throw uploadError;

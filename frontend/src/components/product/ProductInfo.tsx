@@ -174,7 +174,7 @@ const ProductInfo = ({ product, onVariationChange, onHoverVariation }: ProductIn
       </div>
 
       {/* Description Viewer */}
-      <DescriptionViewer description={selectedVariation?.description || ""} name={selectedVariation?.name || product.name} />
+      <DescriptionViewer description={selectedVariation?.description || product.description || ""} name={selectedVariation?.name || product.name} />
     </div>
   );
 };

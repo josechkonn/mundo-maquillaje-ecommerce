@@ -6,6 +6,7 @@ import mundo_maquillaje.ecommerce.Services.TrackingEventService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @RestController
@@ -17,18 +18,21 @@ public class TrackingEventController {
 
     @PostMapping("/event")
     public ResponseEntity<?> trackEvent(
-            @RequestHeader(value = "X-Forwarded-For", required = false) String forwardedFor,
-            @RequestHeader(value = "X-Real-IP", required = false) String realIp,
-            @RequestParam(required = false) String sessionId,
+            HttpServletRequest request,
             @RequestBody Map<String, Object> payload) {
 
         String eventType = (String) payload.get("eventType");
         String userId = (String) payload.get("userId");
         String productId = (String) payload.get("productId");
+        String sessionId = (String) payload.get("sessionId");
         @SuppressWarnings("unchecked")
         Map<String, Object> metadata = (Map<String, Object>) payload.get("metadata");
 
-        String ipAddress = forwardedFor != null ? forwardedFor.split(",")[0].trim() : realIp;
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        String realIp = request.getHeader("X-Real-IP");
+        String ipAddress = forwardedFor != null ? forwardedFor.split(",")[0].trim()
+                        : realIp != null ? realIp
+                        : request.getRemoteAddr();
 
         TrackingEvent event = trackingEventService.trackEvent(eventType, ipAddress, sessionId, userId, productId, metadata);
         return ResponseEntity.ok(Map.of("message", "Event tracked", "id", event.getId().toString()));
