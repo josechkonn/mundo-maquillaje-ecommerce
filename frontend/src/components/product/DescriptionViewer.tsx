@@ -8,29 +8,40 @@ interface DescriptionViewerProps {
   maxLength?: number;
 }
 
+const stripHtml = (html: string): string => {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || "";
+};
+
 const DescriptionViewer = ({ description, name, maxLength = 250 }: DescriptionViewerProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const shouldTruncate = description?.length > maxLength;
-  const displayDescription = shouldTruncate 
-    ? description.substring(0, maxLength) + "..." 
-    : description;
-
   if (!description) return null;
+
+  const isHtml = /<[a-zA-Z][^>]*>/.test(description);
+  const plainText = isHtml ? stripHtml(description) : description;
+  const shouldTruncate = plainText.length > maxLength;
 
   return (
     <div className="pt-8 mt-8">
-      {/* Label P normal con barra abajo */}
       <div className="border-b-[1px] border-brand-200 pb-2 mb-6">
         <p className="text-p-b text-text-base font-normal">
           Descripción del producto
         </p>
       </div>
-      
+
       <div className="relative">
-        <p className="text-p-s text-text-muted leading-relaxed whitespace-pre-line text-justify">
-          {displayDescription}
-        </p>
+        {isHtml ? (
+          <div
+            className={`prose-rich text-justify ${shouldTruncate ? "line-clamp-4" : ""}`}
+            dangerouslySetInnerHTML={{ __html: description }}
+          />
+        ) : (
+          <p className="text-p-s text-text-muted leading-relaxed whitespace-pre-line text-justify">
+            {shouldTruncate ? plainText.substring(0, maxLength) + "..." : plainText}
+          </p>
+        )}
 
         {shouldTruncate && (
           <div className="flex justify-end">
@@ -45,15 +56,22 @@ const DescriptionViewer = ({ description, name, maxLength = 250 }: DescriptionVi
         )}
       </div>
 
-      <Modal 
-        isOpen={isModalOpen} 
+      <Modal
+        isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={`Descripción - ${name}`}
         maxWidth="3xl"
       >
-        <div className="p-8 text-text-base leading-relaxed whitespace-pre-line text-justify text-p-b">
-          {description}
-        </div>
+        {isHtml ? (
+          <div
+            className="p-8 text-text-base leading-relaxed text-justify prose-rich"
+            dangerouslySetInnerHTML={{ __html: description }}
+          />
+        ) : (
+          <div className="p-8 text-text-base leading-relaxed whitespace-pre-line text-justify text-p-b">
+            {description}
+          </div>
+        )}
       </Modal>
     </div>
   );

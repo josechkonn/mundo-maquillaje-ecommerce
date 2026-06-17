@@ -259,11 +259,15 @@ const StepProductos = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1.5 block">Moneda</label>
-            <select value={currencyId} onChange={(e) => onCurrencyChange(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 text-sm bg-white focus:ring-2 focus:ring-brand-200 focus:border-brand-400 outline-none transition-all">
-              <option value="">Seleccionar...</option>
-              {allCurrencies.map(c => <option key={c.id} value={c.id}>{c.name} ({c.code})</option>)}
-            </select>
+            {currencyId ? (
+              <p className="px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-700">
+                {currentCurrency?.name} ({currentCurrency?.code})
+              </p>
+            ) : (
+              <p className="px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-400 italic">
+                Se seleccionará con el método de pago
+              </p>
+            )}
           </div>
           <div>
             <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1.5 block">Método de envío</label>
@@ -275,10 +279,21 @@ const StepProductos = ({
           </div>
           <div>
             <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1.5 block">Método de pago</label>
-            <select value={paymentMethodId} onChange={(e) => onPaymentMethodChange(e.target.value)}
+            <select value={paymentMethodId} onChange={(e) => {
+              const val = e.target.value;
+              onPaymentMethodChange(val);
+              if (val) {
+                const method = paymentMethods.find(p => p.id === val);
+                if (method?.currency) {
+                  onCurrencyChange(method.currency.id);
+                }
+              } else {
+                onCurrencyChange("");
+              }
+            }}
               className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 text-sm bg-white focus:ring-2 focus:ring-brand-200 focus:border-brand-400 outline-none transition-all">
               <option value="">Seleccionar...</option>
-              {paymentMethods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {paymentMethods.map(p => <option key={p.id} value={p.id}>{p.name}{p.currency ? ` (${p.currency.code})` : ''}</option>)}
             </select>
           </div>
           <div>

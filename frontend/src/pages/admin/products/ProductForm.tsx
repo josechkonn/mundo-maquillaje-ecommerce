@@ -9,6 +9,7 @@ import ImagePickerModal from "../../../components/admin/modals/ImagePickerModal"
 import Modal from "../../../components/ui/Modal";
 import Stepper from "../../../components/ui/Stepper";
 import Button from "../../../components/ui/Button";
+import RichTextEditor from "../../../components/ui/RichTextEditor";
 import toast from "react-hot-toast";
 
 interface ProductFormProps {
@@ -599,7 +600,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
               </div>
               <div>
                 <label className={labelClass}>Descripción</label>
-                <textarea value={description} onChange={e => { setDescription(e.target.value); markDirty(); }} rows={3} placeholder="Describe el producto..." className={`${inputClass} resize-none`} />
+                <RichTextEditor value={description} onChange={val => { setDescription(val); markDirty(); }} placeholder="Describe el producto..." minHeight="140px" />
               </div>
               <div>
                 <label className={labelClass}>Marca</label>
@@ -736,7 +737,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                 <h3 className="text-p-b font-bold text-text-base">Información Básica</h3>
                 <div><label className={labelClass}>Nombre</label><input value={name} onChange={e => { setName(e.target.value); markDirty(); }} placeholder="Ej: Labial Mate L'Oréal" className={inputClass} /></div>
                 <div><label className={labelClass}>Slug</label><input value={slug} onChange={e => { setSlug(e.target.value); slugManuallyEdited.current = true; markDirty(); }} placeholder="url-amigable-del-producto" className={`${inputClass} text-text-muted`} /></div>
-                <div><label className={labelClass}>Descripción</label><textarea value={description} onChange={e => { setDescription(e.target.value); markDirty(); }} rows={3} placeholder="Describe el producto..." className={`${inputClass} resize-none`} /></div>
+                <div><label className={labelClass}>Descripción</label><RichTextEditor value={description} onChange={val => { setDescription(val); markDirty(); }} placeholder="Describe el producto..." minHeight="140px" /></div>
                 <div>
                   <label className={labelClass}>Marca</label>
                   <select value={brandId} onChange={e => { setBrandId(e.target.value); markDirty(); }} className={inputClass}>
@@ -842,6 +843,12 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                     <span className={`inline-block px-2.5 py-0.5 rounded-full text-p-xs font-bold ${isActive ? "bg-success-500/10 text-success-500" : "bg-neutral-100 text-text-muted"}`}>{isActive ? "Activo" : "Inactivo"}</span>
                   </div>
                 </div>
+                {description && (
+                  <div className="mt-4">
+                    <p className="text-p-xs text-text-muted mb-2">Descripción</p>
+                    <div className="prose-rich text-justify border border-neutral-100 rounded-xl p-4 bg-neutral-50" dangerouslySetInnerHTML={{ __html: description }} />
+                  </div>
+                )}
               </div>
               <div className={cardClass}>
                 <h3 className="text-p-b font-bold text-text-base flex items-center gap-2"><CurrencyDollarIcon className="w-5 h-5 text-brand-400" /> Precios</h3>
@@ -1006,16 +1013,15 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                       />
                       <span className="text-xs text-text-muted">Usar descripción del producto</span>
                     </label>
-                    <textarea
+                    <RichTextEditor
                       value={useDefaultDescMap[v.id] ? description : v.description || ""}
-                      onChange={e => {
+                      onChange={val => {
                         setUseDefaultDescMap(prev => ({ ...prev, [v.id]: false }));
-                        updateVariationField("description", e.target.value);
+                        updateVariationField("description", val);
                       }}
                       placeholder="Describe esta variante..."
-                      rows={3}
                       disabled={!!useDefaultDescMap[v.id]}
-                      className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 text-sm outline-none focus:ring-2 focus:ring-brand-200 bg-white resize-none disabled:bg-neutral-50 disabled:text-text-muted"
+                      minHeight="100px"
                     />
                   </div>
 
