@@ -14,4 +14,14 @@ public class PaymentMethodDTO {
     private String name;
     private String slug;
     private CurrencyDTO currency;
+    private CashRegisterInfoDTO cashRegister;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class CashRegisterInfoDTO {
+        private String id;
+        private String name;
+    }
 }

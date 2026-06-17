@@ -8,6 +8,7 @@ import mundo_maquillaje.ecommerce.Repositories.TransactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,5 +57,19 @@ public class CashRegisterService {
 
     public List<Transaction> getTransactionsByCashRegister(UUID cashRegisterId) {
         return transactionRepository.findByCashRegisterIdOrderByCreatedAtDesc(cashRegisterId);
+    }
+
+    @Transactional
+    public void addToBalance(CashRegister cashRegister, double amount) {
+        if (cashRegister == null) return;
+        cashRegister.setBalance(cashRegister.getBalance().add(BigDecimal.valueOf(amount)));
+        cashRegisterRepository.save(cashRegister);
+    }
+
+    @Transactional
+    public void subtractFromBalance(CashRegister cashRegister, double amount) {
+        if (cashRegister == null) return;
+        cashRegister.setBalance(cashRegister.getBalance().subtract(BigDecimal.valueOf(amount)));
+        cashRegisterRepository.save(cashRegister);
     }
 }

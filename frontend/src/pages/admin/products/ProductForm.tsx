@@ -41,6 +41,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
 
   const [variations, setVariations] = useState<ProductVariation[]>(product?.variations || []);
+  const [hasVariants, setHasVariants] = useState(product?.variations ? product.variations.length > 1 : false);
 
   const [selectedVariationIds, setSelectedVariationIds] = useState<Set<string>>(new Set());
   const [bulkEditType, setBulkEditType] = useState<"price" | "stock" | null>(null);
@@ -142,6 +143,9 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const addEmptyVariation = () => {
     const baseCode = baseCurrency?.code ?? "";
     const basePrice = priceByCurrency[baseCode] ?? 0;
+    const baseImages = variations.length > 0
+      ? variations[0].images.map(img => ({ ...img, id: crypto.randomUUID(), isMain: false }))
+      : [];
     const newVariation: ProductVariation = {
       id: crypto.randomUUID(),
       name: "",
@@ -154,7 +158,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       attributeName: "",
       attributeValue: "",
       hexColor: "",
-      images: [],
+      images: baseImages,
     };
     setVariations(prev => [...prev, newVariation]);
     const prices: Record<string, number> = {};
@@ -320,6 +324,231 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const labelClass = "text-sm font-semibold text-text-base";
   const cardClass = "bg-white rounded-3xl border border-neutral-100 shadow-sm p-6 space-y-5";
 
+  const renderVariationTable = () => (
+    <div className="mt-6 space-y-4">
+      <div className="overflow-x-auto rounded-2xl border border-neutral-100">
+        <table className="text-left text-sm" style={{ tableLayout: "fixed", minWidth: "1400px", width: "100%" }}>
+          <thead className="bg-neutral-50">
+            <tr>
+              <th className="py-3 px-4" style={{ width: "48px" }}><input type="checkbox" checked={variations.length > 0 && variations.every(v => selectedVariationIds.has(v.id))} onChange={e => { if (e.target.checked) setSelectedVariationIds(new Set(variations.map(v => v.id))); else setSelectedVariationIds(new Set()); }} className="rounded border-neutral-300 text-brand-400 focus:ring-brand-200" /></th>
+              <th className="py-3 px-4" style={{ width: "80px" }}>Img</th>
+              <th className="py-3 px-4" style={{ width: "240px" }}>Variante</th>
+              <th className="py-3 px-4" style={{ width: "200px" }}>SKU</th>
+              <th className="py-3 px-4" style={{ width: "144px" }}>Stk</th>
+              {currencies.map(currency => (
+                <th key={currency.id} className="py-3 px-4" style={{ minWidth: "200px" }}>
+                  <span className="flex items-center gap-1.5 text-text-base">{currency.code}{currency.id === currencyId && <span className="px-1.5 py-0.5 rounded bg-brand-100 text-brand-600 text-[10px] font-bold">BASE</span>}</span>
+                </th>
+              ))}
+              <th className="py-3 px-4" style={{ width: "128px" }}>Alr</th>
+              <th className="py-3 px-4" style={{ width: "96px" }}>Act</th>
+              <th className="py-3 px-4" style={{ width: "56px" }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {variations.map((variation, idx) => {
+              const mainImg = getMainImage(variation);
+              return (
+                <tr key={variation.id} className={`border-t border-neutral-100 hover:bg-neutral-100/50 transition-colors ${idx % 2 === 1 ? "bg-neutral-50" : ""}`}>
+                  <td className="py-3 px-4" style={{ width: "48px" }}>
+                    <input type="checkbox" checked={selectedVariationIds.has(variation.id)} onChange={e => { setSelectedVariationIds(prev => { const n = new Set(prev); if (e.target.checked) n.add(variation.id); else n.delete(variation.id); return n; }); }} className="rounded border-neutral-300 text-brand-400 focus:ring-brand-200" />
+                  </td>
+                  <td className="py-3 px-4" style={{ width: "80px" }}>
+                    {mainImg ? (
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-neutral-100 bg-neutral-100 group">
+                        <img src={mainImg.urlImage} alt="" className="w-full h-full object-cover" />
+                        <button onClick={() => { setImagePickerVariationIndex(idx); setImagePickerImageIndex(null); }} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"><PencilIcon className="w-3 h-3" /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => { setImagePickerVariationIndex(idx); setImagePickerImageIndex(null); }} className="w-10 h-10 rounded-lg border-2 border-dashed border-neutral-300 flex items-center justify-center text-text-muted hover:border-brand-400 hover:text-brand-500 transition-colors"><PhotoIcon className="w-4 h-4" /></button>
+                    )}
+                  </td>
+                  <td className="py-3 px-4" style={{ width: "240px" }}>
+                    <div className="min-w-0">
+                      <button onClick={() => setEditingVariationIndex(idx)} className="flex items-center gap-2 hover:text-brand-500 transition-colors"><PencilIcon className="w-3 h-3 text-text-muted" /><span className="font-semibold text-text-base truncate">{variation.name || "Sin título"}</span></button>
+                      {variation.hexColor && <span className="inline-block w-3 h-3 rounded-full border border-neutral-200 ml-5 mt-1" style={{ backgroundColor: variation.hexColor }} />}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4" style={{ width: "200px" }}><input value={variation.sku} onChange={e => updateVariation(idx, "sku", e.target.value)} placeholder="SKU" className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
+                  <td className="py-3 px-4" style={{ width: "144px" }}><input type="number" min={0} value={variation.stock} onChange={e => updateVariation(idx, "stock", parseInt(e.target.value) || 0)} className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
+                  {currencies.map(currency => {
+                    const isBase = currency.id === currencyId;
+                    const varPrices = variationPrices[variation.id] || {};
+                    const displayedPrice = varPrices[currency.code] ?? convertPriceNumber(variation.price, baseCurrency, currency, currencies);
+                    const decimals = currency.decimalPlaces ?? 2;
+                    return (
+                      <td key={currency.id} className="py-3 px-4" style={{ minWidth: "200px" }}>
+                        {isBase ? (
+                          <div className="flex items-center rounded-lg border border-brand-300 bg-white focus-within:ring-2 focus-within:ring-brand-200 overflow-hidden">
+                            {currency.symbolPosition === "LEFT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-500 bg-neutral-50 border-r border-neutral-200">{currency.symbol}</span>}
+                            <input type="text" inputMode="decimal" value={varPriceDraft[variation.id] ?? (displayedPrice ? displayedPrice.toFixed(decimals) : "")}
+                              onFocus={() => { if (varPriceDraft[variation.id] === undefined) setVarPriceDraft(prev => ({ ...prev, [variation.id]: displayedPrice > 0 ? displayedPrice.toFixed(decimals) : "" })); }}
+                              onChange={e => { const raw = e.target.value.replace(/[^\d.]/g, ""); setVarPriceDraft(prev => ({ ...prev, [variation.id]: raw })); const enteredValue = parseFloat(raw) || 0; updateVariation(idx, "price", enteredValue); }}
+                              onBlur={() => { setVarPriceDraft(prev => { const next = { ...prev }; delete next[variation.id]; return next; }); }}
+                              placeholder="0.00" className="flex-1 py-1.5 px-1.5 text-xs font-semibold text-text-base outline-none bg-transparent min-w-0" />
+                            {currency.symbolPosition === "RIGHT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-500 bg-neutral-50 border-l border-neutral-200">{currency.symbol}</span>}
+                          </div>
+                        ) : (
+                          <div className="flex items-center rounded-lg border border-neutral-200 bg-neutral-50 overflow-hidden">
+                            {currency.symbolPosition === "LEFT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-400 bg-neutral-100 border-r border-neutral-200">{currency.symbol}</span>}
+                            <span className="flex-1 py-1.5 px-1.5 text-xs font-medium text-text-muted min-w-0">{displayedPrice.toFixed(decimals)}</span>
+                            {currency.symbolPosition === "RIGHT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-400 bg-neutral-100 border-l border-neutral-200">{currency.symbol}</span>}
+                          </div>
+                        )}
+                      </td>
+                    );
+                  })}
+                  <td className="py-3 px-4" style={{ width: "128px" }}><input type="number" min={0} value={variation.alertQuantity ?? 5} onChange={e => updateVariation(idx, "alertQuantity", parseInt(e.target.value) || 0)} className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
+                  <td className="py-3 px-4" style={{ width: "96px" }}>
+                    <button onClick={() => updateVariation(idx, "isActive", !variation.isActive)} className={`relative w-9 h-5 rounded-full transition-colors ${variation.isActive ? "bg-success-500" : "bg-neutral-300"}`}>
+                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${variation.isActive ? "translate-x-4" : ""}`} />
+                    </button>
+                  </td>
+                  <td className="py-3 px-4" style={{ width: "56px" }}>
+                    <button onClick={() => removeVariation(idx)} className="p-1 rounded-lg hover:bg-danger-50 text-text-muted hover:text-danger-500 transition-colors"><TrashIcon className="w-4 h-4" /></button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {selectedVariationIds.size > 0 && (
+        <div className="flex items-center gap-3 p-4 bg-brand-50 rounded-2xl border border-brand-100 animate-fade-in">
+          <span className="text-sm font-medium text-text-base">{selectedVariationIds.size} seleccionadas</span>
+          <div className="w-px h-5 bg-brand-200" />
+          {bulkEditType === null ? (
+            <>
+              <button onClick={() => setBulkEditType("price")} className="text-sm font-medium text-brand-500 hover:text-brand-600">Editar Precios</button>
+              <button onClick={() => setBulkEditType("stock")} className="text-sm font-medium text-text-muted hover:text-text-base">Editar Stock</button>
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-muted">{bulkEditType === "price" ? "Precio" : "Stock"}:</span>
+              <input type="number" value={bulkEditValue} onChange={e => setBulkEditValue(e.target.value)} placeholder={bulkEditType === "price" ? "0.00" : "0"} className="w-28 px-3 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" autoFocus />
+              <button onClick={handleBulkEdit} className="px-3 py-1.5 rounded-lg bg-brand-400 text-white text-xs font-bold hover:bg-brand-500 transition-colors">Aplicar</button>
+              <button onClick={() => { setBulkEditType(null); setBulkEditValue(""); }} className="text-xs text-text-muted hover:text-text-base">Cancelar</button>
+            </div>
+          )}
+          <button onClick={() => { setSelectedVariationIds(new Set()); setBulkEditType(null); }} className="ml-auto text-sm text-text-muted hover:text-text-base">Limpiar</button>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderVariantSection = () => {
+    if (!hasVariants) {
+      const baseVariation = variations[0];
+      return (
+        <div className={cardClass}>
+          <div className="flex items-center justify-between">
+            <h3 className="text-p-b font-bold text-text-base">Información del producto</h3>
+            <span className="text-p-xs text-text-muted">1 variante</span>
+          </div>
+          {baseVariation && (
+            <>
+              <div>
+                <label className={`${labelClass} mb-3 block`}>Imágenes</label>
+                <div className="flex flex-wrap gap-3">
+                  {baseVariation.images.map((img, imgIdx) => (
+                    <div key={img.id} className="relative group w-24 h-24 rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50">
+                      <img src={img.urlImage} alt="" className="w-full h-full object-cover" />
+                      {img.isMain && (
+                        <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-brand-500 text-white text-[9px] font-bold">Principal</span>
+                      )}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                        {!img.isMain && (
+                          <button
+                            onClick={() => {
+                              const updatedImages = baseVariation.images.map((vImg, vi) =>
+                                vi === imgIdx ? { ...vImg, isMain: true } : { ...vImg, isMain: false }
+                              );
+                              updateVariation(0, "images", updatedImages);
+                            }}
+                            className="w-7 h-7 rounded bg-white/80 flex items-center justify-center text-text-muted hover:text-brand-500"
+                            title="Marcar como principal"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => updateVariation(0, "images", baseVariation.images.filter((_, i) => i !== imgIdx))}
+                          className="w-7 h-7 rounded bg-white/80 flex items-center justify-center text-text-muted hover:text-danger-500"
+                          title="Eliminar imagen"
+                        >
+                          <XMarkIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => { setImagePickerVariationIndex(0); setImagePickerImageIndex(null); }}
+                    className="w-24 h-24 rounded-xl border-2 border-dashed border-neutral-300 flex flex-col items-center justify-center text-text-muted hover:border-brand-400 hover:text-brand-500 transition-colors"
+                  >
+                    <PhotoIcon className="w-6 h-6" />
+                    <span className="text-[10px] mt-1">Agregar</span>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className={`${labelClass} mb-1.5 block`}>Nombre</label>
+                <input
+                  value={baseVariation.name}
+                  onChange={e => { updateVariation(0, "name", e.target.value); }}
+                  placeholder={name || "Nombre de la variante"}
+                  className={inputClass}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className={`${labelClass} mb-1.5 block`}>SKU</label>
+                  <input value={baseVariation.sku} onChange={e => updateVariation(0, "sku", e.target.value)} placeholder="SKU del producto" className={inputClass} />
+                </div>
+                <div>
+                  <label className={`${labelClass} mb-1.5 block`}>Stock</label>
+                  <input type="number" min={0} value={baseVariation.stock} onChange={e => updateVariation(0, "stock", parseInt(e.target.value) || 0)} className={inputClass} />
+                </div>
+                <div>
+                  <label className={`${labelClass} mb-1.5 block`}>Cantidad de alerta</label>
+                  <input type="number" min={0} value={baseVariation.alertQuantity ?? 5} onChange={e => updateVariation(0, "alertQuantity", parseInt(e.target.value) || 0)} className={inputClass} />
+                </div>
+              </div>
+            </>
+          )}
+          <div className="flex items-center justify-between p-4 bg-brand-50 rounded-2xl border border-brand-100 cursor-pointer hover:bg-brand-100 transition-colors" onClick={() => setHasVariants(true)}>
+            <div>
+              <p className="text-sm font-bold text-text-base">¿Este producto tiene variantes?</p>
+              <p className="text-xs text-text-muted">Colores, tamaños, volúmenes, etc.</p>
+            </div>
+            <button className="relative w-12 h-6 rounded-full transition-colors bg-neutral-300 shrink-0">
+              <span className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className={cardClass}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-p-b font-bold text-text-base">Variantes</h3>
+          {variations.length > 0 && <span className="text-p-xs text-text-muted">{variations.length} variantes</span>}
+        </div>
+        {variations.length <= 1 && (
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-neutral-50 border border-neutral-100">
+            <p className="text-xs text-text-muted">Las nuevas variantes heredarán las imágenes de la variante base</p>
+            <button onClick={() => setHasVariants(false)} className="text-xs text-text-muted hover:text-danger-500 transition-colors">Desactivar</button>
+          </div>
+        )}
+        <button onClick={addEmptyVariation} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-400 text-white font-bold text-sm hover:bg-brand-500 transition-colors">
+          <PlusIcon className="w-4 h-4" />
+          Agregar variante
+        </button>
+        {variations.length > 0 && renderVariationTable()}
+      </div>
+    );
+  };
+
   return (
     <div className="overflow-x-hidden">
       {/* Header */}
@@ -472,127 +701,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                 })}
               </div>
             </div>
-            <div className={cardClass}>
-              <div className="flex items-center justify-between">
-                <h3 className="text-p-b font-bold text-text-base">Variantes</h3>
-                {variations.length > 0 && <span className="text-p-xs text-text-muted">{variations.length} variantes</span>}
-              </div>
-              <button onClick={addEmptyVariation} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-400 text-white font-bold text-sm hover:bg-brand-500 transition-colors">
-                <PlusIcon className="w-4 h-4" />
-                Agregar variante
-              </button>
-              {variations.length > 0 && (
-                <div className="mt-6 space-y-4">
-                  <div className="overflow-x-auto rounded-2xl border border-neutral-100">
-                    <table className="text-left text-sm" style={{ tableLayout: "fixed", minWidth: "1400px", width: "100%" }}>
-                      <thead className="bg-neutral-50">
-                        <tr>
-                          <th className="py-3 px-4" style={{ width: "48px" }}><input type="checkbox" checked={variations.length > 0 && variations.every(v => selectedVariationIds.has(v.id))} onChange={e => { if (e.target.checked) setSelectedVariationIds(new Set(variations.map(v => v.id))); else setSelectedVariationIds(new Set()); }} className="rounded border-neutral-300 text-brand-400 focus:ring-brand-200" /></th>
-                          <th className="py-3 px-4" style={{ width: "80px" }}>Img</th>
-                          <th className="py-3 px-4" style={{ width: "240px" }}>Variante</th>
-                          <th className="py-3 px-4" style={{ width: "200px" }}>SKU</th>
-                          <th className="py-3 px-4" style={{ width: "144px" }}>Stk</th>
-                          {currencies.map(currency => (
-                            <th key={currency.id} className="py-3 px-4" style={{ minWidth: "200px" }}>
-                              <span className="flex items-center gap-1.5 text-text-base">{currency.code}{currency.id === currencyId && <span className="px-1.5 py-0.5 rounded bg-brand-100 text-brand-600 text-[10px] font-bold">BASE</span>}</span>
-                            </th>
-                          ))}
-                          <th className="py-3 px-4" style={{ width: "128px" }}>Alr</th>
-                          <th className="py-3 px-4" style={{ width: "96px" }}>Act</th>
-                          <th className="py-3 px-4" style={{ width: "56px" }}></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {variations.map((variation, idx) => {
-                          const mainImg = getMainImage(variation);
-                          return (
-                            <tr key={variation.id} className={`border-t border-neutral-100 hover:bg-neutral-100/50 transition-colors ${idx % 2 === 1 ? "bg-neutral-50" : ""}`}>
-                              <td className="py-3 px-4" style={{ width: "48px" }}>
-                                <input type="checkbox" checked={selectedVariationIds.has(variation.id)} onChange={e => { setSelectedVariationIds(prev => { const n = new Set(prev); if (e.target.checked) n.add(variation.id); else n.delete(variation.id); return n; }); }} className="rounded border-neutral-300 text-brand-400 focus:ring-brand-200" />
-                              </td>
-                              <td className="py-3 px-4" style={{ width: "80px" }}>
-                                {mainImg ? (
-                                  <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-neutral-100 bg-neutral-100 group">
-                                    <img src={mainImg.urlImage} alt="" className="w-full h-full object-cover" />
-                                    <button onClick={() => { setImagePickerVariationIndex(idx); setImagePickerImageIndex(null); }} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"><PencilIcon className="w-3 h-3" /></button>
-                                  </div>
-                                ) : (
-                                  <button onClick={() => { setImagePickerVariationIndex(idx); setImagePickerImageIndex(null); }} className="w-10 h-10 rounded-lg border-2 border-dashed border-neutral-300 flex items-center justify-center text-text-muted hover:border-brand-400 hover:text-brand-500 transition-colors"><PhotoIcon className="w-4 h-4" /></button>
-                                )}
-                              </td>
-                              <td className="py-3 px-4" style={{ width: "240px" }}>
-                                <div className="min-w-0">
-                                  <button onClick={() => setEditingVariationIndex(idx)} className="flex items-center gap-2 hover:text-brand-500 transition-colors"><PencilIcon className="w-3 h-3 text-text-muted" /><span className="font-semibold text-text-base truncate">{variation.name || "Sin título"}</span></button>
-                                  {variation.hexColor && <span className="inline-block w-3 h-3 rounded-full border border-neutral-200 ml-5 mt-1" style={{ backgroundColor: variation.hexColor }} />}
-                                </div>
-                              </td>
-                              <td className="py-3 px-4" style={{ width: "200px" }}><input value={variation.sku} onChange={e => updateVariation(idx, "sku", e.target.value)} placeholder="SKU" className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
-                              <td className="py-3 px-4" style={{ width: "144px" }}><input type="number" min={0} value={variation.stock} onChange={e => updateVariation(idx, "stock", parseInt(e.target.value) || 0)} className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
-                              {currencies.map(currency => {
-                                const isBase = currency.id === currencyId;
-                                const varPrices = variationPrices[variation.id] || {};
-                                const displayedPrice = varPrices[currency.code] ?? convertPriceNumber(variation.price, baseCurrency, currency, currencies);
-                                const decimals = currency.decimalPlaces ?? 2;
-                                return (
-                                  <td key={currency.id} className="py-3 px-4" style={{ minWidth: "200px" }}>
-                                    {isBase ? (
-                                      <div className="flex items-center rounded-lg border border-brand-300 bg-white focus-within:ring-2 focus-within:ring-brand-200 overflow-hidden">
-                                        {currency.symbolPosition === "LEFT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-500 bg-neutral-50 border-r border-neutral-200">{currency.symbol}</span>}
-                                        <input type="text" inputMode="decimal" value={varPriceDraft[variation.id] ?? (displayedPrice ? displayedPrice.toFixed(decimals) : "")}
-                                          onFocus={() => { if (varPriceDraft[variation.id] === undefined) setVarPriceDraft(prev => ({ ...prev, [variation.id]: displayedPrice > 0 ? displayedPrice.toFixed(decimals) : "" })); }}
-                                          onChange={e => { const raw = e.target.value.replace(/[^\d.]/g, ""); setVarPriceDraft(prev => ({ ...prev, [variation.id]: raw })); const enteredValue = parseFloat(raw) || 0; updateVariation(idx, "price", enteredValue); }}
-                                          onBlur={() => { setVarPriceDraft(prev => { const next = { ...prev }; delete next[variation.id]; return next; }); }}
-                                          placeholder="0.00" className="flex-1 py-1.5 px-1.5 text-xs font-semibold text-text-base outline-none bg-transparent min-w-0" />
-                                        {currency.symbolPosition === "RIGHT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-500 bg-neutral-50 border-l border-neutral-200">{currency.symbol}</span>}
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center rounded-lg border border-neutral-200 bg-neutral-50 overflow-hidden">
-                                        {currency.symbolPosition === "LEFT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-400 bg-neutral-100 border-r border-neutral-200">{currency.symbol}</span>}
-                                        <span className="flex-1 py-1.5 px-1.5 text-xs font-medium text-text-muted min-w-0">{displayedPrice.toFixed(decimals)}</span>
-                                        {currency.symbolPosition === "RIGHT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-400 bg-neutral-100 border-l border-neutral-200">{currency.symbol}</span>}
-                                      </div>
-                                    )}
-                                  </td>
-                                );
-                              })}
-                              <td className="py-3 px-4" style={{ width: "128px" }}><input type="number" min={0} value={variation.alertQuantity ?? 5} onChange={e => updateVariation(idx, "alertQuantity", parseInt(e.target.value) || 0)} className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
-                              <td className="py-3 px-4" style={{ width: "96px" }}>
-                                <button onClick={() => updateVariation(idx, "isActive", !variation.isActive)} className={`relative w-9 h-5 rounded-full transition-colors ${variation.isActive ? "bg-success-500" : "bg-neutral-300"}`}>
-                                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${variation.isActive ? "translate-x-4" : ""}`} />
-                                </button>
-                              </td>
-                              <td className="py-3 px-4" style={{ width: "56px" }}>
-                                <button onClick={() => removeVariation(idx)} className="p-1 rounded-lg hover:bg-danger-50 text-text-muted hover:text-danger-500 transition-colors"><TrashIcon className="w-4 h-4" /></button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  {selectedVariationIds.size > 0 && (
-                    <div className="flex items-center gap-3 p-4 bg-brand-50 rounded-2xl border border-brand-100 animate-fade-in">
-                      <span className="text-sm font-medium text-text-base">{selectedVariationIds.size} seleccionadas</span>
-                      <div className="w-px h-5 bg-brand-200" />
-                      {bulkEditType === null ? (
-                        <>
-                          <button onClick={() => setBulkEditType("price")} className="text-sm font-medium text-brand-500 hover:text-brand-600">Editar Precios</button>
-                          <button onClick={() => setBulkEditType("stock")} className="text-sm font-medium text-text-muted hover:text-text-base">Editar Stock</button>
-                        </>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-text-muted">{bulkEditType === "price" ? "Precio" : "Stock"}:</span>
-                          <input type="number" value={bulkEditValue} onChange={e => setBulkEditValue(e.target.value)} placeholder={bulkEditType === "price" ? "0.00" : "0"} className="w-28 px-3 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" autoFocus />
-                          <button onClick={handleBulkEdit} className="px-3 py-1.5 rounded-lg bg-brand-400 text-white text-xs font-bold hover:bg-brand-500 transition-colors">Aplicar</button>
-                          <button onClick={() => { setBulkEditType(null); setBulkEditValue(""); }} className="text-xs text-text-muted hover:text-text-base">Cancelar</button>
-                        </div>
-                      )}
-                      <button onClick={() => { setSelectedVariationIds(new Set()); setBulkEditType(null); }} className="ml-auto text-sm text-text-muted hover:text-text-base">Limpiar</button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            {renderVariantSection()}
           </div>
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-neutral-100">
             <button onClick={handleCancel} className="px-6 py-2.5 rounded-xl border border-neutral-300 text-text-base font-medium text-sm hover:bg-neutral-50 transition-colors">Cancelar</button>
@@ -698,121 +807,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                   })}
                 </div>
               </div>
-              <div className={cardClass}>
-                <div className="flex items-center justify-between">
-                  <h3 className="text-p-b font-bold text-text-base">Variantes</h3>
-                  {variations.length > 0 && <span className="text-p-xs text-text-muted">{variations.length} variantes</span>}
-                </div>
-                <button onClick={addEmptyVariation} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-400 text-white font-bold text-sm hover:bg-brand-500 transition-colors"><PlusIcon className="w-4 h-4" /> Agregar variante</button>
-                {variations.length > 0 && (
-                  <div className="mt-6 space-y-4">
-                    <div className="overflow-x-auto rounded-2xl border border-neutral-100">
-                      <table className="text-left text-sm" style={{ tableLayout: "fixed", minWidth: "1400px", width: "100%" }}>
-                        <thead className="bg-neutral-50">
-                          <tr>
-                            <th className="py-3 px-4" style={{ width: "48px" }}><input type="checkbox" checked={variations.length > 0 && variations.every(v => selectedVariationIds.has(v.id))} onChange={e => { if (e.target.checked) setSelectedVariationIds(new Set(variations.map(v => v.id))); else setSelectedVariationIds(new Set()); }} className="rounded border-neutral-300 text-brand-400 focus:ring-brand-200" /></th>
-                            <th className="py-3 px-4" style={{ width: "80px" }}>Img</th>
-                            <th className="py-3 px-4" style={{ width: "240px" }}>Variante</th>
-                            <th className="py-3 px-4" style={{ width: "200px" }}>SKU</th>
-                            <th className="py-3 px-4" style={{ width: "144px" }}>Stk</th>
-                            {currencies.map(currency => (
-                              <th key={currency.id} className="py-3 px-4" style={{ minWidth: "200px" }}>
-                                <span className="flex items-center gap-1.5 text-text-base">{currency.code}{currency.id === currencyId && <span className="px-1.5 py-0.5 rounded bg-brand-100 text-brand-600 text-[10px] font-bold">BASE</span>}</span>
-                              </th>
-                            ))}
-                            <th className="py-3 px-4" style={{ width: "128px" }}>Alr</th>
-                            <th className="py-3 px-4" style={{ width: "96px" }}>Act</th>
-                            <th className="py-3 px-4" style={{ width: "56px" }}></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {variations.map((variation, idx) => {
-                            const mainImg = getMainImage(variation);
-                            return (
-                              <tr key={variation.id} className={`border-t border-neutral-100 hover:bg-neutral-100/50 transition-colors ${idx % 2 === 1 ? "bg-neutral-50" : ""}`}>
-                                <td className="py-3 px-4" style={{ width: "48px" }}><input type="checkbox" checked={selectedVariationIds.has(variation.id)} onChange={e => { setSelectedVariationIds(prev => { const n = new Set(prev); if (e.target.checked) n.add(variation.id); else n.delete(variation.id); return n; }); }} className="rounded border-neutral-300 text-brand-400 focus:ring-brand-200" /></td>
-                                <td className="py-3 px-4" style={{ width: "80px" }}>
-                                  {mainImg ? (
-                                    <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-neutral-100 bg-neutral-100 group">
-                                      <img src={mainImg.urlImage} alt="" className="w-full h-full object-cover" />
-                                      <button onClick={() => { setImagePickerVariationIndex(idx); setImagePickerImageIndex(null); }} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"><PencilIcon className="w-3 h-3" /></button>
-                                    </div>
-                                  ) : (
-                                    <button onClick={() => { setImagePickerVariationIndex(idx); setImagePickerImageIndex(null); }} className="w-10 h-10 rounded-lg border-2 border-dashed border-neutral-300 flex items-center justify-center text-text-muted hover:border-brand-400 hover:text-brand-500 transition-colors"><PhotoIcon className="w-4 h-4" /></button>
-                                  )}
-                                </td>
-                                <td className="py-3 px-4" style={{ width: "240px" }}>
-                                  <div className="min-w-0">
-                                    <button onClick={() => setEditingVariationIndex(idx)} className="flex items-center gap-2 hover:text-brand-500 transition-colors"><PencilIcon className="w-3 h-3 text-text-muted" /><span className="font-semibold text-text-base truncate">{variation.name || "Sin título"}</span></button>
-                                    {variation.hexColor && <span className="inline-block w-3 h-3 rounded-full border border-neutral-200 ml-5 mt-1" style={{ backgroundColor: variation.hexColor }} />}
-                                  </div>
-                                </td>
-                                <td className="py-3 px-4" style={{ width: "200px" }}><input value={variation.sku} onChange={e => updateVariation(idx, "sku", e.target.value)} placeholder="SKU" className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
-                                <td className="py-3 px-4" style={{ width: "144px" }}><input type="number" min={0} value={variation.stock} onChange={e => updateVariation(idx, "stock", parseInt(e.target.value) || 0)} className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
-                                {currencies.map(currency => {
-                                  const isBase = currency.id === currencyId;
-                                  const varPrices = variationPrices[variation.id] || {};
-                                  const displayedPrice = varPrices[currency.code] ?? convertPriceNumber(variation.price, baseCurrency, currency, currencies);
-                                  const decimals = currency.decimalPlaces ?? 2;
-                                  return (
-                                    <td key={currency.id} className="py-3 px-4" style={{ minWidth: "200px" }}>
-                                      {isBase ? (
-                                        <div className="flex items-center rounded-lg border border-brand-300 bg-white focus-within:ring-2 focus-within:ring-brand-200 overflow-hidden">
-                                          {currency.symbolPosition === "LEFT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-500 bg-neutral-50 border-r border-neutral-200">{currency.symbol}</span>}
-                                          <input type="text" inputMode="decimal" value={varPriceDraft[variation.id] ?? (displayedPrice ? displayedPrice.toFixed(decimals) : "")}
-                                            onFocus={() => { if (varPriceDraft[variation.id] === undefined) setVarPriceDraft(prev => ({ ...prev, [variation.id]: displayedPrice > 0 ? displayedPrice.toFixed(decimals) : "" })); }}
-                                            onChange={e => { const raw = e.target.value.replace(/[^\d.]/g, ""); setVarPriceDraft(prev => ({ ...prev, [variation.id]: raw })); const enteredValue = parseFloat(raw) || 0; updateVariation(idx, "price", enteredValue); }}
-                                            onBlur={() => { setVarPriceDraft(prev => { const next = { ...prev }; delete next[variation.id]; return next; }); }} placeholder="0.00" className="flex-1 py-1.5 px-1.5 text-xs font-semibold text-text-base outline-none bg-transparent min-w-0" />
-                                          {currency.symbolPosition === "RIGHT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-500 bg-neutral-50 border-l border-neutral-200">{currency.symbol}</span>}
-                                        </div>
-                                      ) : (
-                                        <div className="flex items-center rounded-lg border border-neutral-200 bg-neutral-50 overflow-hidden">
-                                          {currency.symbolPosition === "LEFT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-400 bg-neutral-100 border-r border-neutral-200">{currency.symbol}</span>}
-                                          <span className="flex-1 py-1.5 px-1.5 text-xs font-medium text-text-muted min-w-0">{displayedPrice.toFixed(decimals)}</span>
-                                          {currency.symbolPosition === "RIGHT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-400 bg-neutral-100 border-l border-neutral-200">{currency.symbol}</span>}
-                                        </div>
-                                      )}
-                                    </td>
-                                  );
-                                })}
-                                <td className="py-3 px-4" style={{ width: "128px" }}><input type="number" min={0} value={variation.alertQuantity ?? 5} onChange={e => updateVariation(idx, "alertQuantity", parseInt(e.target.value) || 0)} className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" /></td>
-                                <td className="py-3 px-4" style={{ width: "96px" }}>
-                                  <button onClick={() => updateVariation(idx, "isActive", !variation.isActive)} className={`relative w-9 h-5 rounded-full transition-colors ${variation.isActive ? "bg-success-500" : "bg-neutral-300"}`}>
-                                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${variation.isActive ? "translate-x-4" : ""}`} />
-                                  </button>
-                                </td>
-                                <td className="py-3 px-4" style={{ width: "56px" }}>
-                                  <button onClick={() => removeVariation(idx)} className="p-1 rounded-lg hover:bg-danger-50 text-text-muted hover:text-danger-500 transition-colors"><TrashIcon className="w-4 h-4" /></button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    {selectedVariationIds.size > 0 && (
-                      <div className="flex items-center gap-3 p-4 bg-brand-50 rounded-2xl border border-brand-100 animate-fade-in">
-                        <span className="text-sm font-medium text-text-base">{selectedVariationIds.size} seleccionadas</span>
-                        <div className="w-px h-5 bg-brand-200" />
-                        {bulkEditType === null ? (
-                          <>
-                            <button onClick={() => setBulkEditType("price")} className="text-sm font-medium text-brand-500 hover:text-brand-600">Editar Precios</button>
-                            <button onClick={() => setBulkEditType("stock")} className="text-sm font-medium text-text-muted hover:text-text-base">Editar Stock</button>
-                          </>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-text-muted">{bulkEditType === "price" ? "Precio" : "Stock"}:</span>
-                            <input type="number" value={bulkEditValue} onChange={e => setBulkEditValue(e.target.value)} placeholder={bulkEditType === "price" ? "0.00" : "0"} className="w-28 px-3 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" autoFocus />
-                            <button onClick={handleBulkEdit} className="px-3 py-1.5 rounded-lg bg-brand-400 text-white text-xs font-bold hover:bg-brand-500 transition-colors">Aplicar</button>
-                            <button onClick={() => { setBulkEditType(null); setBulkEditValue(""); }} className="text-xs text-text-muted hover:text-text-base">Cancelar</button>
-                          </div>
-                        )}
-                        <button onClick={() => { setSelectedVariationIds(new Set()); setBulkEditType(null); }} className="ml-auto text-sm text-text-muted hover:text-text-base">Limpiar</button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              {renderVariantSection()}
             </div>
           )}
 

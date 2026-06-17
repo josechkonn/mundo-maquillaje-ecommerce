@@ -5,6 +5,7 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import mundo_maquillaje.ecommerce.DTO.*;
+import mundo_maquillaje.ecommerce.Models.CashRegister;
 import mundo_maquillaje.ecommerce.Models.Order;
 import mundo_maquillaje.ecommerce.Models.OrderProduct;
 import mundo_maquillaje.ecommerce.Models.OrderStatus;
@@ -54,6 +55,7 @@ public class OrderService {
     private final PaymentMethodRepository paymentMethodRepository;
     private final ShippingMethodRepository shippingMethodRepository;
     private final ProductVariationRepository productVariationRepository;
+    private final CashRegisterService cashRegisterService;
 
     @Transactional(readOnly = true)
     public Page<OrderListResponseDTO> getUserOrders(
@@ -345,6 +347,11 @@ public class OrderService {
                 .name(paymentMethod.getName())
                 .slug(paymentMethod.getSlug())
                 .currency(toCurrencyDTO(paymentMethod.getCurrency()))
+                .cashRegister(paymentMethod.getCashRegister() != null ?
+                        PaymentMethodDTO.CashRegisterInfoDTO.builder()
+                                .id(paymentMethod.getCashRegister().getId().toString())
+                                .name(paymentMethod.getCashRegister().getName())
+                                .build() : null)
                 .build();
     }
 
@@ -361,8 +368,15 @@ public class OrderService {
                 .reference(transaction.getReference())
                 .receiptUrl(transaction.getReceiptUrl())
                 .status(transaction.getStatus() != null ? transaction.getStatus().name() : null)
+                .type(transaction.getType() != null ? transaction.getType().name() : null)
+                .description(transaction.getDescription())
                 .currency(toCurrencyDTO(transaction.getCurrency()))
                 .paymentMethod(toPaymentMethodDTO(transaction.getPaymentMethod()))
+                .cashRegister(transaction.getCashRegister() != null ?
+                        TransactionDTO.CashRegisterInfoDTO.builder()
+                                .id(transaction.getCashRegister().getId().toString())
+                                .name(transaction.getCashRegister().getName())
+                                .build() : null)
                 .createdAt(transaction.getCreatedAt())
                 .build();
     }
@@ -371,6 +385,12 @@ public class OrderService {
     public void cancelOrders(List<UUID> orderIds) {
         List<Order> orders = orderRepository.findAllById(orderIds);
         for (Order order : orders) {
+            List<Transaction> transactions = transactionRepository.findByOrderIdIn(List.of(order.getId()));
+            for (Transaction tx : transactions) {
+                if (tx.getStatus() == TransactionStatus.VERIFIED && tx.getCashRegister() != null) {
+                    cashRegisterService.subtractFromBalance(tx.getCashRegister(), tx.getAmount());
+                }
+            }
             order.setStatus(OrderStatus.CANCELLED);
         }
         orderRepository.saveAll(orders);
@@ -391,8 +411,13 @@ public class OrderService {
             }
         }
 
-        // Delete transactions (no cascade from Order to Transaction)
+        // Reverse balance for verified transactions before deleting
         List<Transaction> transactions = transactionRepository.findByOrderIdIn(List.of(orderId));
+        for (Transaction tx : transactions) {
+            if (tx.getStatus() == TransactionStatus.VERIFIED && tx.getCashRegister() != null) {
+                cashRegisterService.subtractFromBalance(tx.getCashRegister(), tx.getAmount());
+            }
+        }
         transactionRepository.deleteAll(transactions);
 
         // Delete the order — CascadeType.ALL handles OrderProduct and OrderDirection
@@ -417,7 +442,15 @@ public class OrderService {
         transaction.setReceiptUrl(order.getReceiptUrl());
         transaction.setStatus(TransactionStatus.VERIFIED);
         transaction.setType(TransactionType.ORDER_PAYMENT);
+
+        CashRegister cashRegister = order.getPaymentMethod() != null ? order.getPaymentMethod().getCashRegister() : null;
+        transaction.setCashRegister(cashRegister);
+
         transactionRepository.save(transaction);
+
+        if (cashRegister != null) {
+            cashRegisterService.addToBalance(cashRegister, order.getTotalAmount());
+        }
 
         order.setStatus(OrderStatus.PAID);
         orderRepository.save(order);
@@ -444,6 +477,10 @@ public class OrderService {
         transaction.setStatus(TransactionStatus.REJECTED);
         transaction.setType(TransactionType.ORDER_PAYMENT);
         transaction.setDescription(reason);
+
+        CashRegister cashRegister = order.getPaymentMethod() != null ? order.getPaymentMethod().getCashRegister() : null;
+        transaction.setCashRegister(cashRegister);
+
         transactionRepository.save(transaction);
 
         order.setStatus(OrderStatus.CANCELLED);
@@ -470,7 +507,16 @@ public class OrderService {
                 if (hasPending) {
                     Transaction tx = existingTx.stream().filter(t -> t.getStatus() == TransactionStatus.PENDING).findFirst().get();
                     tx.setStatus(TransactionStatus.VERIFIED);
+
+                    if (tx.getCashRegister() == null && order.getPaymentMethod() != null) {
+                        tx.setCashRegister(order.getPaymentMethod().getCashRegister());
+                    }
+
                     transactionRepository.save(tx);
+
+                    if (tx.getCashRegister() != null) {
+                        cashRegisterService.addToBalance(tx.getCashRegister(), tx.getAmount());
+                    }
                 } else {
                     Transaction tx = new Transaction();
                     tx.setOrder(order);
@@ -481,7 +527,15 @@ public class OrderService {
                     tx.setReceiptUrl(order.getReceiptUrl());
                     tx.setStatus(TransactionStatus.VERIFIED);
                     tx.setType(TransactionType.ORDER_PAYMENT);
+
+                    CashRegister cashRegister = order.getPaymentMethod() != null ? order.getPaymentMethod().getCashRegister() : null;
+                    tx.setCashRegister(cashRegister);
+
                     transactionRepository.save(tx);
+
+                    if (cashRegister != null) {
+                        cashRegisterService.addToBalance(cashRegister, order.getTotalAmount());
+                    }
                 }
             }
         }
@@ -697,9 +751,17 @@ public class OrderService {
             transaction.setAmount(order.getTotalAmount());
             transaction.setReference(order.getPaymentReference());
             transaction.setReceiptUrl(order.getReceiptUrl());
-            transaction.setStatus(TransactionStatus.PENDING);
+            transaction.setStatus(order.getStatus() == OrderStatus.PAID ? TransactionStatus.VERIFIED : TransactionStatus.PENDING);
             transaction.setType(TransactionType.ORDER_PAYMENT);
+
+            CashRegister cashRegister = paymentMethod.getCashRegister();
+            transaction.setCashRegister(cashRegister);
+
             transactionRepository.save(transaction);
+
+            if (order.getStatus() == OrderStatus.PAID && cashRegister != null) {
+                cashRegisterService.addToBalance(cashRegister, order.getTotalAmount());
+            }
         }
 
         List<OrderProduct> savedProducts = orderProductRepository.findByOrderIdIn(List.of(order.getId()));
