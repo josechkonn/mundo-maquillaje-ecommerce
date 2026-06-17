@@ -39,8 +39,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   fetchProfile: async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
       const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8080/api"}/auth/me`, {
         credentials: "include",
+        headers,
       });
       if (res.ok) {
         const profile = await res.json();
@@ -62,9 +68,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initializeAuthListener: () => {
     const syncTokensWithBackend = async (accessToken: string | null, refreshToken: string | null) => {
       try {
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (accessToken) {
+          headers["Authorization"] = `Bearer ${accessToken}`;
+        }
         await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8080/api"}/auth/sync-session`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           credentials: "include",
           body: JSON.stringify({ accessToken, refreshToken }),
         });

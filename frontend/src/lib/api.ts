@@ -6,11 +6,19 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   const url = `${BASE_URL}${endpoint}`;
 
+  // Obtener token de Supabase para enviarlo como header
+  const { data: { session } } = await supabase.auth.getSession();
+  const authHeaders: Record<string, string> = {};
+  if (session?.access_token) {
+    authHeaders["Authorization"] = `Bearer ${session.access_token}`;
+  }
+
   const defaultOptions: RequestInit = {
     ...options,
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders,
       ...options.headers,
     },
   };
@@ -21,22 +29,21 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   if (response.status === 401) {
     console.warn("Backend 401 detectado. Intentando refrescar sesión...");
 
-    // Forzamos a Supabase a revisar la sesión (esto dispara el refresh si es necesario)
-    const { data: { session } } = await supabase.auth.getSession();
+    // Forzamos a Supabase a refrescar el token
+    const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
 
-    if (session) {
-      // Sincronizar la cookie actualizada con el backend antes de reintentar
-      await fetch(`${BASE_URL}/auth/sync-session`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+    if (refreshedSession) {
+      // Reintentar con el token refrescado
+      const retryOptions: RequestInit = {
+        ...options,
         credentials: "include",
-        body: JSON.stringify({
-          accessToken: session.access_token,
-          refreshToken: session.refresh_token,
-        }),
-      });
-      // Reintentar la petición original
-      response = await fetch(url, defaultOptions);
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${refreshedSession.access_token}`,
+          ...options.headers,
+        },
+      };
+      response = await fetch(url, retryOptions);
     } else {
       // Si no hay sesión, cerramos todo
       useAuthStore.getState().signOut();
