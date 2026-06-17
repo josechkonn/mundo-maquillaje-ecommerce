@@ -183,7 +183,7 @@ const CategoryPage = () => {
       )}
 
       {/* Secciones de Productos con Lazy Loading UI */}
-      <div className="w-full py-4 md:py-16 space-y-16 md:space-y-24 bg-neutral-50 overflow-hidden">
+      <div className="w-full py-4 md:py-16 space-y-16 md:space-y-24 bg-neutral-100 overflow-hidden">
         {productsLoading ? (
           renderSkeletons()
         ) : sections.length > 0 ? (

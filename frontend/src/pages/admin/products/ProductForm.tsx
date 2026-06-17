@@ -146,7 +146,7 @@ const SortableVariationRow = ({
                   {currency.symbolPosition === "RIGHT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-500 bg-neutral-50 border-l border-neutral-200">{currency.symbol}</span>}
                 </div>
               ) : (
-                <div className="flex items-center rounded-lg border border-neutral-200 bg-neutral-50 overflow-hidden">
+                <div className="flex items-center rounded-lg border border-neutral-200 bg-neutral-100 overflow-hidden">
                   {currency.symbolPosition === "LEFT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-400 bg-neutral-100 border-r border-neutral-200">{currency.symbol}</span>}
                   <span className="flex-1 py-1.5 px-1.5 text-xs font-medium text-text-muted min-w-0">{displayedPrice.toFixed(decimals)}</span>
                   {currency.symbolPosition === "RIGHT" && <span className="shrink-0 px-1.5 py-1.5 text-[10px] font-bold text-neutral-400 bg-neutral-100 border-l border-neutral-200">{currency.symbol}</span>}
@@ -604,7 +604,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                             className="w-7 h-7 rounded bg-white/80 flex items-center justify-center text-text-muted hover:text-brand-500"
                             title="Marcar como principal"
                           >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
                           </button>
                         )}
                         <button
@@ -626,20 +626,20 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                   </button>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className={`${labelClass} mb-1.5 block`}>SKU</label>
                   <input value={baseVariation.sku} onChange={e => updateVariation(0, "sku", e.target.value)} placeholder="SKU del producto" className={inputClass} />
                 </div>
-<div>
-                   <label className={`${labelClass} mb-1.5 block`}>Stock</label>
-                   <input type="number" min={0} value={stockDraft[baseVariation.id] ?? baseVariation.stock} onFocus={() => { if (stockDraft[baseVariation.id] === undefined) setStockDraft(prev => ({ ...prev, [baseVariation.id]: String(baseVariation.stock) })); }} onChange={e => { const val = e.target.value; setStockDraft(prev => ({ ...prev, [baseVariation.id]: val })); updateVariation(0, "stock", parseInt(val) || 0); }} onBlur={() => setStockDraft(prev => { const next = { ...prev }; delete next[baseVariation.id]; return next; })} className={inputClass} />
-                 </div>
-                 <div>
-                   <label className={`${labelClass} mb-1.5 block`}>Cantidad de alerta</label>
-                   <input type="number" min={0} value={alertDraft[baseVariation.id] ?? (baseVariation.alertQuantity ?? 5)} onFocus={() => { if (alertDraft[baseVariation.id] === undefined) setAlertDraft(prev => ({ ...prev, [baseVariation.id]: String(baseVariation.alertQuantity ?? 5) })); }} onChange={e => { const val = e.target.value; setAlertDraft(prev => ({ ...prev, [baseVariation.id]: val })); updateVariation(0, "alertQuantity", parseInt(val) || 0); }} onBlur={() => setAlertDraft(prev => { const next = { ...prev }; delete next[baseVariation.id]; return next; })} className={inputClass} />
-                 </div>
+                <div>
+                  <label className={`${labelClass} mb-1.5 block`}>Stock</label>
+                  <input type="number" min={0} value={stockDraft[baseVariation.id] ?? baseVariation.stock} onFocus={() => { if (stockDraft[baseVariation.id] === undefined) setStockDraft(prev => ({ ...prev, [baseVariation.id]: String(baseVariation.stock) })); }} onChange={e => { const val = e.target.value; setStockDraft(prev => ({ ...prev, [baseVariation.id]: val })); updateVariation(0, "stock", parseInt(val) || 0); }} onBlur={() => setStockDraft(prev => { const next = { ...prev }; delete next[baseVariation.id]; return next; })} className={inputClass} />
+                </div>
+                <div>
+                  <label className={`${labelClass} mb-1.5 block`}>Cantidad de alerta</label>
+                  <input type="number" min={0} value={alertDraft[baseVariation.id] ?? (baseVariation.alertQuantity ?? 5)} onFocus={() => { if (alertDraft[baseVariation.id] === undefined) setAlertDraft(prev => ({ ...prev, [baseVariation.id]: String(baseVariation.alertQuantity ?? 5) })); }} onChange={e => { const val = e.target.value; setAlertDraft(prev => ({ ...prev, [baseVariation.id]: val })); updateVariation(0, "alertQuantity", parseInt(val) || 0); }} onBlur={() => setAlertDraft(prev => { const next = { ...prev }; delete next[baseVariation.id]; return next; })} className={inputClass} />
+                </div>
               </div>
             </>
           )}
@@ -758,11 +758,10 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                       onChange={() => { setCurrencyId(currency.id); setBasePriceDraft(null); markDirty(); }}
                       className="sr-only"
                     />
-                    <span className={`px-3 py-2 rounded-xl text-sm font-bold border transition-all ${
-                      currencyId === currency.id
-                        ? "bg-brand-400 text-white border-brand-400"
-                        : "bg-white text-text-muted border-neutral-200 hover:border-brand-300"
-                    }`}>
+                    <span className={`px-3 py-2 rounded-xl text-sm font-bold border transition-all ${currencyId === currency.id
+                      ? "bg-brand-400 text-white border-brand-400"
+                      : "bg-white text-text-muted border-neutral-200 hover:border-brand-300"
+                      }`}>
                       {currency.code}
                     </span>
                   </label>
@@ -979,22 +978,22 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
               <div className={cardClass}>
                 <h3 className="text-p-b font-bold text-text-base">Variantes ({variations.length})</h3>
                 <div className="space-y-3">
-{variations.map((v, idx) => {
-                     const mainImg = getMainImage(v);
-                     const baseVarPrice = variationPrices[v.id]?.[baseCurrency?.code ?? ""] ?? v.price;
-                     const decimals = baseCurrency?.decimalPlaces ?? 2;
-                     return (
-                       <div key={v.id} className={`relative flex items-center gap-4 rounded-2xl p-4 border overflow-hidden ${idx === 0 ? "border-brand-200 bg-brand-50/40" : "bg-neutral-50 border-neutral-100"}`}>
-                         {idx === 0 && <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-400 rounded-l-2xl" />}
-                         {mainImg ? <img src={mainImg.urlImage} alt="" className="w-14 h-14 rounded-xl object-cover border border-neutral-200 shrink-0" /> : <div className="w-14 h-14 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-text-muted shrink-0"><PhotoIcon className="w-5 h-5" /></div>}
-                         <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-4 gap-2">
-                           <div><p className="text-p-xs text-text-muted">Nombre</p><p className={`text-sm font-semibold truncate ${idx === 0 ? "text-brand-600" : "text-text-base"}`}>{v.name || "Sin título"}{idx === 0 ? " ★" : ""}</p></div>
-                           <div><p className="text-p-xs text-text-muted">SKU</p><p className="text-sm font-medium text-text-base">{v.sku || "—"}</p></div>
-                           <div><p className="text-p-xs text-text-muted">Stock</p><p className="text-sm font-medium text-text-base">{v.stock}</p></div>
-                           <div><p className="text-p-xs text-text-muted">Precio base</p><p className="text-sm font-bold text-text-base">{baseCurrency?.symbol}{baseVarPrice.toFixed(decimals)}</p></div>
-                         </div>
-                         {v.attributeName && v.attributeValue && <div className="shrink-0 px-2.5 py-1 rounded-lg bg-brand-50 border border-brand-100 text-p-xs font-medium text-brand-600">{v.attributeName}: {v.attributeValue}</div>}
-                       </div>
+                  {variations.map((v, idx) => {
+                    const mainImg = getMainImage(v);
+                    const baseVarPrice = variationPrices[v.id]?.[baseCurrency?.code ?? ""] ?? v.price;
+                    const decimals = baseCurrency?.decimalPlaces ?? 2;
+                    return (
+                      <div key={v.id} className={`relative flex items-center gap-4 rounded-2xl p-4 border overflow-hidden ${idx === 0 ? "border-brand-200 bg-brand-50/40" : "bg-neutral-50 border-neutral-100"}`}>
+                        {idx === 0 && <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-400 rounded-l-2xl" />}
+                        {mainImg ? <img src={mainImg.urlImage} alt="" className="w-14 h-14 rounded-xl object-cover border border-neutral-200 shrink-0" /> : <div className="w-14 h-14 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-text-muted shrink-0"><PhotoIcon className="w-5 h-5" /></div>}
+                        <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-4 gap-2">
+                          <div><p className="text-p-xs text-text-muted">Nombre</p><p className={`text-sm font-semibold truncate ${idx === 0 ? "text-brand-600" : "text-text-base"}`}>{v.name || "Sin título"}{idx === 0 ? " ★" : ""}</p></div>
+                          <div><p className="text-p-xs text-text-muted">SKU</p><p className="text-sm font-medium text-text-base">{v.sku || "—"}</p></div>
+                          <div><p className="text-p-xs text-text-muted">Stock</p><p className="text-sm font-medium text-text-base">{v.stock}</p></div>
+                          <div><p className="text-p-xs text-text-muted">Precio base</p><p className="text-sm font-bold text-text-base">{baseCurrency?.symbol}{baseVarPrice.toFixed(decimals)}</p></div>
+                        </div>
+                        {v.attributeName && v.attributeValue && <div className="shrink-0 px-2.5 py-1 rounded-lg bg-brand-50 border border-brand-100 text-p-xs font-medium text-brand-600">{v.attributeName}: {v.attributeValue}</div>}
+                      </div>
                     );
                   })}
                 </div>
@@ -1158,7 +1157,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                                 className="w-6 h-6 rounded bg-white/80 flex items-center justify-center text-text-muted hover:text-brand-500"
                                 title="Marcar como principal"
                               >
-                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
                               </button>
                             )}
                             <button
