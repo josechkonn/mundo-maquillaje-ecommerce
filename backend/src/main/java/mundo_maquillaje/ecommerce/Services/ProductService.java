@@ -170,12 +170,16 @@ public class ProductService {
         } else {
             // Link each variation (and its images) back to the product/variation
             product.getVariations().forEach(v -> {
+                v.setId(null);
                 v.setProduct(product);
                 if (v.getAlertQuantity() == null) {
                     v.setAlertQuantity(5);
                 }
                 if (v.getImages() != null) {
-                    v.getImages().forEach(img -> img.setVariation(v));
+                    v.getImages().forEach(img -> {
+                        img.setId(null);
+                        img.setVariation(v);
+                    });
                 }
             });
         }
@@ -235,7 +239,10 @@ public class ProductService {
                     detail.setAlertQuantity(5);
                 }
                 if (detail.getImages() != null) {
-                    detail.getImages().forEach(img -> img.setVariation(detail));
+                    detail.getImages().forEach(img -> {
+                        img.setId(null);
+                        img.setVariation(detail);
+                    });
                 }
                 product.getVariations().add(detail);
             }

@@ -422,7 +422,11 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
         const { images, ...rest } = v;
         return {
           ...rest,
-          images: images.length > 0 ? images.map(({ id: imgId, ...imgRest }) => ({ id: imgId, ...imgRest })) : [],
+          id: isEditing ? v.id : undefined,
+          images: images.length > 0 ? images.map(img => ({
+            ...img,
+            id: isEditing ? img.id : undefined,
+          })) : [],
           price: variationPrices[v.id]?.[selectedCurrency.code] ?? v.price,
         };
       }),
