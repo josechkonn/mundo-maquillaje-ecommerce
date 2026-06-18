@@ -419,17 +419,17 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       brand: { id: selectedBrand.id, name: selectedBrand.name },
       currency: selectedCurrency,
       variations: variations.map(v => {
-        const { images, ...rest } = v;
+        const { images, id, ...rest } = v;
         return {
           ...rest,
-          id: isEditing ? v.id : undefined,
-          images: images.length > 0 ? images.map(img => ({
-            ...img,
-            id: isEditing ? img.id : undefined,
+          ...(isEditing ? { id } : {}),
+          images: images.length > 0 ? images.map(({ id: imgId, ...imgRest }) => ({
+            ...imgRest,
+            ...(isEditing ? { id: imgId } : {}),
           })) : [],
           price: variationPrices[v.id]?.[selectedCurrency.code] ?? v.price,
         };
-      }),
+      }) as ProductVariation[],
     };
 
     setSaving(true);
