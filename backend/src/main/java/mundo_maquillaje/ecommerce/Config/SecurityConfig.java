@@ -73,12 +73,18 @@ public class SecurityConfig {
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, authException) -> {
-            logger.error("Authentication failed for path: {} - Error: {}",
-                    request.getRequestURI(), authException.getMessage());
+            String message = authException.getMessage();
+            boolean isExpired = message != null && message.toLowerCase().contains("expired");
+            if (isExpired) {
+                logger.warn("Authentication failed for path: {} - JWT expired", request.getRequestURI());
+            } else {
+                logger.error("Authentication failed for path: {} - Error: {}",
+                        request.getRequestURI(), message);
+            }
             response.setStatus(401);
             response.setContentType("application/json");
             response.getWriter()
-                    .write("{\"error\": \"Unauthorized\", \"message\": \"" + authException.getMessage() + "\"}");
+                    .write("{\"error\": \"Unauthorized\", \"message\": \"" + message + "\"}");
         };
     }
 
