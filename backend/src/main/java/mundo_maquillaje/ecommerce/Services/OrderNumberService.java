@@ -5,6 +5,8 @@ import mundo_maquillaje.ecommerce.Models.OrderNumberSequence;
 import mundo_maquillaje.ecommerce.Repositories.OrderNumberSequenceRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Year;
@@ -14,14 +16,17 @@ import java.time.Year;
 public class OrderNumberService {
 
     private final OrderNumberSequenceRepository sequenceRepository;
-    private final TransactionTemplate transactionTemplate;
+    private final PlatformTransactionManager transactionManager;
 
     public synchronized String generateOrderNumber() {
         int year = Year.now().getValue();
 
+        TransactionTemplate requiresNewTx = new TransactionTemplate(transactionManager);
+        requiresNewTx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
         for (int attempt = 0; attempt < 3; attempt++) {
             try {
-                String orderNumber = transactionTemplate.execute(status -> {
+                String orderNumber = requiresNewTx.execute(status -> {
                     OrderNumberSequence sequence = sequenceRepository.findByYear(year)
                             .orElseGet(() -> {
                                 OrderNumberSequence newSeq = OrderNumberSequence.builder()
