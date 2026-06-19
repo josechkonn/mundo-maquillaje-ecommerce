@@ -59,16 +59,12 @@ public class CheckoutController {
     public ResponseEntity<?> processCheckout(
             Authentication authentication,
             @RequestBody CheckoutRequestDTO request) {
-        
+
         UUID userId = profileService.getUserIdFromAuthentication(authentication);
-        
-        try {
-            // Pasamos los datos del DTO al servicio para procesar la orden
-            Order order = checkoutService.processCheckout(userId, request, request.getReceiptUrl()); 
-            
-            return ResponseEntity.ok(order);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+
+        // Pasamos los datos del DTO al servicio para procesar la orden
+        Order order = checkoutService.processCheckout(userId, request, request.getReceiptUrl());
+
+        return ResponseEntity.ok(order);
     }
 }

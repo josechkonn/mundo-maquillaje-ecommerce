@@ -8,6 +8,8 @@ import mundo_maquillaje.ecommerce.Repositories.ProfileRepository;
 import mundo_maquillaje.ecommerce.Repositories.TransactionRepository;
 import org.springframework.stereotype.Service;
 
+import mundo_maquillaje.ecommerce.Models.ProductVariation;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -52,7 +54,7 @@ public class ReportsService {
     // ─── Stock Report ────────────────────────────────────────────────────────
 
     public Map<String, Object> getStockReport(String currencyCode) {
-        var variations = productVariationRepository.findAll();
+        List<ProductVariation> variations = productVariationRepository.findAll();
         log.info("[StockReport] currencyCode={}, total variations in DB={}", currencyCode, variations.size());
         List<Map<String, Object>> items = new ArrayList<>();
         int lowCount = 0;

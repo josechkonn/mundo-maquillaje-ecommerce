@@ -48,6 +48,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
 
     long countByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
 
+    @Query("SELECT o.orderNumber FROM Order o WHERE o.orderNumber LIKE CONCAT('%/', :year) ORDER BY o.orderNumber DESC")
+    List<String> findOrderNumbersForYearDesc(@Param("year") String year, org.springframework.data.domain.Pageable pageable);
+
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o JOIN o.currency c WHERE c.code = :currencyCode AND o.status IN ('PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED') AND o.createdAt BETWEEN :start AND :end")
     double sumSalesByCurrencyAndDate(@Param("currencyCode") String currencyCode, @Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end);
 
