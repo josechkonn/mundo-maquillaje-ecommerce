@@ -42,6 +42,7 @@ const StepResumen = ({
 
   const toCurrency = (e: OrderProductEntry): Currency => ({
     id: e.currencyId,
+    name: e.currencyName,
     code: e.currencyCode,
     symbol: e.currencySymbol,
     exchangeRate: e.currencyExchangeRate,

@@ -65,7 +65,6 @@ const CategoryForm = ({ category, categories, onSave, onCancel }: CategoryFormPr
   const excludedIds = category ? [category.id, ...getDescendantIds(category.id, categories)] : [];
   const availableParents = categories.filter((c) => !excludedIds.includes(c.id));
 
-  const selectedParentCat = parentId && parentId !== "__unset__" ? categories.find((c) => c.id === parentId) : null;
   const isRoot = parentId === "";
   const canHaveBanners = isRoot;
 

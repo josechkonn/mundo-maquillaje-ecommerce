@@ -17,6 +17,7 @@ export interface OrderProductEntry {
   subtotal: number;
   imageUrl?: string;
   currencyId: string;
+  currencyName: string;
   currencyCode: string;
   currencySymbol: string;
   currencyExchangeRate: number;
@@ -76,6 +77,7 @@ const StepProductos = ({
 
   const toCurrency = (e: OrderProductEntry): Currency => ({
     id: e.currencyId,
+    name: e.currencyName,
     code: e.currencyCode,
     symbol: e.currencySymbol,
     exchangeRate: e.currencyExchangeRate,
@@ -106,6 +108,7 @@ const StepProductos = ({
       taxAmount: tax,
       subtotal,
       currencyId: srcCurrency?.id || "",
+      currencyName: srcCurrency?.name || "",
       currencyCode: srcCurrency?.code || "",
       currencySymbol: srcCurrency?.symbol || "",
       currencyExchangeRate: srcCurrency?.exchangeRate || 1,

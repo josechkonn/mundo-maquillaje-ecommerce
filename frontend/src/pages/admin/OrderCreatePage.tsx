@@ -70,6 +70,7 @@ const OrderCreatePage = () => {
     try {
       const toCurrency = (p: OrderProductEntry): Currency => ({
         id: p.currencyId,
+        name: p.currencyName,
         code: p.currencyCode,
         symbol: p.currencySymbol,
         exchangeRate: p.currencyExchangeRate,

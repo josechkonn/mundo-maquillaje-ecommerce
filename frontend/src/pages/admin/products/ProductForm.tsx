@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ArrowLeftIcon, PlusIcon, XMarkIcon, PhotoIcon, TrashIcon, PencilIcon, CurrencyDollarIcon, ChatBubbleLeftIcon, DocumentTextIcon, CheckIcon, Bars3Icon } from "@heroicons/react/24/outline";
 import type { Product, ProductVariation, ProductImage, Currency } from "../../../services/productService";
 import { brandService, type Brand } from "../../../services/brandService";
