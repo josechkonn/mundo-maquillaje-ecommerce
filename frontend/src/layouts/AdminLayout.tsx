@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { Toaster } from "react-hot-toast";
 import AdminSidebar from "../components/admin/AdminSidebar";
 import AdminTopNav from "../components/admin/AdminTopNav";
@@ -11,18 +11,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
-  useLayoutEffect(() => {
-    const style = document.createElement("style");
-    style.id = "admin-layout-overflow-fix";
-    style.textContent = `
-      html, body { overflow-x: hidden !important; }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      style.remove();
-    };
-  }, []);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024);

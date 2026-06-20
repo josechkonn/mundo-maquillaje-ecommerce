@@ -90,8 +90,25 @@ export const productService = {
     return api.get(url);
   },
 
-  getAdminProducts: async (page = 0, size = 1000): Promise<PageResponse<Product>> => {
-    return api.get(`/admin/products?page=${page}&size=${size}`);
+  getAdminProducts: async (params: {
+    page?: number;
+    size?: number;
+    search?: string;
+    isActive?: boolean;
+    brandId?: string;
+    categoryId?: string;
+    sortBy?: string;
+    sortDesc?: boolean;
+  } = {}): Promise<PageResponse<Product>> => {
+    const { page = 0, size = 10, search, isActive, brandId, categoryId, sortBy, sortDesc } = params;
+    let url = `/admin/products?page=${page}&size=${size}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (isActive !== undefined) url += `&isActive=${isActive}`;
+    if (brandId) url += `&brandId=${brandId}`;
+    if (categoryId) url += `&categoryId=${categoryId}`;
+    if (sortBy) url += `&sortBy=${sortBy}`;
+    if (sortDesc !== undefined) url += `&sortDesc=${sortDesc}`;
+    return api.get(url);
   },
 
   /**

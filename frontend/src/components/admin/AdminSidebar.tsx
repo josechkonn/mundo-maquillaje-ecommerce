@@ -251,7 +251,7 @@ const AdminSidebar = ({ collapsed, mobileOpen, onMobileClose, isMobile }: AdminS
       <aside
       className={`fixed left-0 top-20 h-[calc(100vh-80px)] bg-brand-200 flex flex-col transition-all duration-300 z-40 p-[10px]
         ${effCollapsed ? "w-[114px]" : "w-72"}
-        max-lg:fixed max-lg:z-40 max-lg:w-72 max-lg:transition-transform
+        max-lg:fixed max-lg:z-40 max-lg:w-72 max-lg:transition-transform max-lg:duration-300
         ${mobileOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-full"}
         lg:translate-x-0`}
     >

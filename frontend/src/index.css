@@ -23,6 +23,10 @@
     padding: 0;
   }
 
+  html, body {
+    overflow-x: hidden;
+  }
+
   body {
     -webkit-font-smoothing: antialiased;
     /* Aplica tipografía Poppins por defecto, texto base y fondo neutral-100 */
@@ -264,6 +268,25 @@
 .prose-rich[style*="text-align: right"],
 .prose-rich [style*="text-align: right"] {
   text-align: right;
+}
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── Global Focus Visible ─── */
+:focus-visible {
+  outline: 2px solid #E7446B;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* Ocultar flechas en móvil si no se usa display: none en el componente */

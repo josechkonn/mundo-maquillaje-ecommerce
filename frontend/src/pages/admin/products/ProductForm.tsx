@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { ArrowLeftIcon, PlusIcon, XMarkIcon, PhotoIcon, TrashIcon, PencilIcon, CurrencyDollarIcon, ChatBubbleLeftIcon, DocumentTextIcon, CheckIcon, Bars3Icon } from "@heroicons/react/24/outline";
 import type { Product, ProductVariation, ProductImage, Currency } from "../../../services/productService";
 import { brandService, type Brand } from "../../../services/brandService";
@@ -103,7 +103,7 @@ const SortableVariationRow = ({
       <div className="shrink-0">
         {mainImg ? (
           <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-neutral-100 bg-neutral-100 group/img">
-            <img src={mainImg.urlImage} alt="" className="w-full h-full object-cover" />
+            <img src={mainImg.urlImage} alt={variation.name || "Imagen de variante"} loading="lazy" className="w-full h-full object-cover" />
             <button onClick={() => { setImagePickerVariationIndex(idx); setImagePickerImageIndex(null); }} className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white"><PencilIcon className="w-3 h-3" /></button>
           </div>
         ) : (
@@ -161,7 +161,7 @@ const SortableVariationRow = ({
         </div>
       </div>
 
-      <button onClick={() => updateVariation(idx, "isActive", !variation.isActive)} className={`shrink-0 relative w-9 h-5 rounded-full transition-colors ${variation.isActive ? "bg-success-500" : "bg-neutral-300"}`}>
+      <button onClick={() => updateVariation(idx, "isActive", !variation.isActive)} role="switch" aria-checked={variation.isActive} aria-label={variation.isActive ? "Desactivar variante" : "Activar variante"} className={`shrink-0 relative w-9 h-5 rounded-full transition-colors ${variation.isActive ? "bg-success-500" : "bg-neutral-300"}`}>
         <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${variation.isActive ? "translate-x-4" : ""}`} />
       </button>
 
@@ -201,6 +201,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [variationPrices, setVariationPrices] = useState<Record<string, Record<string, number>>>({});
   const [editingVariationIndex, setEditingVariationIndex] = useState<number | null>(null);
   const [basePriceDraft, setBasePriceDraft] = useState<string | null>(null);
+  const priceCalcTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [varPriceDraft, setVarPriceDraft] = useState<Record<string, string | null>>({});
   const [stockDraft, setStockDraft] = useState<Record<string, string>>({});
   const [alertDraft, setAlertDraft] = useState<Record<string, string>>({});
@@ -590,7 +591,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                 <div className="flex flex-wrap gap-3">
                   {baseVariation.images.map((img, imgIdx) => (
                     <div key={img.id} className="relative group w-24 h-24 rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50">
-                      <img src={img.urlImage} alt="" className="w-full h-full object-cover" />
+                      <img src={img.urlImage} alt={baseVariation.name || "Imagen de producto"} loading="lazy" className="w-full h-full object-cover" />
                       {img.isMain && (
                         <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-brand-500 text-white text-[9px] font-bold">Principal</span>
                       )}
@@ -650,7 +651,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
               <p className="text-sm font-bold text-text-base">¿Este producto tiene variantes?</p>
               <p className="text-xs text-text-muted">Colores, tamaños, volúmenes, etc.</p>
             </div>
-            <button className="relative w-12 h-6 rounded-full transition-colors bg-neutral-300 shrink-0">
+            <button role="switch" aria-checked={false} aria-label="Activar variantes" className="relative w-12 h-6 rounded-full transition-colors bg-neutral-300 shrink-0">
               <span className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" />
             </button>
           </div>
@@ -739,6 +740,9 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                   <p className="text-p-xs text-text-muted">{isActive ? "Visible en la tienda" : "Oculto"}</p>
                 </div>
                 <button
+                  role="switch"
+                  aria-checked={isActive}
+                  aria-label={isActive ? "Desactivar producto" : "Activar producto"}
                   onClick={() => { setIsActive(!isActive); markDirty(); }}
                   className={`relative w-12 h-6 rounded-full transition-colors ${isActive ? "bg-success-500" : "bg-neutral-300"}`}
                 >
@@ -792,19 +796,23 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                               const raw = e.target.value.replace(/[^\d.]/g, "");
                               setBasePriceDraft(raw);
                               const enteredValue = parseFloat(raw) || 0;
-                              const newPrices: Record<string, number> = { ...priceByCurrency, [currency.code]: enteredValue };
-                              currencies.forEach(c => { if (c.id !== currency.id) newPrices[c.code] = convertPriceNumber(enteredValue, currency, c, currencies); });
-                              setPriceByCurrency(newPrices);
-                              const baseValue = convertPriceNumber(enteredValue, currency, baseCurrency, currencies);
-                              setVariations(prev => prev.map(v => ({ ...v, price: baseValue })));
-                              const updatedVarPrices: Record<string, Record<string, number>> = {};
-                              variations.forEach(v => {
-                                const prices: Record<string, number> = {};
-                                currencies.forEach(c => { prices[c.code] = convertPriceNumber(baseValue, baseCurrency!, c, currencies); });
-                                updatedVarPrices[v.id] = prices;
-                              });
-                              setVariationPrices(prev => ({ ...prev, ...updatedVarPrices }));
-                              markDirty();
+                              setPriceByCurrency(prev => ({ ...prev, [currency.code]: enteredValue }));
+                              if (priceCalcTimer.current) clearTimeout(priceCalcTimer.current);
+                              priceCalcTimer.current = setTimeout(() => {
+                                const newPrices: Record<string, number> = {};
+                                currencies.forEach(c => { newPrices[c.code] = convertPriceNumber(enteredValue, currency, c, currencies); });
+                                setPriceByCurrency(newPrices);
+                                const baseValue = convertPriceNumber(enteredValue, currency, baseCurrency, currencies);
+                                setVariations(prev => prev.map(v => ({ ...v, price: baseValue })));
+                                const updatedVarPrices: Record<string, Record<string, number>> = {};
+                                variations.forEach(v => {
+                                  const prices: Record<string, number> = {};
+                                  currencies.forEach(c => { prices[c.code] = convertPriceNumber(baseValue, baseCurrency!, c, currencies); });
+                                  updatedVarPrices[v.id] = prices;
+                                });
+                                setVariationPrices(prev => ({ ...prev, ...updatedVarPrices }));
+                                markDirty();
+                              }, 300);
                             }}
                             onBlur={() => setBasePriceDraft(null)}
                             placeholder="0.00"
@@ -869,7 +877,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                     <label className={labelClass}>Estado</label>
                     <p className="text-p-xs text-text-muted">{isActive ? "Visible en la tienda" : "Oculto"}</p>
                   </div>
-                  <button onClick={() => { setIsActive(!isActive); markDirty(); }} className={`relative w-12 h-6 rounded-full transition-colors ${isActive ? "bg-success-500" : "bg-neutral-300"}`}>
+                  <button onClick={() => { setIsActive(!isActive); markDirty(); }} role="switch" aria-checked={isActive} aria-label={isActive ? "Desactivar producto" : "Activar producto"} className={`relative w-12 h-6 rounded-full transition-colors ${isActive ? "bg-success-500" : "bg-neutral-300"}`}>
                     <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${isActive ? "translate-x-6" : ""}`} />
                   </button>
                 </div>
@@ -911,15 +919,19 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                               onChange={e => {
                                 const raw = e.target.value.replace(/[^\d.]/g, ""); setBasePriceDraft(raw);
                                 const enteredValue = parseFloat(raw) || 0;
-                                const newPrices: Record<string, number> = { ...priceByCurrency, [currency.code]: enteredValue };
-                                currencies.forEach(c => { if (c.id !== currency.id) newPrices[c.code] = convertPriceNumber(enteredValue, currency, c, currencies); });
-                                setPriceByCurrency(newPrices);
-                                const baseValue = convertPriceNumber(enteredValue, currency, baseCurrency, currencies);
-                                setVariations(prev => prev.map(v => ({ ...v, price: baseValue })));
-                                const updatedVarPrices: Record<string, Record<string, number>> = {};
-                                variations.forEach(v => { const prices: Record<string, number> = {}; currencies.forEach(c => { prices[c.code] = convertPriceNumber(baseValue, baseCurrency!, c, currencies); }); updatedVarPrices[v.id] = prices; });
-                                setVariationPrices(prev => ({ ...prev, ...updatedVarPrices }));
-                                markDirty();
+                                setPriceByCurrency(prev => ({ ...prev, [currency.code]: enteredValue }));
+                                if (priceCalcTimer.current) clearTimeout(priceCalcTimer.current);
+                                priceCalcTimer.current = setTimeout(() => {
+                                  const newPrices: Record<string, number> = {};
+                                  currencies.forEach(c => { newPrices[c.code] = convertPriceNumber(enteredValue, currency, c, currencies); });
+                                  setPriceByCurrency(newPrices);
+                                  const baseValue = convertPriceNumber(enteredValue, currency, baseCurrency, currencies);
+                                  setVariations(prev => prev.map(v => ({ ...v, price: baseValue })));
+                                  const updatedVarPrices: Record<string, Record<string, number>> = {};
+                                  variations.forEach(v => { const prices: Record<string, number> = {}; currencies.forEach(c => { prices[c.code] = convertPriceNumber(baseValue, baseCurrency!, c, currencies); }); updatedVarPrices[v.id] = prices; });
+                                  setVariationPrices(prev => ({ ...prev, ...updatedVarPrices }));
+                                  markDirty();
+                                }, 300);
                               }}
                               onBlur={() => setBasePriceDraft(null)} placeholder="0.00" className="flex-1 py-3 px-3 text-sm font-bold text-text-base outline-none bg-transparent min-w-0" />
                             {currency.symbolPosition === "RIGHT" && <span className="shrink-0 px-3 py-3 text-sm font-bold text-neutral-500 bg-neutral-50 border-l border-neutral-200">{currency.symbol}</span>}
@@ -987,7 +999,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                     return (
                       <div key={v.id} className={`relative flex items-center gap-4 rounded-2xl p-4 border overflow-hidden ${idx === 0 ? "border-brand-200 bg-brand-50/40" : "bg-neutral-50 border-neutral-100"}`}>
                         {idx === 0 && <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-400 rounded-l-2xl" />}
-                        {mainImg ? <img src={mainImg.urlImage} alt="" className="w-14 h-14 rounded-xl object-cover border border-neutral-200 shrink-0" /> : <div className="w-14 h-14 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-text-muted shrink-0"><PhotoIcon className="w-5 h-5" /></div>}
+                        {mainImg ? <img src={mainImg.urlImage} alt={v.name || "Imagen de variante"} loading="lazy" className="w-14 h-14 rounded-xl object-cover border border-neutral-200 shrink-0" /> : <div className="w-14 h-14 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-text-muted shrink-0"><PhotoIcon className="w-5 h-5" /></div>}
                         <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-4 gap-2">
                           <div><p className="text-p-xs text-text-muted">Nombre</p><p className={`text-sm font-semibold truncate ${idx === 0 ? "text-brand-600" : "text-text-base"}`}>{v.name || "Sin título"}{idx === 0 ? " ★" : ""}</p></div>
                           <div><p className="text-p-xs text-text-muted">SKU</p><p className="text-sm font-medium text-text-base">{v.sku || "—"}</p></div>
@@ -1144,7 +1156,7 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                     <div className="flex flex-wrap gap-3">
                       {v.images.map((img, imgIdx) => (
                         <div key={img.id} className="relative group w-20 h-20 rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50">
-                          <img src={img.urlImage} alt="" className="w-full h-full object-cover" />
+                          <img src={img.urlImage} alt={v.name || "Imagen de variante"} loading="lazy" className="w-full h-full object-cover" />
                           {img.isMain && (
                             <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-brand-500 text-white text-[9px] font-bold">Principal</span>
                           )}

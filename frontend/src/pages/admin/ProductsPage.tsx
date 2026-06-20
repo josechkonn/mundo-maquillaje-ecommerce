@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { productService, type Product, type Currency } from "../../services/productService";
 import { brandService, type Brand } from "../../services/brandService";
@@ -23,9 +23,11 @@ const ProductsPage = () => {
   const [confirmDelete, setConfirmDelete] = useState<string | "bulk" | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [sortBy, setSortBy] = useState<string>("");
   const [sortDesc, setSortDesc] = useState(true);
+  const pageSize = 10;
 
   const [brands, setBrands] = useState<Brand[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -34,13 +36,31 @@ const ProductsPage = () => {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await productService.getAdminProducts(0, 1000);
-      setProducts(Array.isArray(data) ? data : (data as any).content || []);
+      const isActive = statusFilter === "active" ? true : statusFilter === "inactive" ? false : undefined;
+      const data = await productService.getAdminProducts({
+        page: currentPage - 1,
+        size: pageSize,
+        search: search || undefined,
+        isActive,
+        brandId: brandFilter || undefined,
+        categoryId: categoryFilter || undefined,
+        sortBy: sortBy || undefined,
+        sortDesc,
+      });
+      if (Array.isArray(data)) {
+        setProducts(data);
+        setTotalPages(1);
+        setTotalItems(data.length);
+      } else {
+        setProducts(data.content || []);
+        setTotalPages(data.totalPages ?? 1);
+        setTotalItems(data.totalElements ?? 0);
+      }
     } catch {
       toast.error("No se pudieron cargar los productos.");
     }
     setLoading(false);
-  }, []);
+  }, [search, statusFilter, brandFilter, categoryFilter, currentPage, sortBy, sortDesc]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -58,22 +78,22 @@ const ProductsPage = () => {
       }
     };
     loadData();
-    fetchProducts();
-  }, [fetchProducts]);
+  }, []);
 
-  const filtered = useMemo(() => {
-    return products.filter(p => {
-      if (statusFilter === "active" && !p.isActive) return false;
-      if (statusFilter === "inactive" && p.isActive) return false;
-      if (brandFilter && p.brand?.id !== brandFilter) return false;
-      if (categoryFilter && p.category?.id !== categoryFilter) return false;
-      if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
-      return true;
-    });
-  }, [products, statusFilter, brandFilter, categoryFilter, search]);
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, brandFilter, categoryFilter]);
 
   const getTotalStock = (product: Product): number => {
     return product.variations?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+  };
+
+  const getStockLabel = (stock: number): string => {
+    if (stock === 0) return "Sin stock";
+    if (stock <= 10) return "Stock bajo";
+    return "En stock";
   };
 
   const getStockColor = (stock: number): string => {
@@ -81,50 +101,6 @@ const ProductsPage = () => {
     if (stock <= 10) return "bg-amber-500";
     return "bg-success-500";
   };
-
-  const sortedProducts = useMemo(() => {
-    if (!sortBy) return filtered;
-    return [...filtered].sort((a, b) => {
-      const getSortValue = (p: Product) => {
-        if (!p.variations || p.variations.length === 0) return 0;
-        const minPrice = Math.min(...p.variations.map(v => v.price || 0));
-        switch (sortBy) {
-          case "priceUSD": {
-            const usd = currencies.find(c => c.code === "USD");
-            return convertPriceNumber(minPrice, p.currency, usd, currencies);
-          }
-          case "priceCOP": {
-            const cop = currencies.find(c => c.code === "COP");
-            return convertPriceNumber(minPrice, p.currency, cop, currencies);
-          }
-          case "priceVES": {
-            const ves = currencies.find(c => c.code === "VES" || c.code === "VEF" || c.code === "BS");
-            return ves ? convertPriceNumber(minPrice, p.currency, ves, currencies) : 0;
-          }
-          case "stock":
-            return getTotalStock(p);
-          default:
-            return 0;
-        }
-      };
-      const valA = getSortValue(a);
-      const valB = getSortValue(b);
-      return sortDesc ? valB - valA : valA - valB;
-    });
-  }, [filtered, sortBy, sortDesc, currencies]);
-
-  const paginatedProducts = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return sortedProducts.slice(start, start + itemsPerPage);
-  }, [sortedProducts, currentPage]);
-
-  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, statusFilter, brandFilter, categoryFilter]);
-
-  const activeCount = products.filter(p => p.isActive).length;
 
   const getMainImage = (product: Product): string | undefined => {
     for (const v of product.variations || []) {
@@ -144,7 +120,7 @@ const ProductsPage = () => {
         return (
           <div className="w-12 h-12 rounded-xl overflow-hidden border border-neutral-100 bg-neutral-100 flex-shrink-0">
             {img ? (
-              <img src={img} alt="" className="w-full h-full object-cover" />
+              <img src={img} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-brand-400 text-xs font-bold">
                 {p.name.charAt(0).toUpperCase()}
@@ -158,6 +134,7 @@ const ProductsPage = () => {
       key: "name",
       header: "Producto",
       className: "min-w-[200px]",
+      sortable: true,
       render: (p) => (
         <div className="min-w-0">
           <p className="text-sm font-bold text-text-base truncate">{p.name}</p>
@@ -249,14 +226,14 @@ const ProductsPage = () => {
     {
       key: "stock",
       header: "Stk",
-      className: "w-24",
-      sortable: true,
+      className: "w-32",
       render: (p) => {
         const total = getTotalStock(p);
         return (
-          <div className="flex items-center gap-2">
-            <span className={`w-2.5 h-2.5 rounded-full ${getStockColor(total)}`} />
+          <div className="flex items-center gap-2" role="status" aria-label={`${getStockLabel(total)}: ${total}`}>
+            <span className={`w-2.5 h-2.5 rounded-full ${getStockColor(total)}`} aria-hidden="true" />
             <span className="text-sm font-semibold text-text-base">{total}</span>
+            <span className="sr-only">{getStockLabel(total)}</span>
           </div>
         );
       },
@@ -268,8 +245,10 @@ const ProductsPage = () => {
       render: (p) => (
         <button
           onClick={() => handleToggleActive(p)}
+          role="switch"
+          aria-checked={p.isActive}
+          aria-label={p.isActive ? "Desactivar producto" : "Activar producto"}
           className={`relative w-10 h-5 rounded-full transition-colors ${p.isActive ? "bg-success-500" : "bg-neutral-300"}`}
-          title={p.isActive ? "Desactivar" : "Activar"}
         >
           <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${p.isActive ? "translate-x-5" : ""}`} />
         </button>
@@ -295,6 +274,7 @@ const ProductsPage = () => {
       setProducts(prev => prev.filter(p => p.id !== id));
       setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
       toast.success("Producto eliminado correctamente.");
+      fetchProducts();
     } catch {
       toast.error("No se pudo eliminar el producto.");
     }
@@ -313,6 +293,7 @@ const ProductsPage = () => {
     toast.success(`${successCount} productos eliminados.`);
     setDeleting(false);
     setConfirmDelete(null);
+    fetchProducts();
   };
 
   const handleBulkToggle = async (active: boolean) => {
@@ -321,25 +302,24 @@ const ProductsPage = () => {
       if (product) {
         try {
           await productService.updateProduct(id, { ...product, isActive: active });
-          setProducts(prev => prev.map(p => p.id === id ? { ...p, isActive: active } : p));
         } catch { }
       }
     }
     setSelectedIds(new Set());
+    fetchProducts();
   };
 
   const handleSaveForm = async (data: Partial<Product>) => {
     try {
       if (editingProduct) {
-        const updated = await productService.updateProduct(editingProduct.id, data);
-        setProducts(prev => prev.map(p => p.id === editingProduct.id ? updated : p));
+        await productService.updateProduct(editingProduct.id, data);
       } else {
-        const created = await productService.createProduct(data);
-        setProducts(prev => [...prev, created]);
+        await productService.createProduct(data);
       }
       setShowForm(false);
       setEditingProduct(null);
       toast.success(editingProduct ? "Producto actualizado correctamente." : "Producto creado correctamente.");
+      fetchProducts();
     } catch {
       toast.error("Error al guardar el producto.");
       throw new Error("Error al guardar");
@@ -378,17 +358,18 @@ const ProductsPage = () => {
 
       <DataTable
         title="Productos"
-        titleInfo={`${sortedProducts.length} productos · ${activeCount} activos`}
+        titleInfo={`${totalItems || 0} productos registrados`}
         columns={columns}
-        data={paginatedProducts}
+        data={products}
         isLoading={loading}
-        totalItems={filtered.length}
+        totalItems={totalItems}
+        itemsPerPage={pageSize}
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
         sortBy={sortBy}
         sortDesc={sortDesc}
-        onSort={(key, desc) => { setSortBy(key); setSortDesc(desc); }}
+        onSort={(key, desc) => { setSortBy(key); setSortDesc(desc); setCurrentPage(1); }}
         onSearch={setSearch}
         searchPlaceholder="Buscar productos..."
         selectable

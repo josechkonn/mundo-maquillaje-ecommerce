@@ -243,6 +243,7 @@ const AdminTopNav = ({ collapsed, onToggle }: AdminTopNavProps) => {
                     <img
                       src={`https://flagcdn.com/w40/${getFlagCode(selectedCurrency.code)}.png`}
                       alt=""
+                      loading="lazy"
                       className="w-4 h-4 lg:w-5 lg:h-5 rounded-full object-cover shadow-sm"
                     />
                     <span className="font-medium tracking-wide hidden sm:inline">
@@ -273,6 +274,7 @@ const AdminTopNav = ({ collapsed, onToggle }: AdminTopNavProps) => {
                       <img
                         src={`https://flagcdn.com/w40/${getFlagCode(opt.code)}.png`}
                         alt=""
+                        loading="lazy"
                         className="w-5 h-5 rounded-full object-cover"
                       />
                       <span>{opt.code}</span>
@@ -289,7 +291,7 @@ const AdminTopNav = ({ collapsed, onToggle }: AdminTopNavProps) => {
                 {profile?.avatarUrl ? (
                   <img
                     src={profile.avatarUrl}
-                    alt=""
+                    alt={profile?.name || "Avatar"}
                     className="w-full h-full object-cover"
                   />
                 ) : (

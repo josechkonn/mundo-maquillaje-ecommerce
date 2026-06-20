@@ -12,9 +12,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import java.text.Normalizer;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+import org.springframework.data.jpa.domain.Specification;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -117,6 +120,57 @@ public class ProductService {
                         rateVES, rateCOP, targetCurrencyCode, sortBy), pageable);
         filterActiveVariations(productPage.getContent());
         return productPage;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Product> getFilteredAdminProducts(
+            String search,
+            Boolean isActive,
+            UUID brandId,
+            UUID categoryId,
+            String sortBy,
+            boolean sortDesc,
+            int page,
+            int size) {
+
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.unsorted();
+        if (sortBy != null && !sortBy.isEmpty()) {
+            org.springframework.data.domain.Sort.Direction dir = sortDesc
+                    ? org.springframework.data.domain.Sort.Direction.DESC
+                    : org.springframework.data.domain.Sort.Direction.ASC;
+            switch (sortBy) {
+                case "name" -> sort = org.springframework.data.domain.Sort.by(dir, "name");
+                case "priceUSD", "priceCOP", "priceVES" ->
+                    sort = org.springframework.data.domain.Sort.by(dir, "minPrice");
+            }
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Specification<Product> spec = (Root<Product> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (search != null && !search.trim().isEmpty()) {
+                String pattern = "%" + search.toLowerCase() + "%";
+                predicates.add(cb.like(cb.lower(root.get("name")), pattern));
+            }
+
+            if (isActive != null) {
+                predicates.add(cb.equal(root.get("isActive"), isActive));
+            }
+
+            if (brandId != null) {
+                predicates.add(cb.equal(root.get("brand").get("id"), brandId));
+            }
+
+            if (categoryId != null) {
+                predicates.add(cb.equal(root.get("category").get("id"), categoryId));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return productRepository.findAll(spec, pageable);
     }
 
     public Product getProductById(UUID id) {

@@ -38,6 +38,13 @@ const SettingsPage = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
+
   const updateField = <K extends keyof StoreConfig>(key: K, value: StoreConfig[K]) => {
     setConfig((prev) => prev ? { ...prev, [key]: value } : prev);
     setDirty(true);
@@ -201,6 +208,8 @@ const SettingsPage = () => {
         <div className="flex items-center gap-3 mb-3">
           <label className="text-sm font-semibold text-text-muted">Mostrar sección</label>
           <button
+            role="switch"
+            aria-checked={!!config?.showMissionVision}
             onClick={() => updateField("showMissionVision", !config?.showMissionVision)}
             className={`relative w-10 h-5 rounded-full transition-colors ${config?.showMissionVision ? "bg-success-500" : "bg-neutral-300"}`}
           >
@@ -212,6 +221,8 @@ const SettingsPage = () => {
           <div className="flex items-center gap-3">
             <label className="text-sm font-semibold text-text-muted">Mostrar Misión</label>
             <button
+              role="switch"
+              aria-checked={!!config?.showMission}
               onClick={() => updateField("showMission", !config?.showMission)}
               className={`relative w-8 h-4 rounded-full transition-colors ${config?.showMission ? "bg-success-500" : "bg-neutral-300"}`}
             >
@@ -226,6 +237,8 @@ const SettingsPage = () => {
           <div className="flex items-center gap-3">
             <label className="text-sm font-semibold text-text-muted">Mostrar Visión</label>
             <button
+              role="switch"
+              aria-checked={!!config?.showVision}
               onClick={() => updateField("showVision", !config?.showVision)}
               className={`relative w-8 h-4 rounded-full transition-colors ${config?.showVision ? "bg-success-500" : "bg-neutral-300"}`}
             >
@@ -260,6 +273,8 @@ const SettingsPage = () => {
       <div className="flex items-center gap-3 mb-4">
         <label className="text-sm font-semibold text-text-muted">Mostrar sección</label>
         <button
+          role="switch"
+          aria-checked={!!config?.showPillars}
           onClick={() => updateField("showPillars", !config?.showPillars)}
           className={`relative w-10 h-5 rounded-full transition-colors ${config?.showPillars ? "bg-success-500" : "bg-neutral-300"}`}
         >
@@ -273,6 +288,8 @@ const SettingsPage = () => {
             <span className="text-xs font-bold text-text-muted">Pilar {idx + 1}</span>
             <div className="flex items-center gap-2">
               <button
+                role="switch"
+                aria-checked={pillar.isActive}
                 onClick={() => updatePillar(idx, "isActive", !pillar.isActive)}
                 className={`relative w-8 h-4 rounded-full transition-colors ${pillar.isActive ? "bg-success-500" : "bg-neutral-300"}`}
               >

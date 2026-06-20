@@ -26,6 +26,7 @@ const ProductsPage = () => {
   // Paginación
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [totalPages, setTotalPages] = useState(0);
   const pageSize = 28;
 
   // Estados de Filtros
@@ -214,6 +215,7 @@ const ProductsPage = () => {
 
       let newProducts: Product[] = [];
       let isLastPage = false;
+      let totalPagesCount = 0;
 
       if (Array.isArray(response)) {
         if (response.length > pageSize) {
@@ -226,6 +228,7 @@ const ProductsPage = () => {
       } else {
         const pageRes = response as any;
         newProducts = pageRes.content;
+        totalPagesCount = pageRes.totalPages ?? 0;
 
         // Robust check for last page
         const isLastByFlag = pageRes.last === true;
@@ -238,6 +241,7 @@ const ProductsPage = () => {
       }
 
       setProducts(newProducts);
+      setTotalPages(totalPagesCount);
       setHasMore(!isLastPage);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -680,21 +684,68 @@ const ProductsPage = () => {
           </div>
         )}
 
-        {products.length > 0 && (
-          <div className="mt-8 md:mt-16 flex justify-center items-center gap-4">
+        {products.length > 0 && (totalPages > 1 || (totalPages === 0 && hasMore)) && (
+          <div className="mt-8 md:mt-16 flex justify-center items-center gap-2">
             <button
               onClick={handlePrevPage}
               disabled={currentPageIndex === 0 || loading}
-              className="w-14 h-14 rounded-full bg-mm-filter-active text-white flex items-center justify-center hover:bg-mm-filter-active-hover disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-md hover:scale-110 active:scale-95"
+              className="w-10 h-10 rounded-full bg-mm-filter-active text-white flex items-center justify-center hover:bg-mm-filter-active-hover disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-md hover:scale-110 active:scale-95"
             >
-              <ChevronLeftIcon className="w-8 h-8 stroke-[3px]" />
+              <ChevronLeftIcon className="w-5 h-5 stroke-[3px]" />
             </button>
+
+            {totalPages > 0 && (
+              <div className="flex items-center gap-1.5">
+                {(() => {
+                  const pages: (number | "...")[] = [];
+                  const total = totalPages;
+                  const current = currentPageIndex;
+
+                  if (total <= 7) {
+                    for (let i = 0; i < total; i++) pages.push(i);
+                  } else {
+                    pages.push(0);
+                    if (current > 2) pages.push("...");
+
+                    const start = Math.max(1, current - 1);
+                    const end = Math.min(total - 2, current + 1);
+                    for (let i = start; i <= end; i++) pages.push(i);
+
+                    if (current < total - 3) pages.push("...");
+                    pages.push(total - 1);
+                  }
+                  return pages;
+                })().map((page, idx) =>
+                  page === "..." ? (
+                    <span key={`ellipsis-${idx}`} className="w-8 text-center text-neutral-400 text-sm select-none">...</span>
+                  ) : (
+                    <button
+                      key={page}
+                      onClick={() => {
+                        setCurrentPageIndex(page);
+                        fetchProducts(page);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      disabled={loading}
+                      className={`w-10 h-10 rounded-full text-sm font-bold transition-all flex items-center justify-center ${
+                        page === currentPageIndex
+                          ? "bg-mm-filter-active text-white shadow-md scale-110"
+                          : "bg-white text-neutral-600 border border-neutral-200 hover:border-mm-filter-active hover:text-mm-filter-active"
+                      }`}
+                    >
+                      {page + 1}
+                    </button>
+                  )
+                )}
+              </div>
+            )}
+
             <button
               onClick={handleNextPage}
               disabled={!hasMore || loading}
-              className="w-14 h-14 rounded-full bg-mm-filter-active text-white flex items-center justify-center hover:bg-mm-filter-active-hover disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-md hover:scale-110 active:scale-95"
+              className="w-10 h-10 rounded-full bg-mm-filter-active text-white flex items-center justify-center hover:bg-mm-filter-active-hover disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-md hover:scale-110 active:scale-95"
             >
-              <ChevronRightIcon className="w-8 h-8 stroke-[3px]" />
+              <ChevronRightIcon className="w-5 h-5 stroke-[3px]" />
             </button>
           </div>
         )}

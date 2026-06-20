@@ -122,6 +122,9 @@ const RevenueChart = () => {
       <div className="flex items-center gap-4 mb-3">
         <button
           onClick={toggleRevenue}
+          role="switch"
+          aria-checked={showRevenue}
+          aria-label={showRevenue ? "Ocultar línea de ingresos" : "Mostrar línea de ingresos"}
           className={`flex items-center gap-2 transition-opacity ${!showRevenue ? "opacity-30" : ""}`}
         >
           <div className="w-3 h-0.5 bg-brand-500" />
@@ -129,9 +132,12 @@ const RevenueChart = () => {
         </button>
         <button
           onClick={toggleOrders}
+          role="switch"
+          aria-checked={showOrders}
+          aria-label={showOrders ? "Ocultar línea de pedidos" : "Mostrar línea de pedidos"}
           className={`flex items-center gap-2 transition-opacity ${!showOrders ? "opacity-30" : ""}`}
         >
-          <div className="w-3 h-0.5 bg-brand-300 border-dashed" style={{ borderTop: "2px dashed #FDA4AF" }} />
+          <div className="w-3 h-0.5 bg-brand-300" style={{ borderTop: "2px dashed #FDA4AF", width: "12px", height: "0.5px" }} />
           <span className="text-xs text-text-muted">Pedidos</span>
         </button>
       </div>
