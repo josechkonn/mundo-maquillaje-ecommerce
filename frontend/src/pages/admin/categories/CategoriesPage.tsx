@@ -6,6 +6,7 @@ import {
   DocumentDuplicateIcon,
   EyeIcon,
   ChevronRightIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { categoryService, type Category } from "../../../services/categoryService";
 import toast from "react-hot-toast";
@@ -75,6 +76,12 @@ const CategoriesPage = () => {
   const [collapsedTreeIds, setCollapsedTreeIds] = useState<Set<string>>(new Set());
   const hasInitCollapsed = useRef(false);
 
+  // Parent filter state
+  const [parentFilterIds, setParentFilterIds] = useState<Set<string>>(new Set());
+  const [parentFilterSearch, setParentFilterSearch] = useState("");
+  const [parentFilterOpen, setParentFilterOpen] = useState(false);
+  const parentFilterRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (categories.length > 0 && !hasInitCollapsed.current) {
       hasInitCollapsed.current = true;
@@ -114,12 +121,32 @@ const CategoriesPage = () => {
 
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (parentFilterRef.current && !parentFilterRef.current.contains(e.target as Node)) {
+        setParentFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   const filtered = categories.filter((c) => {
     if (statusFilter === "active" && !c.isActive) return false;
     if (statusFilter === "inactive" && c.isActive) return false;
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (parentFilterIds.size > 0) {
+      if (parentFilterIds.has("root") && !c.parent) return true;
+      if (c.parent && parentFilterIds.has(c.parent.id)) return true;
+      return false;
+    }
     return true;
   });
+
+  const parentOptions = categories.filter((c) => !c.parent);
+  const filteredParentOptions = parentOptions.filter((c) =>
+    c.name.toLowerCase().includes(parentFilterSearch.toLowerCase())
+  );
 
   const tree = buildTree(filtered);
   const flatTree = flattenTree(tree);
@@ -517,9 +544,93 @@ const CategoriesPage = () => {
         ]}
         renderHeaderActions={(
           <div className="w-full flex justify-between sm:w-auto sm:justify-start sm:gap-3">
+            <div className="relative" ref={parentFilterRef}>
+              <button
+                onClick={() => setParentFilterOpen(!parentFilterOpen)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 border h-[46px] ${
+                  parentFilterIds.size > 0
+                    ? "bg-brand-50 border-brand-300 text-brand-500"
+                    : "bg-white border-neutral-400 text-text-muted hover:text-text-base"
+                }`}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 6h18M6 12h12M10 18h4" strokeLinecap="round" />
+                </svg>
+                <span className="hidden sm:inline">Categoría padre</span>
+                {parentFilterIds.size > 0 && (
+                  <span className="w-5 h-5 rounded-full bg-brand-400 text-white text-p-xs flex items-center justify-center font-bold">
+                    {parentFilterIds.size}
+                  </span>
+                )}
+                <ChevronRightIcon className={`w-4 h-4 transition-transform duration-200 ${parentFilterOpen ? "rotate-90" : ""}`} />
+              </button>
+
+              {parentFilterOpen && (
+                <div className="absolute left-0 top-full mt-2 w-72 bg-white border border-neutral-200 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in">
+                  <div className="p-2 border-b border-neutral-100">
+                    <div className="relative">
+                      <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+                      <input
+                        value={parentFilterSearch}
+                        onChange={(e) => setParentFilterSearch(e.target.value)}
+                        placeholder="Buscar categoría padre..."
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-neutral-300 text-sm outline-none focus:ring-2 focus:ring-brand-200"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  <div className="overflow-y-auto max-h-64 custom-scrollbar p-1">
+                    <label className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-brand-50 transition-colors cursor-pointer">
+                      <Checkbox
+                        checked={parentFilterIds.has("root")}
+                        onChange={() => {
+                          const next = new Set(parentFilterIds);
+                          if (next.has("root")) next.delete("root");
+                          else next.add("root");
+                          setParentFilterIds(next);
+                        }}
+                      />
+                      <span className="text-sm text-text-base font-medium">— Raíz (sin padre) —</span>
+                    </label>
+                    <div className="h-px bg-neutral-100 mx-3 my-1" />
+                    {filteredParentOptions.map((c) => {
+                      const checked = parentFilterIds.has(c.id);
+                      return (
+                        <label key={c.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-brand-50 transition-colors cursor-pointer">
+                          <Checkbox
+                            checked={checked}
+                            onChange={() => {
+                              const next = new Set(parentFilterIds);
+                              if (next.has(c.id)) next.delete(c.id);
+                              else next.add(c.id);
+                              setParentFilterIds(next);
+                            }}
+                          />
+                          <span className="text-sm text-text-base truncate">{c.name}</span>
+                        </label>
+                      );
+                    })}
+                    {filteredParentOptions.length === 0 && parentFilterSearch && (
+                      <p className="px-3 py-6 text-center text-sm text-text-muted">Sin resultados</p>
+                    )}
+                  </div>
+                  {parentFilterIds.size > 0 && (
+                    <div className="border-t border-neutral-100 p-2">
+                      <button
+                        onClick={() => { setParentFilterIds(new Set()); setParentFilterSearch(""); }}
+                        className="w-full py-2 text-sm font-medium text-danger-500 hover:bg-danger-50 rounded-lg transition-colors"
+                      >
+                        Limpiar filtro
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <button
               onClick={() => { setEditingCategory(null); setShowForm(true); }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 active:scale-95 bg-brand-400 text-white hover:bg-brand-500 shadow-sm"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 active:scale-95 bg-brand-400 text-white hover:bg-brand-500 shadow-sm h-[46px]"
             >
               <PlusIcon className="w-5 h-5" />
               Crear

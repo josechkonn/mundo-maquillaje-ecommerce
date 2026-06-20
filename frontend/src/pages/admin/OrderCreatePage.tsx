@@ -6,6 +6,7 @@ import { orderService } from "../../services/orderService";
 import { currencyService } from "../../services/currencyService";
 import { shippingMethodService } from "../../services/shippingMethodService";
 import { paymentMethodService } from "../../services/paymentMethodService";
+import { convertPriceNumber } from "../../lib/formatters";
 import StepCliente from "../../components/admin/orders/StepCliente";
 import type { ShippingAddressData } from "../../components/admin/orders/StepCliente";
 import StepProductos from "../../components/admin/orders/StepProductos";
@@ -67,14 +68,32 @@ const OrderCreatePage = () => {
     if (!selectedClient) return;
     setIsCreating(true);
     try {
+      const toCurrency = (p: OrderProductEntry): Currency => ({
+        id: p.currencyId,
+        code: p.currencyCode,
+        symbol: p.currencySymbol,
+        exchangeRate: p.currencyExchangeRate,
+        decimalPlaces: p.currencyDecimalPlaces,
+        symbolPosition: p.currencySymbolPosition as "LEFT" | "RIGHT",
+      });
+
+      const convertedProducts = orderProducts.map(p => ({
+        productName: p.productName,
+        variationName: p.variationName,
+        price: currency ? convertPriceNumber(p.price, toCurrency(p), currency, allCurrencies) : p.price,
+        quantity: p.quantity,
+        discount: p.discount,
+        taxAmount: p.taxAmount,
+      }));
+
       await orderService.createAdminOrder({
         profileId: selectedClient.id,
-        products: orderProducts,
+        products: convertedProducts,
         currencyId,
         paymentMethodId,
         shippingMethodId,
-        shippingCost,
-        discountAmount,
+        shippingCost: shippingCost,
+        discountAmount: discountAmount,
         shippingAddress: {
           name: address.fullname,
           fullname: address.fullname,
@@ -176,6 +195,7 @@ const OrderCreatePage = () => {
             shippingCost={shippingCost}
             paymentMethod={paymentMethod}
             discountAmount={discountAmount}
+            allCurrencies={allCurrencies}
             paymentReference={paymentReference}
             onPaymentReferenceChange={setPaymentReference}
             receiptUrl={receiptUrl}

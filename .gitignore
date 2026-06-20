@@ -24,3 +24,7 @@ node_modules/
 dist/
 target/
 build/
+
+# Agent skills
+.agents/
+skills-lock.json

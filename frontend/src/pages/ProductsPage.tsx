@@ -327,7 +327,10 @@ const ProductsPage = () => {
               {/* Categorías */}
               <div className="border-b border-pink-100 pb-3">
                 <button onClick={() => setOpenAccordion(openAccordion === "cat" ? null : "cat")} className="w-full flex justify-between items-center py-3 text-left">
-                  <span className="text-[16px] font-semibold text-neutral-800">Categorías</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[16px] font-semibold text-neutral-800">Categorías</span>
+                    {tempCategoryId !== undefined && <span className="bg-mm-filter-active text-white text-[11px] w-5 h-5 rounded-full flex items-center justify-center font-bold">1</span>}
+                  </div>
                   <ChevronDownIcon className={`w-4 h-4 text-neutral-800 transition-transform ${openAccordion === "cat" ? "rotate-180" : ""}`} />
                 </button>
                 {openAccordion === "cat" && (
@@ -372,7 +375,10 @@ const ProductsPage = () => {
               {/* Marcas */}
               <div className="border-b border-pink-100 pb-3">
                 <button onClick={() => setOpenAccordion(openAccordion === "brand" ? null : "brand")} className="w-full flex justify-between items-center py-3 text-left">
-                  <span className="text-[16px] font-semibold text-neutral-800">Marcas</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[16px] font-semibold text-neutral-800">Marcas</span>
+                    {tempBrandId !== undefined && <span className="bg-mm-filter-active text-white text-[11px] w-5 h-5 rounded-full flex items-center justify-center font-bold">1</span>}
+                  </div>
                   <ChevronDownIcon className={`w-4 h-4 text-neutral-800 transition-transform ${openAccordion === "brand" ? "rotate-180" : ""}`} />
                 </button>
                 {openAccordion === "brand" && (

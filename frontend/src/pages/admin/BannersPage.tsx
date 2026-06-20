@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { bannerService, type Banner } from "../../services/bannerService";
 import toast from "react-hot-toast";
@@ -17,6 +18,8 @@ const BannersPage = () => {
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | "bulk" | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
 
   const fetchBanners = useCallback(async () => {
     setLoading(true);
@@ -30,6 +33,13 @@ const BannersPage = () => {
   }, []);
 
   useEffect(() => { fetchBanners(); }, [fetchBanners]);
+
+  useEffect(() => {
+    const handleClose = () => { setOpenMenuId(null); setMenuPos(null); };
+    window.addEventListener("scroll", handleClose, true);
+    window.addEventListener("resize", handleClose);
+    return () => { window.removeEventListener("scroll", handleClose, true); window.removeEventListener("resize", handleClose); };
+  }, []);
 
   const filtered = banners.filter((b) => {
     if (statusFilter === "active" && !b.isActive) return false;
@@ -312,12 +322,15 @@ const BannersPage = () => {
             </button>
           </div>
         )}
-        renderActionsColumn={(b) => {
-          const idx = filtered.findIndex((x) => x.id === b.id);
+        renderActionsColumn={(item) => {
+          const id = item.id;
+          const isOpen = openMenuId === id;
+          const banner = item as Banner;
+          const idx = filtered.findIndex((x) => x.id === banner.id);
           return (
             <div className="flex items-center gap-1">
               <button
-                onClick={() => handleMoveUp(b as Banner)}
+                onClick={() => handleMoveUp(banner)}
                 disabled={idx === 0}
                 className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-neutral-100 text-text-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 title="Mover arriba"
@@ -325,13 +338,60 @@ const BannersPage = () => {
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 15l-6-6-6 6" /></svg>
               </button>
               <button
-                onClick={() => handleMoveDown(b as Banner)}
+                onClick={() => handleMoveDown(banner)}
                 disabled={idx === filtered.length - 1}
                 className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-neutral-100 text-text-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 title="Mover abajo"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
               </button>
+              <div className="relative flex items-center justify-center">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isOpen) {
+                      setOpenMenuId(null);
+                      setMenuPos(null);
+                    } else {
+                      setOpenMenuId(id);
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const menuWidth = 192;
+                      const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8));
+                      setMenuPos({ top: rect.bottom + 4, left });
+                    }
+                  }}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-neutral-100 transition-colors text-text-muted hover:text-text-base"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="1.5" />
+                    <circle cx="12" cy="12" r="1.5" />
+                    <circle cx="12" cy="19" r="1.5" />
+                  </svg>
+                </button>
+              </div>
+              {isOpen && menuPos && createPortal(
+                <>
+                  <div className="fixed inset-0 z-[90]" onClick={() => { setOpenMenuId(null); setMenuPos(null); }} />
+                  <div className="fixed z-[100] w-48 bg-white rounded-2xl border border-neutral-100 shadow-xl py-2 animate-fade-in" style={{ top: menuPos.top, left: menuPos.left }}>
+                    <button
+                      onClick={() => { setOpenMenuId(null); setMenuPos(null); setEditingBanner(banner); setShowForm(true); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text-base hover:bg-brand-50 transition-colors"
+                    >
+                      <svg className="w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+                      Editar
+                    </button>
+                    <div className="h-px bg-neutral-100 my-1" />
+                    <button
+                      onClick={() => { setOpenMenuId(null); setMenuPos(null); setConfirmDelete(banner.id); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                      Eliminar
+                    </button>
+                  </div>
+                </>,
+                document.body
+              )}
             </div>
           );
         }}

@@ -4,7 +4,7 @@ import { productService, type Product, type ProductVariation, type Currency } fr
 import { currencyService } from "../../../services/currencyService";
 import { shippingMethodService, type ShippingMethod } from "../../../services/shippingMethodService";
 import { paymentMethodService, type PaymentMethod } from "../../../services/paymentMethodService";
-import { formatPrice } from "../../../lib/formatters";
+import { formatPrice, convertAndFormatPrice, convertPriceNumber } from "../../../lib/formatters";
 import ProductVariationPicker from "../../ui/ProductVariationPicker";
 
 export interface OrderProductEntry {
@@ -16,6 +16,12 @@ export interface OrderProductEntry {
   taxAmount: number;
   subtotal: number;
   imageUrl?: string;
+  currencyId: string;
+  currencyCode: string;
+  currencySymbol: string;
+  currencyExchangeRate: number;
+  currencyDecimalPlaces: number;
+  currencySymbolPosition: string;
 }
 
 interface StepProductosProps {
@@ -67,7 +73,19 @@ const StepProductos = ({
   }, []);
 
   const currentCurrency = allCurrencies.find(c => c.id === currencyId);
+
+  const toCurrency = (e: OrderProductEntry): Currency => ({
+    id: e.currencyId,
+    code: e.currencyCode,
+    symbol: e.currencySymbol,
+    exchangeRate: e.currencyExchangeRate,
+    decimalPlaces: e.currencyDecimalPlaces,
+    symbolPosition: e.currencySymbolPosition as "LEFT" | "RIGHT",
+  });
+
   const fmt = (amount: number) => formatPrice(amount, currentCurrency);
+  const fmtConverted = (amount: number, src: Currency) =>
+    convertAndFormatPrice(amount, src, currentCurrency, allCurrencies);
 
   const handleAddProduct = () => {
     if (!selectedVariation) return;
@@ -77,6 +95,8 @@ const StepProductos = ({
     const tax = addTax;
     const subtotal = qty * price * (1 - disc / 100) * (1 + tax / 100);
 
+    const srcCurrency = selectedProduct?.currency;
+
     const entry: OrderProductEntry = {
       productName: selectedProduct?.name || selectedVariation.name,
       variationName: selectedVariation.name,
@@ -85,6 +105,12 @@ const StepProductos = ({
       discount: disc,
       taxAmount: tax,
       subtotal,
+      currencyId: srcCurrency?.id || "",
+      currencyCode: srcCurrency?.code || "",
+      currencySymbol: srcCurrency?.symbol || "",
+      currencyExchangeRate: srcCurrency?.exchangeRate || 1,
+      currencyDecimalPlaces: srcCurrency?.decimalPlaces ?? 2,
+      currencySymbolPosition: srcCurrency?.symbolPosition || "LEFT",
     };
 
     onProductsChange([...products, entry]);
@@ -116,8 +142,11 @@ const StepProductos = ({
     onProductsChange(updated);
   };
 
-  const subtotal = products.reduce((s, p) => s + p.subtotal, 0);
-  const total = subtotal + (shippingCost || 0) - (discountAmount || 0);
+  const convertedSubtotalSum = products.reduce((s, p) => {
+    const src = toCurrency(p);
+    return s + convertPriceNumber(p.subtotal, src, currentCurrency, allCurrencies);
+  }, 0);
+  const total = convertedSubtotalSum + (shippingCost || 0) - (discountAmount || 0);
 
   const hasProducts = products.length > 0;
   const hasConfig = currencyId && shippingMethodId && paymentMethodId;
@@ -162,7 +191,11 @@ const StepProductos = ({
                 <div className="grid grid-cols-4 gap-3">
                   <div>
                     <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1 block">Precio</label>
-                    <span className="text-sm font-bold text-brand-600 block px-3 py-2 bg-white rounded-lg border border-neutral-200">{fmt(selectedVariation.price)}</span>
+                    <span className="text-sm font-bold text-brand-600 block px-3 py-2 bg-white rounded-lg border border-neutral-200">
+                      {selectedProduct?.currency && currentCurrency
+                        ? convertAndFormatPrice(selectedVariation.price, selectedProduct.currency, currentCurrency, allCurrencies)
+                        : formatPrice(selectedVariation.price, selectedProduct?.currency)}
+                    </span>
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1 block">Cant.</label>
@@ -225,6 +258,11 @@ const StepProductos = ({
                     <td className="py-2.5 px-3">
                       <input type="number" step="0.01" min={0} value={p.price} onChange={(e) => updateProduct(i, "price", parseFloat(e.target.value) || 0)}
                         className="w-24 mx-auto px-2 py-1 rounded-lg border border-neutral-300 text-sm text-center bg-white outline-none focus:ring-2 focus:ring-brand-200" />
+                      {currentCurrency && p.currencyId !== currentCurrency.id && (
+                        <p className="text-[10px] text-neutral-400 text-center mt-0.5">
+                          ≈ {fmtConverted(p.price, toCurrency(p))}
+                        </p>
+                      )}
                     </td>
                     <td className="py-2.5 px-3">
                       <input type="number" min={1} value={p.quantity} onChange={(e) => updateProduct(i, "quantity", parseInt(e.target.value) || 1)}
@@ -238,7 +276,7 @@ const StepProductos = ({
                       <input type="number" step="0.01" min={0} value={p.taxAmount} onChange={(e) => updateProduct(i, "taxAmount", parseFloat(e.target.value) || 0)}
                         className="w-16 mx-auto px-2 py-1 rounded-lg border border-neutral-300 text-sm text-center bg-white outline-none focus:ring-2 focus:ring-brand-200" />
                     </td>
-                    <td className="py-2.5 px-3 text-right text-sm font-semibold text-neutral-800">{fmt(p.subtotal)}</td>
+                    <td className="py-2.5 px-3 text-right text-sm font-semibold text-neutral-800">{fmtConverted(p.subtotal, toCurrency(p))}</td>
                     <td className="py-2.5 px-3">
                       <button onClick={() => handleRemoveProduct(i)}
                         className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors">
@@ -329,7 +367,7 @@ const StepProductos = ({
       <div className="bg-neutral-50 rounded-3xl border border-neutral-200 p-5">
         <div className="flex justify-end">
           <div className="w-full max-w-xs space-y-1.5">
-            <div className="flex justify-between text-sm"><span className="text-neutral-500">Subtotal</span><span className="font-medium text-neutral-800">{fmt(subtotal)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-neutral-500">Subtotal</span><span className="font-medium text-neutral-800">{fmt(convertedSubtotalSum)}</span></div>
             {discountAmount > 0 && <div className="flex justify-between text-sm"><span className="text-neutral-500">Descuento</span><span className="font-medium text-green-600">-{fmt(discountAmount)}</span></div>}
             {shippingCost > 0 && <div className="flex justify-between text-sm"><span className="text-neutral-500">Envío</span><span className="font-medium text-neutral-800">{fmt(shippingCost)}</span></div>}
             <div className="border-t border-neutral-300 pt-1.5 flex justify-between">

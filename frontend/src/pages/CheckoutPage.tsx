@@ -237,11 +237,8 @@ const CheckoutPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12 lg:items-start">
           {/* Lado Izquierdo: Pasos 1-3 (Timeline) */}
           <div className="relative space-y-16">
-            {/* Línea vertical conectora sólida */}
-            <div className="absolute left-[18px] top-[20px] bottom-0 w-[4px] bg-brand-400 hidden md:block"></div>
-
             {/* Paso 1: Dirección */}
-            <CheckoutStep number={1} title="Selecciona la dirección de envío">
+            <CheckoutStep number={1} title="Selecciona la dirección de envío" showConnector>
               <div className="grid grid-cols-1 gap-4">
                 {addresses.length > 0 ? (
                   addresses.map((addr) => (
@@ -273,7 +270,7 @@ const CheckoutPage = () => {
             </CheckoutStep>
 
             {/* Paso 2: Método de Envío */}
-            <CheckoutStep number={2} title="Selecciona el método de envío">
+            <CheckoutStep number={2} title="Selecciona el método de envío" showConnector>
               <div className="space-y-3">
                 {shippingMethods.map((method) => (
                   <SelectionCard
@@ -288,7 +285,7 @@ const CheckoutPage = () => {
             </CheckoutStep>
 
             {/* Paso 3: Método de Pago */}
-            <CheckoutStep number={3} title="Selecciona el método de pago">
+            <CheckoutStep number={3} title="Selecciona el método de pago" showConnector>
               <div className="space-y-4">
                 {paymentMethods.map((method) => (
                   <SelectionCard
@@ -321,33 +318,28 @@ const CheckoutPage = () => {
           </div>
         </div>
 
-        {/* Conector entre paso 3 y paso 4 */}
-        <div className="relative max-w-4xl mt-16">
-          <div className="absolute left-[18px] -top-16 bottom-0 w-[4px] bg-brand-400 hidden md:block"></div>
-
-          {/* Paso 4: Comprobante */}
-          <div className="relative space-y-16 md:pl-0">
-            <CheckoutStep number={4} title="Ingresa aquí el comprobante de pago">
-              <div className="space-y-6 bg-white p-6 md:p-8 rounded-[30px] border border-neutral-200">
-                <ReceiptUploader
-                  onUploadComplete={setReceiptUrl}
-                  currentUrl={receiptUrl}
+        {/* Paso 4: Comprobante */}
+        <div className="max-w-4xl mt-16">
+          <CheckoutStep number={4} title="Ingresa aquí el comprobante de pago">
+            <div className="space-y-6 bg-white p-6 md:p-8 rounded-[30px] border border-neutral-200">
+              <ReceiptUploader
+                onUploadComplete={setReceiptUrl}
+                currentUrl={receiptUrl}
+              />
+              <div className="space-y-2">
+                <label className="block text-p-s font-bold text-neutral-800">
+                  Número de Referencia del Pago
+                </label>
+                <input
+                  type="text"
+                  value={paymentReference}
+                  onChange={(e) => setPaymentReference(e.target.value)}
+                  placeholder="Ingrese el número de confirmación o referencia"
+                  className="w-full bg-white border border-neutral-300 rounded-[20px] px-5 py-3.5 text-p-s text-neutral-800 focus:outline-none focus:border-brand-400 placeholder-neutral-400"
                 />
-                <div className="space-y-2">
-                  <label className="block text-p-s font-bold text-neutral-800">
-                    Número de Referencia del Pago
-                  </label>
-                  <input
-                    type="text"
-                    value={paymentReference}
-                    onChange={(e) => setPaymentReference(e.target.value)}
-                    placeholder="Ingrese el número de confirmación o referencia"
-                    className="w-full bg-white border border-neutral-300 rounded-[20px] px-5 py-3.5 text-p-s text-neutral-800 focus:outline-none focus:border-brand-400 placeholder-neutral-400"
-                  />
-                </div>
               </div>
-            </CheckoutStep>
-          </div>
+            </div>
+          </CheckoutStep>
         </div>
 
         {/* Botón de Finalizar */}
@@ -422,8 +414,14 @@ const CheckoutPage = () => {
 
 // --- Sub-componentes auxiliares ---
 
-const CheckoutStep = ({ number, title, children }: { number: number; title: string; children: React.ReactNode }) => (
+const CheckoutStep = ({ number, title, children, showConnector }: { number: number; title: string; children: React.ReactNode; showConnector?: boolean }) => (
   <div className="relative pl-0 md:pl-20">
+    {showConnector && (
+      <div
+        className="absolute left-[18px] w-[4px] bg-brand-400 hidden md:block pointer-events-none"
+        style={{ top: "20px", bottom: "calc(-4rem - 20px)" }}
+      ></div>
+    )}
     <div className="absolute left-0 top-0 w-10 h-10 bg-brand-400 rounded-full flex items-center justify-center text-white font-bold z-10 hidden md:flex shadow-lg shadow-brand-100">
       {number}
     </div>

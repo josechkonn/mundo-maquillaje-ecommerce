@@ -32,7 +32,6 @@ const CategoryForm = ({ category, categories, onSave, onCancel }: CategoryFormPr
   const [subBannerUrl, setSubBannerUrl] = useState(category?.subBannerUrl || "");
   const [isActive, setIsActive] = useState(category?.isActive ?? true);
   const [parentId, setParentId] = useState(category?.parent?.id || "__unset__");
-  const [hierarchyTouched, setHierarchyTouched] = useState(isEditing);
 
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
@@ -49,6 +48,9 @@ const CategoryForm = ({ category, categories, onSave, onCancel }: CategoryFormPr
   const [imagePickerTarget, setImagePickerTarget] = useState<"logo" | "banner" | "subBanner">("logo");
   const formRef = useRef<HTMLDivElement>(null);
   const slugManuallyEdited = useRef(false);
+  const [parentSearchOpen, setParentSearchOpen] = useState(false);
+  const [parentSearchInput, setParentSearchInput] = useState("");
+  const parentDropdownRef = useRef<HTMLDivElement>(null);
 
   const getDescendantIds = (catId: string, allCats: Category[]): string[] => {
     const result: string[] = [];
@@ -62,6 +64,75 @@ const CategoryForm = ({ category, categories, onSave, onCancel }: CategoryFormPr
 
   const excludedIds = category ? [category.id, ...getDescendantIds(category.id, categories)] : [];
   const availableParents = categories.filter((c) => !excludedIds.includes(c.id));
+
+  const selectedParentCat = parentId && parentId !== "__unset__" ? categories.find((c) => c.id === parentId) : null;
+  const isRoot = parentId === "";
+  const canHaveBanners = isRoot;
+
+  interface TreeCategory extends Category {
+    children: TreeCategory[];
+  }
+
+  const buildParentTree = (cats: Category[]): TreeCategory[] => {
+    const map = new Map<string, TreeCategory>();
+    const roots: TreeCategory[] = [];
+    cats.forEach((c) => map.set(c.id, { ...c, children: [] }));
+    cats.forEach((c) => {
+      const node = map.get(c.id)!;
+      if (c.parent && map.has(c.parent.id)) {
+        map.get(c.parent.id)!.children.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+    return roots;
+  };
+
+  const parentTree = buildParentTree(availableParents);
+
+  const treeHasMatch = (node: TreeCategory, query: string): boolean => {
+    if (!query) return true;
+    if (node.name.toLowerCase().includes(query.toLowerCase())) return true;
+    return node.children.some((child) => treeHasMatch(child, query));
+  };
+
+  const renderTreeItems = (node: TreeCategory, depth: number): React.ReactNode[] => {
+    if (parentSearchInput && !treeHasMatch(node, parentSearchInput)) return [];
+    const isSelected = parentId === node.id;
+    const indent = depth * 16;
+    const items: React.ReactNode[] = [
+      <button
+        key={node.id}
+        type="button"
+        onClick={() => { setParentId(node.id); setParentSearchOpen(false); setParentSearchInput(""); markDirty(); }}
+        className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${isSelected ? "bg-brand-50 text-brand-500 font-medium" : "hover:bg-brand-50 text-text-base"}`}
+        style={{ paddingLeft: `${16 + indent}px` }}
+      >
+        <span className="w-5 h-5 rounded-full border-2 border-neutral-300 flex items-center justify-center shrink-0">
+          {isSelected && <span className="w-2.5 h-2.5 rounded-full bg-brand-400" />}
+        </span>
+        <span className="truncate">{node.name}</span>
+        {node.parent && (
+          <span className="text-p-xs text-text-muted shrink-0 ml-auto">Sub de {node.parent.name}</span>
+        )}
+      </button>,
+    ];
+    node.children.forEach((child) => items.push(...renderTreeItems(child, depth + 1)));
+    return items;
+  };
+
+  const anyTreeVisible = !parentSearchInput || parentTree.some((n) => treeHasMatch(n, parentSearchInput));
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (parentDropdownRef.current && !parentDropdownRef.current.contains(e.target as Node)) {
+        setParentSearchOpen(false);
+        setParentSearchInput("");
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   useEffect(() => {
     if (!isEditing && name && !slugManuallyEdited.current) {
@@ -180,70 +251,81 @@ const CategoryForm = ({ category, categories, onSave, onCancel }: CategoryFormPr
               <label className={labelClass}>Descripción</label>
               <textarea value={description} onChange={(e) => { setDescription(e.target.value); markDirty(); }} rows={4} placeholder="Describe la categoría..." className={`${inputClass} resize-none`} />
             </div>
-            {hierarchyTouched && parentId === "" ? (
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className={labelClass}>Imagen principal</label>
-                  <div className="mt-1.5">
-                    {logoUrl ? (
-                      <div className="relative w-full aspect-square rounded-2xl overflow-hidden border border-neutral-100">
-                        <img src={logoUrl} alt="" className="w-full h-full object-cover" />
-                        <button onClick={() => { setLogoUrl(""); markDirty(); }} className="absolute top-1 right-1 w-5 h-5 bg-white/80 rounded-full flex items-center justify-center text-text-muted hover:text-danger-500"><XMarkIcon className="w-3 h-3" /></button>
-                      </div>
-                    ) : (
-                      <div className="w-full aspect-square rounded-2xl border-2 border-dashed border-neutral-300 flex flex-col items-center justify-center text-text-muted hover:border-brand-400 transition-colors cursor-pointer" onClick={() => { setImagePickerTarget("logo"); setShowImagePicker(true); }}>
-                        <PhotoIcon className="w-6 h-6" />
-                        <span className="text-p-xs mt-1">Agregar</span>
-                      </div>
-                    )}
+            {/* Imagen principal — disponible para todas las categorías */}
+            <div>
+              <label className={labelClass}>Imagen principal</label>
+              <p className="text-p-xs text-text-muted mt-0.5 mb-1.5">Se muestra como círculo en la página de inicio y filtros</p>
+              <div className="max-w-[200px]">
+                {logoUrl ? (
+                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden border border-neutral-100">
+                    <img src={logoUrl} alt="" className="w-full h-full object-cover" />
+                    <button onClick={() => { setLogoUrl(""); markDirty(); }} className="absolute top-1 right-1 w-5 h-5 bg-white/80 rounded-full flex items-center justify-center text-text-muted hover:text-danger-500"><XMarkIcon className="w-3 h-3" /></button>
                   </div>
-                </div>
-                <div>
-                  <label className={labelClass}>Imagen de portada</label>
-                  <div className="mt-1.5">
-                    {bannerUrl ? (
-                      <div className="relative w-full aspect-[5/3] rounded-2xl overflow-hidden border border-neutral-100">
-                        <img src={bannerUrl} alt="" className="w-full h-full object-cover" />
-                        <button onClick={() => { setBannerUrl(""); markDirty(); }} className="absolute top-1 right-1 w-5 h-5 bg-white/80 rounded-full flex items-center justify-center text-text-muted hover:text-danger-500"><XMarkIcon className="w-3 h-3" /></button>
-                      </div>
-                    ) : (
-                      <div className="w-full aspect-[5/3] rounded-2xl border-2 border-dashed border-neutral-300 flex flex-col items-center justify-center text-text-muted hover:border-brand-400 transition-colors cursor-pointer" onClick={() => { setImagePickerTarget("banner"); setShowImagePicker(true); }}>
-                        <PhotoIcon className="w-6 h-6" />
-                        <span className="text-p-xs mt-1">Agregar</span>
-                      </div>
-                    )}
+                ) : (
+                  <div className="w-full aspect-square rounded-2xl border-2 border-dashed border-neutral-300 flex flex-col items-center justify-center text-text-muted hover:border-brand-400 transition-colors cursor-pointer" onClick={() => { setImagePickerTarget("logo"); setShowImagePicker(true); }}>
+                    <PhotoIcon className="w-6 h-6" />
+                    <span className="text-p-xs mt-1">Agregar</span>
                   </div>
-                </div>
-                <div>
-                  <label className={labelClass}>Imagen de subportada</label>
-                  <p className="text-p-xs text-text-muted mt-0.5">Se muestra en la categoría principal</p>
-                  <div className="mt-1.5">
-                    {subBannerUrl ? (
-                      <div className="relative w-full aspect-[5/3] rounded-2xl overflow-hidden border border-neutral-100">
-                        <img src={subBannerUrl} alt="" className="w-full h-full object-cover" />
-                        <button onClick={() => { setSubBannerUrl(""); markDirty(); }} className="absolute top-1 right-1 w-5 h-5 bg-white/80 rounded-full flex items-center justify-center text-text-muted hover:text-danger-500"><XMarkIcon className="w-3 h-3" /></button>
-                      </div>
-                    ) : (
-                      <div className="w-full aspect-[5/3] rounded-2xl border-2 border-dashed border-neutral-300 flex flex-col items-center justify-center text-text-muted hover:border-brand-400 transition-colors cursor-pointer" onClick={() => { setImagePickerTarget("subBanner"); setShowImagePicker(true); }}>
-                        <PhotoIcon className="w-6 h-6" />
-                        <span className="text-p-xs mt-1">Agregar</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
-            ) : (
-              <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-100 text-center">
-                <PhotoIcon className="w-8 h-8 text-neutral-300 mx-auto mb-2" />
-                {parentId === "__unset__" ? (
+            </div>
+
+            {/* Portada y subportada — solo para categorías principales y subcategorías de primer nivel */}
+            <div className="border-t border-neutral-100 pt-4">
+              <h4 className="text-sm font-bold text-text-base mb-3">Imágenes de portada</h4>
+              {canHaveBanners ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelClass}>Imagen de portada</label>
+                    <p className="text-p-xs text-text-muted mt-0.5">Banner principal de la categoría</p>
+                    <div className="mt-1.5">
+                      {bannerUrl ? (
+                        <div className="relative w-full aspect-[5/3] rounded-2xl overflow-hidden border border-neutral-100">
+                          <img src={bannerUrl} alt="" className="w-full h-full object-cover" />
+                          <button onClick={() => { setBannerUrl(""); markDirty(); }} className="absolute top-1 right-1 w-5 h-5 bg-white/80 rounded-full flex items-center justify-center text-text-muted hover:text-danger-500"><XMarkIcon className="w-3 h-3" /></button>
+                        </div>
+                      ) : (
+                        <div className="w-full aspect-[5/3] rounded-2xl border-2 border-dashed border-neutral-300 flex flex-col items-center justify-center text-text-muted hover:border-brand-400 transition-colors cursor-pointer" onClick={() => { setImagePickerTarget("banner"); setShowImagePicker(true); }}>
+                          <PhotoIcon className="w-6 h-6" />
+                          <span className="text-p-xs mt-1">Agregar</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Imagen de subportada</label>
+                    <p className="text-p-xs text-text-muted mt-0.5">Se muestra debajo de las subcategorías</p>
+                    <div className="mt-1.5">
+                      {subBannerUrl ? (
+                        <div className="relative w-full aspect-[5/3] rounded-2xl overflow-hidden border border-neutral-100">
+                          <img src={subBannerUrl} alt="" className="w-full h-full object-cover" />
+                          <button onClick={() => { setSubBannerUrl(""); markDirty(); }} className="absolute top-1 right-1 w-5 h-5 bg-white/80 rounded-full flex items-center justify-center text-text-muted hover:text-danger-500"><XMarkIcon className="w-3 h-3" /></button>
+                        </div>
+                      ) : (
+                        <div className="w-full aspect-[5/3] rounded-2xl border-2 border-dashed border-neutral-300 flex flex-col items-center justify-center text-text-muted hover:border-brand-400 transition-colors cursor-pointer" onClick={() => { setImagePickerTarget("subBanner"); setShowImagePicker(true); }}>
+                          <PhotoIcon className="w-6 h-6" />
+                          <span className="text-p-xs mt-1">Agregar</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : parentId === "__unset__" ? (
+                <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-100 text-center">
+                  <PhotoIcon className="w-8 h-8 text-neutral-300 mx-auto mb-2" />
                   <p className="text-sm text-text-muted">
                     Primero elige en <strong>Jerarquía</strong> si será una categoría principal o una subcategoría
                   </p>
-                ) : (
-                  <p className="text-sm text-text-muted">Solo las categorías principales pueden tener imágenes</p>
-                )}
-              </div>
-            )}
+                </div>
+              ) : (
+                <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-100 text-center">
+                  <PhotoIcon className="w-8 h-8 text-neutral-300 mx-auto mb-2" />
+                  <p className="text-sm text-text-muted">
+                    Las imágenes de portada solo están disponibles para categorías principales y subcategorías de primer nivel
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Block 2: Products */}
@@ -294,21 +376,56 @@ const CategoryForm = ({ category, categories, onSave, onCancel }: CategoryFormPr
             <h3 className="text-p-b font-bold text-text-base">Jerarquía</h3>
             <div>
               <label className={labelClass}>Categoría padre</label>
-              <div className="relative mt-1">
-                <select
-                  value={parentId}
-                  onChange={(e) => { setParentId(e.target.value); setHierarchyTouched(true); markDirty(); }}
-                  className={`${inputClass} appearance-none pr-10`}
+              <div className="relative mt-1" ref={parentDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => { setParentSearchOpen(!parentSearchOpen); setParentSearchInput(""); }}
+                  className={`${inputClass} flex items-center justify-between`}
                 >
-                  <option value="__unset__" disabled>— Selecciona una opción —</option>
-                  <option value="">— Ninguna (categoría raíz) —</option>
-                  {availableParents.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-                <ChevronDownIcon className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+                  <span className={parentId === "__unset__" ? "text-text-muted" : "text-text-base"}>
+                    {parentId === "__unset__"
+                      ? "— Selecciona una opción —"
+                      : parentId === ""
+                        ? "— Ninguna (categoría raíz) —"
+                        : categories.find((c) => c.id === parentId)?.name || "— Selecciona una opción —"}
+                  </span>
+                  <ChevronDownIcon className={`w-4 h-4 text-text-muted transition-transform duration-200 ${parentSearchOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {parentSearchOpen && (
+                  <div className="absolute z-50 mt-1 w-full bg-white border border-neutral-200 rounded-xl shadow-xl max-h-80 overflow-hidden">
+                    <div className="p-2 border-b border-neutral-100">
+                      <input
+                        value={parentSearchInput}
+                        onChange={(e) => setParentSearchInput(e.target.value)}
+                        placeholder="Buscar categoría..."
+                        className="w-full px-3 py-2 rounded-lg border border-neutral-300 text-sm outline-none focus:ring-2 focus:ring-brand-200"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="overflow-y-auto max-h-60 custom-scrollbar">
+                      <button
+                        type="button"
+                        onClick={() => { setParentId(""); setParentSearchOpen(false); setParentSearchInput(""); markDirty(); }}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${parentId === "" ? "bg-brand-50 text-brand-500 font-medium" : "hover:bg-brand-50 text-text-base"}`}
+                      >
+                        <span className="w-5 h-5 rounded-full border-2 border-neutral-300 flex items-center justify-center shrink-0">
+                          {parentId === "" && <span className="w-2.5 h-2.5 rounded-full bg-brand-400" />}
+                        </span>
+                        — Ninguna (categoría raíz) —
+                      </button>
+                      {parentTree.flatMap((root) => {
+                        if (parentSearchInput && !treeHasMatch(root, parentSearchInput)) return [];
+                        return renderTreeItems(root, 0);
+                      })}
+                      {!anyTreeVisible && (
+                        <p className="px-4 py-6 text-center text-sm text-text-muted">Sin resultados</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-              {parentId && (
+              {parentId && parentId !== "__unset__" && (
                 <p className="text-p-xs text-text-muted mt-1.5">Se mostrará como subcategoría de {categories.find((c) => c.id === parentId)?.name}</p>
               )}
             </div>

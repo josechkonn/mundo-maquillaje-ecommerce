@@ -3,7 +3,7 @@ import { type Currency } from "../../../services/productService";
 import { type ShippingMethod } from "../../../services/shippingMethodService";
 import { type PaymentMethod } from "../../../services/paymentMethodService";
 import { type UserProfile } from "../../../services/userService";
-import { formatPrice } from "../../../lib/formatters";
+import { formatPrice, convertAndFormatPrice, convertPriceNumber } from "../../../lib/formatters";
 import ReceiptUploader from "../../checkout/ReceiptUploader";
 import { type ShippingAddressData } from "./StepCliente";
 import { type OrderProductEntry } from "./StepProductos";
@@ -17,6 +17,7 @@ interface StepResumenProps {
   shippingCost: number;
   paymentMethod: PaymentMethod | undefined;
   discountAmount: number;
+  allCurrencies: Currency[];
   paymentReference: string;
   onPaymentReferenceChange: (ref: string) => void;
   receiptUrl: string;
@@ -31,7 +32,7 @@ interface StepResumenProps {
 const StepResumen = ({
   selectedClient, address, products,
   currency, shippingMethod, shippingCost,
-  paymentMethod, discountAmount,
+  paymentMethod, discountAmount, allCurrencies,
   paymentReference, onPaymentReferenceChange,
   receiptUrl, onReceiptUrlChange,
   includeVoucher, onIncludeVoucherChange,
@@ -39,8 +40,20 @@ const StepResumen = ({
 }: StepResumenProps) => {
   const fmt = (amount: number) => formatPrice(amount, currency);
 
-  const subtotal = products.reduce((s, p) => s + p.subtotal, 0);
-  const total = subtotal + shippingCost - discountAmount;
+  const toCurrency = (e: OrderProductEntry): Currency => ({
+    id: e.currencyId,
+    code: e.currencyCode,
+    symbol: e.currencySymbol,
+    exchangeRate: e.currencyExchangeRate,
+    decimalPlaces: e.currencyDecimalPlaces,
+    symbolPosition: e.currencySymbolPosition as "LEFT" | "RIGHT",
+  });
+
+  const convertedSubtotalSum = products.reduce((s, p) => {
+    const src = toCurrency(p);
+    return s + convertPriceNumber(p.subtotal, src, currency, allCurrencies);
+  }, 0);
+  const total = convertedSubtotalSum + shippingCost - discountAmount;
 
   const isValid = !includeVoucher || (receiptUrl && paymentReference.trim());
 
@@ -172,7 +185,11 @@ const StepResumen = ({
                   <p className="text-sm font-medium text-neutral-800 truncate">{p.productName}</p>
                   <p className="text-xs text-neutral-500">{p.variationName} x{p.quantity}</p>
                 </div>
-                <p className="text-sm font-semibold text-neutral-800 ml-3">{fmt(p.subtotal)}</p>
+                <p className="text-sm font-semibold text-neutral-800 ml-3">
+                  {currency
+                    ? convertAndFormatPrice(p.subtotal, toCurrency(p), currency, allCurrencies)
+                    : fmt(p.subtotal)}
+                </p>
               </div>
             ))}
           </div>
@@ -181,7 +198,7 @@ const StepResumen = ({
         {/* Totales */}
         <div className="border-t border-neutral-100 px-5 py-4 bg-neutral-50">
           <div className="space-y-1.5 max-w-xs ml-auto">
-            <div className="flex justify-between text-sm"><span className="text-neutral-500">Subtotal</span><span className="font-medium text-neutral-800">{fmt(subtotal)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-neutral-500">Subtotal</span><span className="font-medium text-neutral-800">{fmt(convertedSubtotalSum)}</span></div>
             {discountAmount > 0 && <div className="flex justify-between text-sm"><span className="text-neutral-500">Descuento</span><span className="font-medium text-green-600">-{fmt(discountAmount)}</span></div>}
             {shippingCost > 0 && <div className="flex justify-between text-sm"><span className="text-neutral-500">Envío</span><span className="font-medium text-neutral-800">{fmt(shippingCost)}</span></div>}
             <div className="border-t border-neutral-300 pt-1.5 flex justify-between">
