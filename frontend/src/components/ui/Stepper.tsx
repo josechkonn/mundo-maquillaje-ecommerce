@@ -9,14 +9,14 @@ interface StepperProps {
 
 const Stepper = ({ steps, currentStep }: StepperProps) => {
   return (
-    <div className="flex items-center justify-center mb-8 overflow-x-auto scrollbar-hide">
-      <div className="flex items-center gap-0 min-w-0 shrink-0">
+    <div className="flex items-center justify-center mb-6 sm:mb-8">
+      <div className="flex items-center gap-0 w-full max-w-md">
         {steps.map((step, idx) => {
           const isCompleted = idx < currentStep;
           const isActive = idx === currentStep;
 
           return (
-            <div key={idx} className="flex items-center">
+            <div key={idx} className="flex items-center flex-1 last:flex-none">
               <div className="flex flex-col items-center">
                 <div
                   className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
@@ -36,7 +36,7 @@ const Stepper = ({ steps, currentStep }: StepperProps) => {
                   )}
                 </div>
                 <span
-                  className={`text-xs font-semibold mt-1.5 whitespace-nowrap transition-colors ${
+                  className={`text-xs font-semibold mt-1.5 whitespace-nowrap transition-colors hidden sm:block ${
                     isActive ? "text-text-base" : "text-neutral-400"
                   }`}
                 >
@@ -45,7 +45,7 @@ const Stepper = ({ steps, currentStep }: StepperProps) => {
               </div>
               {idx < steps.length - 1 && (
                 <div
-                  className={`w-8 sm:w-12 md:w-24 h-0.5 mx-1 sm:mx-2 mt-[-1.25rem] transition-colors shrink-0 ${
+                  className={`flex-1 h-0.5 mx-1.5 sm:mx-2 mt-[-1.25rem] transition-colors ${
                     isCompleted ? "bg-success-500" : "bg-neutral-200"
                   }`}
                 />

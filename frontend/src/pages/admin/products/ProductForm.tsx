@@ -11,6 +11,7 @@ import Stepper from "../../../components/ui/Stepper";
 import Button from "../../../components/ui/Button";
 import RichTextEditor from "../../../components/ui/RichTextEditor";
 import toast from "react-hot-toast";
+import { uploadImageToSupabase } from "../../../lib/uploadImage";
 import {
   DndContext,
   closestCenter,
@@ -90,40 +91,40 @@ const SortableVariationRow = ({
   const mainImg = getMainImage(variation);
 
   return (
-    <div ref={setNodeRef} style={style} className={`relative flex items-center gap-3 rounded-xl border px-4 py-3 group hover:shadow-md transition-shadow overflow-hidden ${isPrincipal ? "border-brand-300 bg-brand-50/30" : "border-neutral-200 bg-white"} ${isDragging ? "opacity-50" : ""}`}>
+    <div ref={setNodeRef} style={style} className={`relative flex items-center gap-2 sm:gap-3 rounded-xl border px-3 sm:px-4 py-3 group hover:shadow-md transition-shadow overflow-x-auto scrollbar-hide ${isPrincipal ? "border-brand-300 bg-brand-50/30" : "border-neutral-200 bg-white"} ${isDragging ? "opacity-50" : ""}`}>
       {isPrincipal && <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-400 rounded-l-xl" />}
       <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-neutral-700 hover:text-text-base p-1 touch-none shrink-0" title="Arrastrar para reordenar">
         <Bars3Icon className="w-5 h-5" />
       </button>
 
-      <label className="shrink-0 cursor-pointer">
+      <label className="shrink-0 cursor-pointer hidden sm:block">
         <input type="checkbox" checked={selectedVariationIds.has(variation.id)} onChange={e => { setSelectedVariationIds(prev => { const n = new Set(prev); if (e.target.checked) n.add(variation.id); else n.delete(variation.id); return n; }); }} className="rounded border-neutral-300 text-brand-400 focus:ring-brand-200" />
       </label>
 
       <div className="shrink-0">
         {mainImg ? (
-          <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-neutral-100 bg-neutral-100 group/img">
+          <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden border border-neutral-100 bg-neutral-100 group/img">
             <img src={mainImg.urlImage} alt={variation.name || "Imagen de variante"} loading="lazy" className="w-full h-full object-cover" />
             <button onClick={() => { setImagePickerVariationIndex(idx); setImagePickerImageIndex(null); }} className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white"><PencilIcon className="w-3 h-3" /></button>
           </div>
         ) : (
-          <button onClick={() => { setImagePickerVariationIndex(idx); setImagePickerImageIndex(null); }} className="w-10 h-10 rounded-lg border-2 border-dashed border-neutral-300 flex items-center justify-center text-text-muted hover:border-brand-400 hover:text-brand-500 transition-colors"><PhotoIcon className="w-4 h-4" /></button>
+          <button onClick={() => { setImagePickerVariationIndex(idx); setImagePickerImageIndex(null); }} className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg border-2 border-dashed border-neutral-300 flex items-center justify-center text-text-muted hover:border-brand-400 hover:text-brand-500 transition-colors"><PhotoIcon className="w-3 h-3 sm:w-4 sm:h-4" /></button>
         )}
       </div>
 
-      <button onClick={() => setEditingVariationIndex(idx)} className="min-w-0 max-w-[180px] flex items-center gap-1.5 hover:text-brand-500 transition-colors shrink-0">
+      <button onClick={() => setEditingVariationIndex(idx)} className="min-w-0 max-w-[120px] sm:max-w-[180px] flex items-center gap-1.5 hover:text-brand-500 transition-colors shrink-0">
         <PencilIcon className="w-3 h-3 text-text-muted shrink-0" />
-        <span className={`font-semibold text-sm md:text-base truncate ${isPrincipal ? "text-brand-600" : "text-text-base"}`}>{variation.name || "Sin título"}</span>
+        <span className={`font-semibold text-xs sm:text-sm md:text-base truncate ${isPrincipal ? "text-brand-600" : "text-text-base"}`}>{variation.name || "Sin título"}</span>
         {variation.hexColor && <span className="inline-block w-3 h-3 rounded-full border border-neutral-200 shrink-0" style={{ backgroundColor: variation.hexColor }} />}
         {isPrincipal && <span className="text-[10px] font-bold text-brand-400 shrink-0">★</span>}
       </button>
 
-      <div className="flex-1 flex items-center gap-2 overflow-x-auto min-w-0">
-        <div className="shrink-0 w-[120px]">
+      <div className="flex items-center gap-2 shrink-0">
+        <div className="shrink-0 w-[100px] sm:w-[120px]">
           <span className="text-[10px] text-text-muted block leading-none mb-0.5">SKU</span>
           <input value={variation.sku} onChange={e => updateVariation(idx, "sku", e.target.value)} placeholder="SKU" className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" />
         </div>
-        <div className="shrink-0 w-[80px]">
+        <div className="shrink-0 w-[70px] sm:w-[80px]">
           <span className="text-[10px] text-text-muted block leading-none mb-0.5">Stock</span>
           <input type="number" min={0} value={stockDraft[variation.id] ?? variation.stock} onFocus={() => { if (stockDraft[variation.id] === undefined) setStockDraft(prev => ({ ...prev, [variation.id]: String(variation.stock) })); }} onChange={e => { const val = e.target.value; setStockDraft(prev => ({ ...prev, [variation.id]: val })); updateVariation(idx, "stock", parseInt(val) || 0); }} onBlur={() => setStockDraft(prev => { const next = { ...prev }; delete next[variation.id]; return next; })} className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" />
         </div>
@@ -133,7 +134,7 @@ const SortableVariationRow = ({
           const displayedPrice = varPrices[currency.code] ?? convertPriceNumber(variation.price, baseCurrency, currency, currencies);
           const decimals = currency.decimalPlaces ?? 2;
           return (
-            <div key={currency.id} className="shrink-0 w-[120px]">
+            <div key={currency.id} className="shrink-0 w-[100px] sm:w-[120px]">
               <span className="text-[10px] text-text-muted block leading-none mb-0.5 flex items-center gap-1">{currency.code}{isBase && <span className="px-1 py-0 rounded bg-brand-100 text-brand-600 text-[9px] font-bold">BASE</span>}</span>
               {isBase ? (
                 <div className="flex items-center rounded-lg border border-brand-300 bg-white focus-within:ring-2 focus-within:ring-brand-200 overflow-hidden">
@@ -155,14 +156,14 @@ const SortableVariationRow = ({
             </div>
           );
         })}
-        <div className="shrink-0 w-[70px]">
+        <div className="shrink-0 w-[60px] sm:w-[70px]">
           <span className="text-[10px] text-text-muted block leading-none mb-0.5">Alerta</span>
           <input type="number" min={0} value={alertDraft[variation.id] ?? (variation.alertQuantity ?? 5)} onFocus={() => { if (alertDraft[variation.id] === undefined) setAlertDraft(prev => ({ ...prev, [variation.id]: String(variation.alertQuantity ?? 5) })); }} onChange={e => { const val = e.target.value; setAlertDraft(prev => ({ ...prev, [variation.id]: val })); updateVariation(idx, "alertQuantity", parseInt(val) || 0); }} onBlur={() => setAlertDraft(prev => { const next = { ...prev }; delete next[variation.id]; return next; })} className="w-full px-2 py-1.5 rounded-lg border border-neutral-300 text-xs outline-none focus:ring-2 focus:ring-brand-200" />
         </div>
       </div>
 
-      <button onClick={() => updateVariation(idx, "isActive", !variation.isActive)} role="switch" aria-checked={variation.isActive} aria-label={variation.isActive ? "Desactivar variante" : "Activar variante"} className={`shrink-0 relative w-9 h-5 rounded-full transition-colors ${variation.isActive ? "bg-success-500" : "bg-neutral-300"}`}>
-        <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${variation.isActive ? "translate-x-4" : ""}`} />
+      <button onClick={() => updateVariation(idx, "isActive", !variation.isActive)} role="switch" aria-checked={variation.isActive} aria-label={variation.isActive ? "Desactivar variante" : "Activar variante"} className={`shrink-0 relative w-8 h-[18px] sm:w-9 sm:h-5 rounded-full transition-colors ${variation.isActive ? "bg-success-500" : "bg-neutral-300"}`}>
+        <span className={`absolute top-[2px] left-[2px] w-3.5 h-3.5 sm:w-4 sm:h-4 bg-white rounded-full shadow-sm transition-transform ${variation.isActive ? "translate-x-[14px] sm:translate-x-4" : ""}`} />
       </button>
 
       <button onClick={() => removeVariation(idx)} className="shrink-0 p-1 rounded-lg hover:bg-danger-50 text-text-muted hover:text-danger-500 transition-colors"><TrashIcon className="w-4 h-4" /></button>
@@ -208,6 +209,11 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   const [useDefaultTitleMap, setUseDefaultTitleMap] = useState<Record<string, boolean>>({});
   const [useDefaultDescMap, setUseDefaultDescMap] = useState<Record<string, boolean>>({});
   const slugManuallyEdited = useRef(false);
+
+  const [dragOverKey, setDragOverKey] = useState<string | null>(null);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const multiFileInputRef = useRef<HTMLInputElement>(null);
+  const [multiFileTarget, setMultiFileTarget] = useState<number | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -490,11 +496,15 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
   };
 
   const handleNext = () => {
-    if (canGoNext()) setStep(prev => prev + 1);
+    if (canGoNext()) {
+      setStep(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleBack = () => {
     setStep(prev => prev - 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCancel = () => {
@@ -512,6 +522,52 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
       onCancel();
     }
   };
+
+  const handleMultiImageUpload = useCallback(async (files: FileList | File[], variationIdx: number) => {
+    const arr = Array.from(files);
+    if (arr.length === 0) return;
+
+    const validFiles = arr.filter(f => {
+      if (!f.type.startsWith("image/")) { toast.error(`${f.name}: solo se permiten imágenes`); return false; }
+      if (f.size > 5 * 1024 * 1024) { toast.error(`${f.name}: máximo 5MB`); return false; }
+      return true;
+    });
+    if (validFiles.length === 0) return;
+
+    setUploadingImages(true);
+    const variation = variations[variationIdx];
+    const newImages: ProductImage[] = [];
+
+    for (const file of validFiles) {
+      try {
+        const url = await uploadImageToSupabase(file);
+        newImages.push({
+          id: crypto.randomUUID(),
+          urlImage: url,
+          order: variation.images.length + newImages.length,
+          altText: variation.name,
+          isMain: variation.images.length === 0 && newImages.length === 1,
+        });
+      } catch (err: any) {
+        toast.error(err.message || `Error al subir ${file.name}`);
+      }
+    }
+
+    if (newImages.length > 0) {
+      updateVariation(variationIdx, "images", [...variation.images, ...newImages]);
+      toast.success(`${newImages.length} imagen${newImages.length > 1 ? "es" : ""} subida${newImages.length > 1 ? "s" : ""}`);
+    }
+    setUploadingImages(false);
+  }, [variations, updateVariation]);
+
+  const handleDrop = useCallback((e: React.DragEvent, variationIdx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverKey(null);
+    if (e.dataTransfer.files?.length) {
+      handleMultiImageUpload(e.dataTransfer.files, variationIdx);
+    }
+  }, [handleMultiImageUpload]);
 
   const inputClass = "w-full px-4 py-3 rounded-xl border border-neutral-400 text-sm text-text-base placeholder-neutral-500 outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 transition-all bg-white";
   const labelClass = "text-sm font-semibold text-text-base";
@@ -588,12 +644,23 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
             <>
               <div>
                 <label className={`${labelClass} mb-3 block`}>Imágenes</label>
-                <div className="flex flex-wrap gap-3">
+                <div
+                  className={`flex flex-wrap gap-3 rounded-2xl p-3 transition-colors ${dragOverKey === "0" ? "bg-brand-50 ring-2 ring-brand-400 ring-dashed" : "bg-neutral-50/50 ring-1 ring-neutral-200 ring-dashed"}`}
+                  onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverKey("0"); }}
+                  onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (e.currentTarget === e.target) setDragOverKey(null); }}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={(e) => handleDrop(e, 0)}
+                >
                   {baseVariation.images.map((img, imgIdx) => (
                     <div key={img.id} className="relative group w-24 h-24 rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50">
                       <img src={img.urlImage} alt={baseVariation.name || "Imagen de producto"} loading="lazy" className="w-full h-full object-cover" />
                       {img.isMain && (
                         <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-brand-500 text-white text-[9px] font-bold">Principal</span>
+                      )}
+                      {uploadingImages && (
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent" />
+                        </div>
                       )}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                         {!img.isMain && (
@@ -621,13 +688,16 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                     </div>
                   ))}
                   <button
-                    onClick={() => { setImagePickerVariationIndex(0); setImagePickerImageIndex(null); }}
-                    className="w-24 h-24 rounded-xl border-2 border-dashed border-neutral-300 flex flex-col items-center justify-center text-text-muted hover:border-brand-400 hover:text-brand-500 transition-colors"
+                    onClick={() => { setMultiFileTarget(0); multiFileInputRef.current?.click(); }}
+                    className={`w-24 h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-colors ${dragOverKey === "0" ? "border-brand-400 text-brand-500 bg-brand-50" : "border-neutral-300 text-text-muted hover:border-brand-400 hover:text-brand-500"}`}
                   >
                     <PhotoIcon className="w-6 h-6" />
-                    <span className="text-[10px] mt-1">Agregar</span>
+                    <span className="text-[10px] mt-1">{uploadingImages ? "Subiendo..." : "Agregar"}</span>
                   </button>
                 </div>
+                {dragOverKey === "0" && (
+                  <p className="text-xs text-brand-500 font-medium mt-2 text-center">Suelta las imágenes aquí</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1101,20 +1171,26 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                   </div>
 
                   {v.attributeName === "Color" && (
-                    <div>
-                      <label className="text-sm font-bold text-text-muted mb-1.5 block">Color (hex)</label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="color"
-                          value={v.hexColor || "#cccccc"}
-                          onChange={e => updateVariationField("hexColor", e.target.value)}
-                          className="w-10 h-10 rounded-lg border border-neutral-300 cursor-pointer"
-                        />
+                    <div className="min-w-0">
+                      <label className="text-sm font-bold text-text-muted mb-1.5 block">Color</label>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="relative shrink-0">
+                          <input
+                            type="color"
+                            value={v.hexColor || "#cccccc"}
+                            onChange={e => updateVariationField("hexColor", e.target.value)}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                          <div
+                            className="w-10 h-10 rounded-xl border-2 border-neutral-200 shadow-sm cursor-pointer hover:border-brand-400 transition-colors"
+                            style={{ backgroundColor: v.hexColor || "#cccccc" }}
+                          />
+                        </div>
                         <input
                           value={v.hexColor || ""}
                           onChange={e => updateVariationField("hexColor", e.target.value)}
                           placeholder="#RRGGBB"
-                          className="flex-1 px-4 py-2.5 rounded-xl border border-neutral-300 text-sm outline-none focus:ring-2 focus:ring-brand-200 bg-white"
+                          className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-neutral-300 text-sm outline-none focus:ring-2 focus:ring-brand-200 bg-white"
                         />
                       </div>
                     </div>
@@ -1153,12 +1229,23 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
 
                   <div>
                     <label className="text-sm font-bold text-text-muted mb-2 block">Imágenes</label>
-                    <div className="flex flex-wrap gap-3">
+                    <div
+                      className={`flex flex-wrap gap-3 rounded-2xl p-3 transition-colors ${dragOverKey === `modal-${editingVariationIndex}` ? "bg-brand-50 ring-2 ring-brand-400 ring-dashed" : "bg-neutral-50/50 ring-1 ring-neutral-200 ring-dashed"}`}
+                      onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverKey(`modal-${editingVariationIndex}`); }}
+                      onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (e.currentTarget === e.target) setDragOverKey(null); }}
+                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverKey(null); if (e.dataTransfer.files?.length && editingVariationIndex !== null) handleMultiImageUpload(e.dataTransfer.files, editingVariationIndex); }}
+                    >
                       {v.images.map((img, imgIdx) => (
                         <div key={img.id} className="relative group w-20 h-20 rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50">
                           <img src={img.urlImage} alt={v.name || "Imagen de variante"} loading="lazy" className="w-full h-full object-cover" />
                           {img.isMain && (
                             <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-brand-500 text-white text-[9px] font-bold">Principal</span>
+                          )}
+                          {uploadingImages && (
+                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                            </div>
                           )}
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                             {!img.isMain && (
@@ -1187,13 +1274,16 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
                         </div>
                       ))}
                       <button
-                        onClick={() => { setImagePickerVariationIndex(editingVariationIndex); setImagePickerImageIndex(null); }}
-                        className="w-20 h-20 rounded-xl border-2 border-dashed border-neutral-300 flex flex-col items-center justify-center text-text-muted hover:border-brand-400 hover:text-brand-500 transition-colors"
+                        onClick={() => { setMultiFileTarget(editingVariationIndex); multiFileInputRef.current?.click(); }}
+                        className={`w-20 h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-colors ${dragOverKey === `modal-${editingVariationIndex}` ? "border-brand-400 text-brand-500 bg-brand-50" : "border-neutral-300 text-text-muted hover:border-brand-400 hover:text-brand-500"}`}
                       >
                         <PlusIcon className="w-5 h-5" />
-                        <span className="text-[10px] mt-1">Agregar</span>
+                        <span className="text-[10px] mt-1">{uploadingImages ? "Subiendo..." : "Agregar"}</span>
                       </button>
                     </div>
+                    {dragOverKey === `modal-${editingVariationIndex}` && (
+                      <p className="text-xs text-brand-500 font-medium mt-2 text-center">Suelta las imágenes aquí</p>
+                    )}
                   </div>
                 </>
               );
@@ -1233,6 +1323,22 @@ const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
           }}
         />
       )}
+
+      {/* Hidden multi-file input for image drag-and-drop */}
+      <input
+        ref={multiFileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files?.length && multiFileTarget !== null) {
+            handleMultiImageUpload(e.target.files, multiFileTarget);
+          }
+          e.target.value = "";
+          setMultiFileTarget(null);
+        }}
+      />
     </div>
   );
 };

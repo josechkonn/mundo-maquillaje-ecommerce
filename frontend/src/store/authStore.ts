@@ -18,6 +18,7 @@ interface AuthState {
   session: Session | null;
   profile: Profile | null;
   isLoading: boolean;
+  authReady: boolean;
   setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
   setProfile: (profile: Profile | null) => void;
@@ -32,6 +33,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   profile: null,
   isLoading: true,
+  authReady: false,
   setUser: (user) => set({ user }),
   setSession: (session) => set({ session }),
   setProfile: (profile) => set({ profile }),
@@ -95,6 +97,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         useCartStore.getState().loadCart(false);
       }
       set({ isLoading: false });
+      set({ authReady: true });
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

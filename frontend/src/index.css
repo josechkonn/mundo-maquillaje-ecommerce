@@ -291,3 +291,12 @@
 
 /* Ocultar flechas en móvil si no se usa display: none en el componente */
 
+/* ─── Scrollbar Hide ─── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+

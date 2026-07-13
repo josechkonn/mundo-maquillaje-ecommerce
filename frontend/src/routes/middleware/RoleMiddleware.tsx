@@ -9,8 +9,9 @@ const RoleMiddleware = () => {
   const isLoading = useAuthStore((state) => state.isLoading);
   const profile = useAuthStore((state) => state.profile);
   const user = useAuthStore((state) => state.user);
+  const authReady = useAuthStore((state) => state.authReady);
 
-  if (isLoading || (user && !profile)) {
+  if (!authReady) {
     return (
       <AdminLayout>
         <AdminSkeleton />

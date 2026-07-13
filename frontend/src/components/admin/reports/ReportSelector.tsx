@@ -6,7 +6,6 @@ import {
   UsersIcon,
   CubeIcon,
   TagIcon,
-  ArrowPathIcon,
   ChartBarSquareIcon,
 } from "@heroicons/react/24/outline";
 import { ChevronDownIcon } from "@heroicons/react/24/solid";
@@ -18,7 +17,6 @@ const REPORT_TYPES = [
   { id: "customers", label: "Clientes", icon: UsersIcon },
   { id: "best-sellers", label: "Más Vendidos", icon: CubeIcon },
   { id: "revenue-by-category", label: "Ingresos por Categoría", icon: TagIcon },
-  { id: "transactions", label: "Transacciones", icon: ArrowPathIcon },
   { id: "conversion", label: "Conversión", icon: ChartBarSquareIcon },
 ];
 

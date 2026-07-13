@@ -711,7 +711,7 @@ function DataTable<T>({
                         onClick={() => toggleRow(rowIndex)}
                         className="w-full flex items-center justify-between px-5 py-4"
                       >
-                        <div className="text-sm font-semibold text-neutral-800">
+                        <div className="text-sm font-semibold text-neutral-800 min-w-0 flex-1 overflow-hidden">
                           {firstCol.render ? firstCol.render(item) : (item as any)[firstCol.key]}
                         </div>
                         <div className={`w-8 h-8 rounded-full bg-brand-300 flex items-center justify-center transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>

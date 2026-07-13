@@ -1,5 +1,6 @@
 package mundo_maquillaje.ecommerce.Exceptions;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -40,6 +41,18 @@ public class GlobalExceptionHandler {
         Map<String, String> error = new HashMap<>();
         error.put("message", "Datos inválidos en la solicitud. Verifica que los identificadores tengan el formato correcto.");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        Map<String, String> error = new HashMap<>();
+        String message = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
+        if (message.contains("slug")) {
+            error.put("message", "Ya existe un producto con ese nombre");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+        }
+        error.put("message", "Error de integridad de datos");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler(RuntimeException.class)

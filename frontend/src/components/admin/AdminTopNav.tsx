@@ -34,7 +34,7 @@ const SECTION_TITLES: Record<string, string> = {
   "/admin/ajustes": "Ajustes",
 };
 
-const SECTION_DATE_FILTER: string[] = ["/admin", "/admin/transacciones"];
+const SECTION_DATE_FILTER: string[] = ["/admin", "/admin/reportes", "/admin/transacciones"];
 const SECTION_CURRENCY: string[] = ["/admin", "/admin/reportes"];
 
 const FLAG_MAP: Record<string, string> = {
@@ -88,7 +88,7 @@ const AdminTopNav = ({ collapsed, onToggle }: AdminTopNavProps) => {
   const { startDate, endDate, setDateRange } = useDashboardDateStore();
   const { selectedReport } = useReportsStore();
   const showDateFilter = SECTION_DATE_FILTER.includes(location.pathname);
-  const showCurrency = SECTION_CURRENCY.includes(location.pathname) && !(location.pathname === "/admin/reportes" && selectedReport === "stock");
+  const showCurrency = SECTION_CURRENCY.includes(location.pathname) && !(location.pathname === "/admin/reportes" && (selectedReport === "stock" || selectedReport === "conversion"));
   const hasDates = !!(startDate && endDate);
   const [dateDropOpen, setDateDropOpen] = useState(false);
   const dateDropRef = useRef<HTMLDivElement>(null);

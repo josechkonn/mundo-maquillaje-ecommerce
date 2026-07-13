@@ -320,15 +320,20 @@ const ProductsPage = () => {
       setEditingProduct(null);
       toast.success(editingProduct ? "Producto actualizado correctamente." : "Producto creado correctamente.");
       fetchProducts();
-    } catch {
-      toast.error("Error al guardar el producto.");
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.includes("Ya existe un producto")) {
+        toast.error("Ya existe un producto con ese nombre.");
+      } else {
+        toast.error("Error al guardar el producto.");
+      }
       throw new Error("Error al guardar");
     }
   };
 
   if (showForm) {
     return (
-      <div className="bg-white rounded-3xl p-8 animate-fade-in">
+      <div className="bg-white rounded-3xl p-4 sm:p-8 animate-fade-in">
         <ProductForm
           product={editingProduct}
           onSave={handleSaveForm}

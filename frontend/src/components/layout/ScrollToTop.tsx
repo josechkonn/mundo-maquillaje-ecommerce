@@ -5,7 +5,7 @@ export default function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    // Retrasar ligeramente para asegurar que la página nueva se haya renderizado
+    if (pathname.startsWith("/admin")) return;
     setTimeout(() => {
       window.scrollTo(0, 0);
     }, 0);

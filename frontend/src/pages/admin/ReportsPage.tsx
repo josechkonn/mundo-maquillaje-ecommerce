@@ -11,7 +11,6 @@ const OrdersReport = lazy(() => import("../../components/admin/reports/OrdersRep
 const CustomersReport = lazy(() => import("../../components/admin/reports/CustomersReport"));
 const BestSellersReport = lazy(() => import("../../components/admin/reports/BestSellersReport"));
 const RevenueByCategoryReport = lazy(() => import("../../components/admin/reports/RevenueByCategoryReport"));
-const TransactionsReport = lazy(() => import("../../components/admin/reports/TransactionsReport"));
 const ConversionReport = lazy(() => import("../../components/admin/reports/ConversionReport"));
 
 const ReportsPage = () => {
@@ -43,8 +42,6 @@ const ReportsPage = () => {
         return <BestSellersReport {...commonProps} />;
       case "revenue-by-category":
         return <RevenueByCategoryReport {...commonProps} />;
-      case "transactions":
-        return <TransactionsReport {...commonProps} />;
       case "conversion":
         return <ConversionReport {...commonProps} />;
       default:
