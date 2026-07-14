@@ -10,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface CartProductRepository extends JpaRepository<CartProduct, UUID> {
     List<CartProduct> findAllByCartIdAndVariationId(UUID cartId, UUID variationId);
+    List<CartProduct> findAllByVariationIdIn(List<UUID> variationIds);
+    void deleteAllByVariationIdIn(List<UUID> variationIds);
 }

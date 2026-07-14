@@ -5,6 +5,10 @@ import mundo_maquillaje.ecommerce.Models.Product;
 import mundo_maquillaje.ecommerce.Models.ProductVariation;
 import mundo_maquillaje.ecommerce.Repositories.ProductRepository;
 import mundo_maquillaje.ecommerce.Repositories.ProductSpecifications;
+import mundo_maquillaje.ecommerce.Repositories.CartProductRepository;
+import mundo_maquillaje.ecommerce.Repositories.OrderProductRepository;
+import mundo_maquillaje.ecommerce.Repositories.FavoriteRepository;
+import mundo_maquillaje.ecommerce.Repositories.CollectionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +31,10 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final CartProductRepository cartProductRepository;
+    private final OrderProductRepository orderProductRepository;
+    private final FavoriteRepository favoriteRepository;
+    private final CollectionRepository collectionRepository;
 
     public List<Product> getAllProducts() {
         return productRepository.findAll();
@@ -342,6 +350,16 @@ public class ProductService {
     @Transactional
     public void deleteProduct(UUID id) {
         Product product = getProductByIdAdmin(id);
+        List<UUID> variationIds = product.getVariations().stream()
+                .map(ProductVariation::getId)
+                .filter(Objects::nonNull)
+                .toList();
+        if (!variationIds.isEmpty()) {
+            cartProductRepository.deleteAllByVariationIdIn(variationIds);
+            orderProductRepository.detachVariationsByIds(variationIds);
+        }
+        favoriteRepository.deleteAllByProductId(id);
+        collectionRepository.deleteAllByProductId(id);
         productRepository.delete(product);
     }
 

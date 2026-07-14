@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface CollectionRepository extends JpaRepository<ProductCollection, UUID> {
     List<ProductCollection> findAllByIsActiveOrderByDisplayOrderAsc(Boolean isActive);
+    void deleteAllByProductId(UUID productId);
 }

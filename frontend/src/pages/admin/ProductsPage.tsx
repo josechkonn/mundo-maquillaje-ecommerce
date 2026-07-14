@@ -355,8 +355,8 @@ const ProductsPage = () => {
         title={confirmDelete === "bulk" ? "Eliminar productos" : "Eliminar producto"}
         message={
           confirmDelete === "bulk"
-            ? `¿Estás seguro de eliminar ${selectedIds.size} productos? Esta acción no se puede deshacer.`
-            : "¿Estás seguro de eliminar este producto? Esta acción no se puede deshacer."
+            ? `¿Estás seguro de eliminar ${selectedIds.size} productos? Esta acción eliminará permanentemente las variantes, imágenes, referencias en carritos y colecciones asociadas. Los pedidos existentes conservarán el nombre pero perderán la referencia. Esta acción no se puede deshacer.`
+            : "¿Estás seguro de eliminar este producto? Se eliminarán permanentemente sus variantes, imágenes, referencias en carritos y colecciones. Los pedidos existentes conservarán el nombre pero perderán la referencia. Esta acción no se puede deshacer."
         }
         loading={deleting}
       />
