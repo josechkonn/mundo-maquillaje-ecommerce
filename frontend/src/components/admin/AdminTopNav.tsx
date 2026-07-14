@@ -213,7 +213,7 @@ const AdminTopNav = ({ collapsed, onToggle }: AdminTopNavProps) => {
                 </button>
 
                 {dateDropOpen && (
-                  <div className="absolute right-0 top-full mt-2 z-50 animate-fade-in">
+                  <div className="absolute right-0 sm:right-auto sm:left-0 top-full mt-2 z-50 animate-fade-in">
                     <DateRangePicker
                       startDate={startDate}
                       endDate={endDate}
