@@ -6,8 +6,6 @@ import AdminSkeleton from "../../components/admin/AdminSkeleton";
 
 const RoleMiddleware = () => {
   const { hasPermission } = usePermissions();
-  const isLoading = useAuthStore((state) => state.isLoading);
-  const profile = useAuthStore((state) => state.profile);
   const user = useAuthStore((state) => state.user);
   const authReady = useAuthStore((state) => state.authReady);
 

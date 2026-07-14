@@ -341,7 +341,7 @@ public class ProductService {
 
     @Transactional
     public void deleteProduct(UUID id) {
-        Product product = getProductById(id);
+        Product product = getProductByIdAdmin(id);
         productRepository.delete(product);
     }
 
