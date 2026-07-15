@@ -8,6 +8,14 @@ export interface PaymentMethodField {
   displayOrder: number;
 }
 
+export interface PaymentMethodCashRegister {
+  id: string;
+  name: string;
+  description?: string;
+  currency?: Currency;
+  isActive: boolean;
+}
+
 export interface PaymentMethod {
   id: string;
   name: string;
@@ -17,6 +25,7 @@ export interface PaymentMethod {
   currency: Currency;
   imageUrl?: string;
   fields: PaymentMethodField[];
+  cashRegister?: PaymentMethodCashRegister;
 }
 
 export const paymentMethodService = {

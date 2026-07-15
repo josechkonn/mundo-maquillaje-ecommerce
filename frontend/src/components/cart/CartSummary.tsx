@@ -117,6 +117,12 @@ const CartSummary = ({
     currencies
   );
 
+  useEffect(() => {
+    if (discountInfo?.code && onApplyDiscount) {
+      onApplyDiscount(discountInfo.code, subtotal);
+    }
+  }, [subtotal, selectedCurrency]);
+
   // El descuento ya viene calculado en discountAmount (en la moneda en que se aplicó, 
   // usualmente USD o la base del sistema). Necesitamos asegurarnos de que se reste correctamente.
   // Si discountInfo.discountAmount está disponible, lo usamos.

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { PlusIcon, CreditCardIcon, XMarkIcon, ArrowUpIcon, ArrowDownIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { paymentMethodService, type PaymentMethod } from "../../services/paymentMethodService";
 import { currencyService } from "../../services/currencyService";
+import { cashRegisterService, type CashRegister } from "../../services/cashRegisterService";
 import type { Currency } from "../../services/productService";
 import DataTable, { type ColumnDef } from "../../components/ui/DataTable";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
@@ -19,6 +20,7 @@ interface FieldRow {
 const MetodosPagoPage = () => {
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [cashRegisters, setCashRegisters] = useState<CashRegister[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -34,6 +36,7 @@ const MetodosPagoPage = () => {
     slug: "",
     displayOrder: 1,
     currencyId: "",
+    cashRegisterId: "",
     isActive: true,
     imageUrl: "",
     fields: [] as FieldRow[],
@@ -55,6 +58,7 @@ const MetodosPagoPage = () => {
   useEffect(() => {
     fetchMethods();
     currencyService.getAllCurrencies().then(setCurrencies).catch(() => toast.error("Error al cargar monedas"));
+    cashRegisterService.getAllCashRegisters().then(setCashRegisters).catch(() => {});
   }, [fetchMethods]);
 
   const filtered = methods.filter((m) => {
@@ -68,7 +72,7 @@ const MetodosPagoPage = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setFormData({ name: "", slug: "", displayOrder: methods.length + 1, currencyId: currencies[0]?.id || "", isActive: true, imageUrl: "", fields: [] });
+    setFormData({ name: "", slug: "", displayOrder: methods.length + 1, currencyId: currencies[0]?.id || "", cashRegisterId: "", isActive: true, imageUrl: "", fields: [] });
     setShowForm(true);
   };
 
@@ -79,6 +83,7 @@ const MetodosPagoPage = () => {
       slug: m.slug,
       displayOrder: m.displayOrder,
       currencyId: m.currency?.id || "",
+      cashRegisterId: m.cashRegister?.id || "",
       isActive: m.isActive,
       imageUrl: m.imageUrl || "",
       fields: (m.fields || []).map((f, i) => ({ id: f.id, field: f.field, value: f.value, displayOrder: f.displayOrder ?? i + 1 })),
@@ -109,9 +114,13 @@ const MetodosPagoPage = () => {
       };
       if (editing) {
         await paymentMethodService.update(editing.id, payload);
+        await paymentMethodService.assignCashRegister(editing.id, formData.cashRegisterId || null);
         toast.success("Método de pago actualizado.");
       } else {
-        await paymentMethodService.create(payload);
+        const created = await paymentMethodService.create(payload);
+        if (formData.cashRegisterId) {
+          await paymentMethodService.assignCashRegister(created.id, formData.cashRegisterId);
+        }
         toast.success("Método de pago creado.");
       }
       setShowForm(false);
@@ -244,6 +253,14 @@ const MetodosPagoPage = () => {
       ) : <span className="text-p-xs text-text-muted">—</span>,
     },
     {
+      key: "cashRegister",
+      header: "Caja",
+      className: "text-center w-28",
+      render: (m) => m.cashRegister ? (
+        <span className="px-2 py-1 rounded-lg bg-success-50 text-success-600 text-xs font-bold">{m.cashRegister.name}</span>
+      ) : <span className="text-p-xs text-text-muted">Sin caja</span>,
+    },
+    {
       key: "fields",
       header: "Campos",
       className: "text-center w-20",
@@ -300,7 +317,7 @@ const MetodosPagoPage = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-semibold text-text-base mb-1.5 block">Moneda</label>
-              <select value={formData.currencyId} onChange={e => setFormData(p => ({ ...p, currencyId: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-neutral-400 text-sm outline-none focus:ring-2 focus:ring-brand-200 bg-white">
+              <select value={formData.currencyId} onChange={e => setFormData(p => ({ ...p, currencyId: e.target.value, cashRegisterId: "" }))} className="w-full px-4 py-3 rounded-xl border border-neutral-400 text-sm outline-none focus:ring-2 focus:ring-brand-200 bg-white">
                 <option value="">Seleccionar...</option>
                 {currencies.filter(c => c.isActive !== false).map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
               </select>
@@ -308,6 +325,19 @@ const MetodosPagoPage = () => {
             <div>
               <label className="text-sm font-semibold text-text-base mb-1.5 block">Orden</label>
               <input type="number" min={1} value={formData.displayOrder} onChange={e => setFormData(p => ({ ...p, displayOrder: parseInt(e.target.value) || 1 }))} className="w-full px-4 py-3 rounded-xl border border-neutral-400 text-sm outline-none focus:ring-2 focus:ring-brand-200 bg-white" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-semibold text-text-base mb-1.5 block">Caja asignada</label>
+              <select value={formData.cashRegisterId} onChange={e => setFormData(p => ({ ...p, cashRegisterId: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-neutral-400 text-sm outline-none focus:ring-2 focus:ring-brand-200 bg-white">
+                <option value="">Ninguna</option>
+                {cashRegisters.filter(cr => cr.isActive && (!formData.currencyId || cr.currency?.id === formData.currencyId)).map(cr => (
+                  <option key={cr.id} value={cr.id}>{cr.name} ({cr.currency?.code})</option>
+                ))}
+              </select>
+              <p className="text-xs text-text-muted mt-1">Caja donde se depositarán los pagos de este método</p>
             </div>
           </div>
 

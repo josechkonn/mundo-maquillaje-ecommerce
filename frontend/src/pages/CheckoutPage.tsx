@@ -174,12 +174,7 @@ const CheckoutPage = () => {
     fetchConfig();
   }, [fetchConfig]);
 
-  useEffect(() => {
-    if (!selectedPaymentId && paymentMethods.length > 0 && selectedCurrency) {
-      const matched = paymentMethods.find(pm => pm.currency?.id === selectedCurrency.id);
-      if (matched) setSelectedPayment(matched.id);
-    }
-  }, [paymentMethods, selectedCurrency?.id]);
+
 
   if (isLoading) {
     return (
