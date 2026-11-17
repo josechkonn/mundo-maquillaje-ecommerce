@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { configService, type StoreConfig } from "../../services/configService";
-import { checkoutService, type PaymentMethod } from "../../services/checkoutService";
+import { paymentMethodService, type PaymentMethod } from "../../services/paymentMethodService";
 import logo from "../../assets/imgs/logo.webp";
 
 const Footer = () => {
@@ -23,8 +23,8 @@ const Footer = () => {
 
     const fetchPaymentMethods = async () => {
       try {
-        const checkoutConfig = await checkoutService.getConfig();
-        setPaymentMethods(checkoutConfig.paymentMethods.filter(pm => pm.isActive));
+        const methods = await paymentMethodService.getActive();
+        setPaymentMethods(methods.filter(pm => pm.isActive));
       } catch (error) {
         console.error("Error fetching payment methods:", error);
       }
