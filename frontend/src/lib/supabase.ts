@@ -2,11 +2,15 @@ import { createClient } from "@supabase/supabase-js";
 
 // Estas variables deben venir del archivo .env.local
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
+// VITE_SUPABASE_ANON_PUBLIC es el nombre nuevo (Vercel bloquea nombres públicos con "KEY");
+// se mantiene el antiguo como respaldo para entornos locales.
+const supabaseAnonKey =
+  import.meta.env.VITE_SUPABASE_ANON_PUBLIC ||
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
-    "Faltan las variables de entorno de Supabase (VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY)."
+    "Faltan las variables de entorno de Supabase (VITE_SUPABASE_URL y VITE_SUPABASE_ANON_PUBLIC)."
   );
 }
 
