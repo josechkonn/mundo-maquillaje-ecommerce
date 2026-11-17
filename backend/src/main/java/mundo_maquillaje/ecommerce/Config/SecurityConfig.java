@@ -56,6 +56,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/banners", "/api/banners/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/collections", "/api/collections/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/config", "/api/payment-methods/active").permitAll()
                         .requestMatchers("/api/cart/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/discount-codes/validate").permitAll()
                         .requestMatchers("/api/discount-codes/**").authenticated()
