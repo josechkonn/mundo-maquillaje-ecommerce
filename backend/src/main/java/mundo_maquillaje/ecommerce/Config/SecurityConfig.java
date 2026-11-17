@@ -76,8 +76,9 @@ public class SecurityConfig {
                     request.getRequestURI(), authException.getMessage());
             response.setStatus(401);
             response.setContentType("application/json");
+            // No se refleja el mensaje interno de la excepcion (evita JSON roto/inyectado y fuga de detalles)
             response.getWriter()
-                    .write("{\"error\": \"Unauthorized\", \"message\": \"" + authException.getMessage() + "\"}");
+                    .write("{\"error\": \"Unauthorized\", \"message\": \"Autenticacion requerida o token invalido\"}");
         };
     }
 

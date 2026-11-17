@@ -35,10 +35,12 @@ public class TransactionController {
 
     @GetMapping
     public Map<String, Object> getAllTransactions(
+            Authentication authentication,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam(defaultValue = "20") int size) {
+        permissionService.requirePermission(authentication, "access.admin");
         PageRequest pageable = PageRequest.of(0, size);
         List<Transaction> transactions;
         String nextCursor = null;
@@ -134,7 +136,8 @@ public class TransactionController {
     }
 
     @GetMapping("/cash-register/{cashRegisterId}")
-    public List<Transaction> getTransactionsByCashRegister(@PathVariable UUID cashRegisterId) {
+    public List<Transaction> getTransactionsByCashRegister(Authentication authentication, @PathVariable UUID cashRegisterId) {
+        permissionService.requirePermission(authentication, "access.admin");
         return transactionRepository.findByCashRegisterIdOrderByCreatedAtDesc(cashRegisterId);
     }
 

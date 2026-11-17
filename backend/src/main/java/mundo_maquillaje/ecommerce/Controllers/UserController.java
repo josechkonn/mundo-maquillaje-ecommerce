@@ -26,6 +26,7 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<?> getAllUsers(
+            Authentication authentication,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String role,
             @RequestParam(required = false) UUID stateId,
@@ -33,6 +34,8 @@ public class UserController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
+
+        permissionService.requirePermission(authentication, "access.admin");
 
         Sort sort = sortDir.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
@@ -50,7 +53,8 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public Profile getUserById(@PathVariable UUID id) {
+    public Profile getUserById(Authentication authentication, @PathVariable UUID id) {
+        permissionService.requirePermission(authentication, "access.admin");
         return profileService.getProfileById(id);
     }
 

@@ -27,21 +27,24 @@ public class CashRegisterController {
     private final PermissionService permissionService;
 
     @GetMapping
-    public List<CashRegisterResponseDTO> getAllCashRegisters() {
+    public List<CashRegisterResponseDTO> getAllCashRegisters(Authentication authentication) {
+        permissionService.requirePermission(authentication, "access.admin");
         return cashRegisterService.getAllCashRegisters().stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
     @GetMapping("/active")
-    public List<CashRegisterResponseDTO> getActiveCashRegisters() {
+    public List<CashRegisterResponseDTO> getActiveCashRegisters(Authentication authentication) {
+        permissionService.requirePermission(authentication, "access.admin");
         return cashRegisterService.getActiveCashRegisters().stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public CashRegisterResponseDTO getCashRegisterById(@PathVariable UUID id) {
+    public CashRegisterResponseDTO getCashRegisterById(Authentication authentication, @PathVariable UUID id) {
+        permissionService.requirePermission(authentication, "access.admin");
         return toResponseDTO(cashRegisterService.getCashRegisterById(id));
     }
 

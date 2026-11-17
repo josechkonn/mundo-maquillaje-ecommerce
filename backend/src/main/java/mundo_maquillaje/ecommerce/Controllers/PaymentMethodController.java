@@ -25,7 +25,8 @@ public class PaymentMethodController {
     private final PermissionService permissionService;
 
     @GetMapping
-    public List<PaymentMethod> getAllPaymentMethods() {
+    public List<PaymentMethod> getAllPaymentMethods(Authentication authentication) {
+        permissionService.requirePermission(authentication, "access.admin");
         return paymentMethodRepository.findAll();
     }
 
@@ -35,7 +36,8 @@ public class PaymentMethodController {
     }
 
     @GetMapping("/{id}")
-    public PaymentMethod getPaymentMethodById(@PathVariable UUID id) {
+    public PaymentMethod getPaymentMethodById(Authentication authentication, @PathVariable UUID id) {
+        permissionService.requirePermission(authentication, "access.admin");
         return paymentMethodRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Método de pago no encontrado"));
     }

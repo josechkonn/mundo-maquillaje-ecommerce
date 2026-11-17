@@ -83,6 +83,8 @@ public class OrderController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "true") boolean sortDesc) {
 
+        permissionService.requirePermission(authentication, "access.admin");
+
         Page<OrderListResponseDTO> pageResult = orderService.getAdminOrders(
                 page, size, search, status, sortBy, sortDesc, startDate, endDate);
 
