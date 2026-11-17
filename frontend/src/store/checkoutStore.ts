@@ -46,7 +46,6 @@ export const useCheckoutStore = create<CheckoutState>((set) => ({
     set({ isLoading: true });
     try {
       const config = await checkoutService.getConfig();
-      console.log("Checkout Config cargada:", config);
 
       if (!config) {
         throw new Error("La configuración del checkout llegó vacía");

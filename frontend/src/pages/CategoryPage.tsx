@@ -63,7 +63,7 @@ const CategoryPage = () => {
           const results = await Promise.all(sectionPromises);
           const activeSections = results.filter((s): s is ProductSection => s !== null);
 
-          let finalSections = activeSections.slice(0, 2);
+          const finalSections = activeSections.slice(0, 2);
 
           // 4. Fallback: Si no hay productos en subcategorías, cargar productos generales de la categoría madre
           if (finalSections.length === 0) {

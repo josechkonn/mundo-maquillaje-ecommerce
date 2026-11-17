@@ -165,6 +165,7 @@ const AddressForm = ({ initialData, onSubmit, onCancel, isLoading, hideHeader = 
     }
   }, [initialData]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleStateChange = useCallback((id: string, _name: string) => {
     setFormData(prev => ({ ...prev, stateId: id, cityId: "", municipalityId: "", parishId: "" }));
     setCities([]);

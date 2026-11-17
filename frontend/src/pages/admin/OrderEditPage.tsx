@@ -89,7 +89,6 @@ const OrderEditPage = () => {
     try {
       const data = await productService.getAllProducts(0, 10000);
       const productList = Array.isArray(data) ? data : (data as any).content || [];
-      console.log('[loadProducts] Loaded', productList.length, 'products');
       setProducts(productList);
     } catch (e) {
       console.error('[loadProducts] Error:', e);

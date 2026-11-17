@@ -3,9 +3,16 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import FormField from "../../components/ui/FormField";
 import SubmitButton from "../../components/ui/SubmitButton";
+import { supabase, translateAuthError } from "../../lib/supabase";
+
+interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
 
 const ChangePasswordPage = () => {
-  const { register, handleSubmit, formState: { isSubmitting }, reset } = useForm({
+  const { register, handleSubmit, formState: { isSubmitting }, reset } = useForm<ChangePasswordData>({
     defaultValues: {
       currentPassword: "",
       newPassword: "",
@@ -17,20 +24,40 @@ const ChangePasswordPage = () => {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const onSubmit = async (_data: any) => {
+  const onSubmit = async (data: ChangePasswordData) => {
+    if (data.newPassword.length < 6) {
+      toast.error("La nueva contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+    if (data.newPassword !== data.confirmPassword) {
+      toast.error("Las contraseñas no coinciden");
+      return;
+    }
     const id = toast.loading("Actualizando contraseña...");
     try {
-      // TODO: Implementar lógica de cambio de contraseña con supabase
-      // await supabase.auth.updateUser({ password: data.newPassword });
-      
-      // Simular delay de red
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const { data: userData } = await supabase.auth.getUser();
+      const email = userData.user?.email;
+      if (!email) throw new Error("No hay sesión activa");
+
+      // Verifica la contraseña actual antes de permitir el cambio
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email,
+        password: data.currentPassword,
+      });
+      if (verifyError) {
+        toast.error("La contraseña actual es incorrecta", { id });
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({ password: data.newPassword });
+      if (error) throw error;
+
       toast.success("¡Contraseña actualizada con éxito! ✨", { id });
       reset();
     } catch (error) {
       console.error("Error al actualizar la contraseña:", error);
-      toast.error("No se pudo actualizar la contraseña", { id });
+      const message = error instanceof Error ? translateAuthError(error.message) : "No se pudo actualizar la contraseña";
+      toast.error(message, { id });
     }
   };
 

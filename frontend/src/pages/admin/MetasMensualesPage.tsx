@@ -110,8 +110,6 @@ const MetasMensualesPage = () => {
       currencyService.getAllCurrencies(),
     ])
       .then(([goalsData, currenciesData]) => {
-        console.log("Goals loaded:", goalsData);
-        console.log("Currencies loaded:", currenciesData);
         setGoals(goalsData || []);
         setCurrencies((currenciesData || []).filter((c) => c.isActive !== false));
       })

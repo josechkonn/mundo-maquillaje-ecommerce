@@ -267,7 +267,7 @@ const MonedasPage = () => {
                   <div>
                     <label className="flex items-center gap-1.5 text-p-xs font-bold text-text-muted mb-1.5">
                       Tasa de cambio
-                      <span title="Valor por el que se multiplica el precio base">{/* @ts-ignore */}
+                      <span title="Valor por el que se multiplica el precio base">
                         <InformationCircleIcon className="w-3.5 h-3.5 text-neutral-400 cursor-help" />
                       </span>
                     </label>

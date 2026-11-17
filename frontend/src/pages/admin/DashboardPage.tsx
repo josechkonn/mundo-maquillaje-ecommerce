@@ -25,6 +25,7 @@ interface DashboardOverview {
 
 const DashboardContext = createContext<DashboardOverview | null>(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useDashboardData = () => useContext(DashboardContext);
 
 const defaultOverview: DashboardOverview = {

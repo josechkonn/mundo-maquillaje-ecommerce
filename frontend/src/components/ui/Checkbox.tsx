@@ -62,7 +62,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
 
     if (label) {
       return (
-        <label className={`flex items-center gap-3 group/checkbox ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}>
+        <label className={`flex items-center gap-3 group/checkbox ${className ?? ""} ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}>
           {box}
           <span className="text-sm text-text-base select-none">{label}</span>
         </label>

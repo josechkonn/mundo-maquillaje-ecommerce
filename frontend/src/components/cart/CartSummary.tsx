@@ -140,7 +140,7 @@ const CartSummary = ({
       } else {
         setCouponCode("");
       }
-    } catch (error) {
+    } catch {
       setCouponError("Error al aplicar el cupón");
     } finally {
       setIsApplying(false);
