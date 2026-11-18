@@ -39,8 +39,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   fetchProfile: async () => {
     try {
+      // El token va en el header: el backend está en otro dominio y no recibe la cookie
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8080/api"}/auth/me`, {
         credentials: "include",
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
       });
       if (res.ok) {
         const profile = await res.json();
