@@ -6,11 +6,16 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   const url = `${BASE_URL}${endpoint}`;
 
+  // El backend vive en otro dominio (onrender.com): el navegador no le envía la
+  // cookie SameSite=Lax, así que mandamos el token de Supabase en el header.
+  const { data: { session: current } } = await supabase.auth.getSession();
+
   const defaultOptions: RequestInit = {
     ...options,
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
+      ...(current?.access_token ? { Authorization: `Bearer ${current.access_token}` } : {}),
       ...options.headers,
     },
   };
@@ -25,9 +30,11 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session) {
-      // Si tenemos sesión nueva, reintentamos la petición original una vez
-      // El authListener ya se encargará de sincronizar la cookie en segundo plano
-      response = await fetch(url, defaultOptions);
+      // Si tenemos sesión nueva, reintentamos la petición original una vez con el token actualizado
+      response = await fetch(url, {
+        ...defaultOptions,
+        headers: { ...(defaultOptions.headers as Record<string, string>), Authorization: `Bearer ${session.access_token}` },
+      });
     } else {
       // Si no hay sesión, cerramos todo
       useAuthStore.getState().signOut();
